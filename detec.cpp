@@ -16,7 +16,6 @@ Detec::Detec(QMainWindow* parent):QObject(parent)
     MustCancel = false;
     MustCompress = true;
     _fileProblem = false;
-    // 4-3-2015 :
     _collectPreviousVersionsTags = true;
     _detecTreatment = new DetecTreatment(this);
 }
@@ -85,6 +84,14 @@ void Detec::endDetec()
     _detecTreatment->EndDetecTreatment();
     IsRunning = false;
     MustCancel = false;
+    if(ReprocessingMode)
+    {
+
+
+        int vdl = _versionDirList.size();
+        if(vdl>0) for(int k=0;k<vdl;k++) delete[] _versionIndicators[k];
+        delete[] _versionIndicators;
+    }
     _logFile.close();
 }
 
@@ -136,15 +143,14 @@ void Detec::createVersionsList()
         }
     }
     _logText << "liste des sv versions - nbre = " << _versionDirList.size() << endl;
-    for(int j=0;j<_versionDirList.size();j++)
-        _logText << j << ") " << _versionDirList.at(j) << endl;
-    if(_versionDirList.size()>1)
+    int vdl =_versionDirList.size();
+    if(vdl > 1)
     {
         bool ontrie = true;
         while(ontrie)
         {
             ontrie = false;
-            for(int j=0;j<_versionDirList.size()-1;j++)
+            for(int j=0;j<vdl-1;j++)
             {
                 sv1 = _versionDirList.at(j);
                 sv2 = _versionDirList.at(j+1);
@@ -160,10 +166,127 @@ void Detec::createVersionsList()
                 }
             }
         }
+
     }
-    _logText << "tri des sv versions - nbre = " << _versionDirList.size() << endl;
+    _logText << "tri des sv versions - nbre = " << vdl << endl;
     for(int j=0;j<_versionDirList.size();j++)
         _logText << j << ") " << _versionDirList.at(j) << endl;
+    if(vdl>0)
+    {
+        _versionIndicators = new int*[vdl];
+        for(int k=0;k<vdl;k++)
+        {
+            _versionIndicators[k] = new int[3];
+            for(int l=0;l<3;l++) _versionIndicators[k][l] = 0;
+        }
+    }
+
+}
+
+/*
+void Detec::cleanVerSubdir()
+{
+    _logText << "Nettoyage des sous-répertoires du répertoire " << _wavPath << endl;
+    QDir wDir(_wavPath);
+    if(!wDir.exists()) return;
+    for(int j=0;j<_versionDirList.size();j++)
+    {
+        _logText << j << ") " << _versionDirList.at(j) << "  nbcris=" << _versionIndicators[j][0]
+                 << " nbeti=" << _versionIndicators[j][1] << "indicsup=" <<   _versionIndicators[j][2] << endl;
+        if(j<_versionDirList.size()-1)
+        {
+            if(_versionIndicators[j][0]==_versionIndicators[j+1][0] && _versionIndicators[j][1]==_versionIndicators[j+1][1]
+                    && _versionIndicators[j][2]==_versionIndicators[j+1][2])
+            {
+                _logText << "Sous-répertoire " << _versionDirList.at(j) << " à supprimer" << endl;
+                QString srep;
+                QDir vDir(_wavPath + "/" + _versionDirList.at(j));
+                for(int k=0;k<3;k++)
+                {
+                    if(k==0) srep = "txt";
+                    if(k==1) srep = "dat";
+                    if(k==2) srep = "eti";
+                    QString kDir = _wavPath + "/" + _versionDirList.at(j) + "/" + srep;
+                    QDir rDir(kDir);
+                    if(rDir.exists())
+                    {
+                        _logText << kDir << "à supprimer !" << endl;
+                        QStringList txtFiles = rDir.entryList(QStringList("*.*"), QDir::Files);
+                        foreach(QString f,txtFiles)
+                        {
+                            //_logText << f << "à supprimer !" << endl;
+                            rDir.remove(f);
+                        }
+                        rDir.rmdir(kDir);
+                    } // fin rdir.exists
+                } // next k
+                if(vDir.exists())
+                {
+                    _logText << _wavPath + "/" + _versionDirList.at(j) << "à supprimer !" << endl;
+                    wDir.rmdir(_wavPath + "/" + _versionDirList.at(j));
+                }
+            } // fin suppression d'un répertoire
+        } // j< size-1
+    } // next j
+}
+*/
+
+void Detec::cleanVerSubdir()
+{
+    _logText << "Nettoyage des sous-répertoires du répertoire " << _wavPath << endl;
+    QDir wDir(_wavPath);
+    if(!wDir.exists()) return;
+    for(int j=0;j<_versionDirList.size();j++)
+    {
+        _logText << j << ") " << _versionDirList.at(j) << "  nbcris=" << _versionIndicators[j][0]
+                 << " nbeti=" << _versionIndicators[j][1] << "indicsup=" <<   _versionIndicators[j][2] << endl;
+        bool isCleaned = false;
+        QString svPath = _wavPath + "/" + _versionDirList.at(j);
+        if(j<_versionDirList.size()-1)
+        {
+            if(_versionIndicators[j][0]==_versionIndicators[j+1][0] && _versionIndicators[j][1]==_versionIndicators[j+1][1]
+                    && _versionIndicators[j][2]==_versionIndicators[j+1][2])
+            {
+                cleanSubdir(wDir,svPath,true,QString("*.*"));
+                _logText << "Suppression du sous-répertoire " << _versionDirList.at(j) << endl;
+                isCleaned = true;
+            } // fin suppression d'un répertoire
+        } // j< size-1
+        if(!isCleaned)
+        {
+            cleanSubdir(wDir,svPath+"/txt",true,QString("*.*"));
+            cleanSubdir(wDir,svPath+"/ima",true,QString("*.*"));
+        }
+    } // next j
+    cleanSubdir(wDir,_wavPath+"/dat",false,QString("*.dat"));
+    cleanSubdir(wDir,_wavPath+"/txt",false,QString("*.txt"));
+    cleanSubdir(wDir,_wavPath+"/txt",false,QString("*.csv"));
+}
+
+void Detec::cleanSubdir(QDir cdir,QString ndirPath,bool cleanAll,QString filter)
+{
+    //_logText << "cleanSubDir doit vider " << ndirPath << endl;
+    QDir nDir(ndirPath);
+    if(!nDir.exists()) return;
+    //_logText << "cleanSubDir suite - va vider les fichier simples de " << ndirPath << endl;
+    QStringList listFiles = nDir.entryList(QStringList(filter), QDir::Files);
+    //_logText << "cleanSubDir suite - nbre de fichiers à supprimer : " << listFiles.size() << endl;
+    foreach(QString f,listFiles) nDir.remove(f);
+    //_logText << "cleanSubDir suite - a vidé les fichier simples de " << ndirPath << endl;
+    if(cleanAll)
+    {
+       // _logText << "cleanSubDir suite - va vider les sous répertoires de " << ndirPath << endl;
+        QStringList sdirList = nDir.entryList(QStringList("*"), QDir::Dirs);
+        foreach(QString r,sdirList)
+        {
+            if(r.length()>2)
+            {
+                //_logText << "appel récursif de cleanSubDir pour répertoire  " << ndirPath+"/"+r << endl;
+                cleanSubdir(nDir,ndirPath+"/"+r,true,"*.*"); // attention : récursivité
+            }
+        }
+        cdir.rmdir(ndirPath);
+    }
 }
 
 bool Detec::treatOneFile()
@@ -173,6 +296,7 @@ bool Detec::treatOneFile()
     if(_fileIndex >= _filesNumber || (MustCancel  && !ReprocessingMode) || _fileProblem)
     {
         _clock->stop();
+        if(ReprocessingMode && _collectPreviousVersionsTags && _fileIndex >= _filesNumber) cleanVerSubdir();
         endDetec();
         return(true);
     }
@@ -218,7 +342,8 @@ bool Detec::treatOneFile()
     if(ReprocessingMode)
     {
         //_logText << "Retraitement - fenim2" << endl;
-        int nbTags = _remObject->PostMatch(true,"");
+        int pcpma;
+        int nbTags = _remObject->PostMatch(true,"",&pcpma);
         if(_remObject->Ok)
         {
             _numberEndTags+=nbTags;
@@ -245,8 +370,10 @@ bool Detec::treatOneFile()
                     QString verPath = _wavPath + "/" + _versionDirList.at(j);
                     // _logText << "Boucle récup - verPath = " << verPath << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
                     _remObject->PreMatch(wavFile,verPath);
+                    _versionIndicators[j][0] += _remObject->nbc1;
+                    _versionIndicators[j][1] += _remObject->nbe1;
                     // _logText << "Boucle récup - 2" << endl;
-                    _remObject->PostMatch(false,verPath);
+                    _remObject->PostMatch(false,verPath,_versionIndicators[j]+2);
                     // _logText << "Boucle récup - 3" << endl;
                     if(_remObject->nbe2 > 0)
                     {
@@ -261,9 +388,7 @@ bool Detec::treatOneFile()
                         // _logText << "Boucle récup - 4 - cas trouvé fin" << endl;
                     }
                 }
-                if(_fileIndex == _filesNumber-1 && _numberRecupTags>0)
-                  _logText << "Après récupération sur versions antérieures, rematchage du répertoire "<< info2 << endl;
-                // _logText << "Boucle récup - 5" << endl;
+                //
             }
             //
             // _logText << "fin de traitement du fichier 1" << endl;

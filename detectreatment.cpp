@@ -26,7 +26,6 @@ DetecTreatment::DetecTreatment(Detec *pDet)
     ResultSuffix = QString("ta");
     ResultCompressedSuffix = QString("tac");
     initVectorParams();
-    //InitializeDetecTreatment();
 }
 
 DetecTreatment::~DetecTreatment()
@@ -3057,25 +3056,17 @@ if(avoir) _detec->_logText << "D__  récupère le param. du cri précédant de "
 
 void DetecTreatment::createImage(QString wavFile)
 {
-    _detec->_logText << "createimage début" << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
     if(_sonogramWidth > 32767) {_xmoitie = true; _imaWidth=(_sonogramWidth+1)/2;}
     else  {_xmoitie = false; _imaWidth=_sonogramWidth;}
     QImage ima = QImage(_imaWidth, _fftHeightHalf,QImage::Format_RGB32);
-    //_logText << "ZZE _emin=" << _energyMin << " emax=" << _energyMax
-             //<< "  emed=" << _medianNoise << endl;
     initBvrvb(_energyMin,(double)_medianNoise,_energyMax);
     // refuser le traitement si imax > 2000
     int imax=((int)(_energyMax-_energyMin)*5)+1;
-    _detec->_logText << "createimage imax = " << imax
-                     << "   énergie min  " << _energyMin   << "  énergie max  " << _energyMax  << endl;
-
     uint crgb;
     for(int i=0;i<imax;i++)
     {
         _tvaleur[i]=calculateRGB((double)i/5.0f);
     }
-    _detec->_logText << "createimage milieu" << " - " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
-    _detec->_logText << "createimage hauteur = " << _fftHeightHalf  << "   largeur = " << _imaWidth << endl;
     float *ydl;
     char *mzc;
     int exceptions = 0;
@@ -3095,13 +3086,8 @@ void DetecTreatment::createImage(QString wavFile)
         }
     }
     //
-    if(exceptions>0)
-        _detec->_logText << "createimage exceptions = " << exceptions  << endl;
     QString imageName = _imagePath + '/' + wavFile.replace(QString(".wav"), QString(".jpg"), Qt::CaseInsensitive);
-    _detec->_logText << "createimage avant save imageName=" << imageName
-                      << " - " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
     ima.save(imageName,0,100); // save image
-    _detec->_logText << "createimage fin" << " - " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
 }
 
 void DetecTreatment::initBvrvb(double bornemin,double median,double bornemax)

@@ -35,12 +35,11 @@ int RematchClass::PreMatch(QString wavName,QString wavPath)
     return(nbe1);
 }
 
-int RematchClass::PostMatch(bool initial,QString recupVersion)
+int RematchClass::PostMatch(bool initial,QString recupVersion,int *cpma)
 {
     nbe2=0;
     nbc2=0;
     TadaridaMainWindow *tgui = (TadaridaMainWindow *)_parent;
-    //tgui->_logText << "postmatch1 "  << _fileName << endl;
     if(initial)
     {
         _fenim2 = new Fenim(_parent,_wavPath,_fileName,_baseDayDir,false,true,2,"2",0,0);
@@ -54,16 +53,9 @@ int RematchClass::PostMatch(bool initial,QString recupVersion)
     }
     if(nbe1>0)
     {
-        //tgui->_logText << "postmatch2 "  << _fileName << endl;
-        nbe2 = _fenim2->rematcheEtiquettes(_fenim1,initial,recupVersion);
-        //tgui->_logText << "postmatch3 "  << _fileName << endl;
-    }
-    else
-    {
-        //tgui->_logText << "pas de rematchage car pas d'étiquette dans le fichier antérieur' "  << _fileName << endl;
+        nbe2 = _fenim2->rematcheEtiquettes(_fenim1,initial,recupVersion,cpma);
     }
     delete _fenim1;
-    //tgui->_logText << "postmatch4 "  << _fileName << endl;
     return(nbe2);
 }
 
@@ -1455,10 +1447,8 @@ void TadaridaMainWindow::previousVersionSave(QStringList wavFileList,QString wav
         basecopie.mkdir(nomrepcop);
         basecopieDat = QDir(nomrepcop+"/dat");
         basecopieEti = QDir(nomrepcop+"/eti");
-        basecopieTxt = QDir(nomrepcop+"/txt");
         basecopieDat.mkdir(basecopieDat.path());
         basecopieEti.mkdir(basecopieEti.path());
-        basecopieTxt.mkdir(basecopieTxt.path());
 
         foreach(QString wavFile, wavFileList)
         {
@@ -1470,8 +1460,6 @@ void TadaridaMainWindow::previousVersionSave(QStringList wavFileList,QString wav
             QFile etiFile(wavPath + "/eti/" + nomfic + ".eti");
             if(etiFile.exists()) etiFile.copy(basecopieEti.path()+"/"+nomfic+".eti");
         }
-        QFile txt2File(wavPath + "/txt/param2.txt");
-        if(txt2File.exists()) txt2File.copy(basecopieTxt.path()+"/param2.txt");
     }
 }
 

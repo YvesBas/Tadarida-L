@@ -63,8 +63,9 @@ private:
 
     // methods
     uint calculateRGB(double);
+    void cleanVerSubdir();
+    void cleanSubdir(QDir,QString,bool,QString);
     void createImage(QString);
-    // 4-3-2015 :
     void createVersionsList();
     void endDetec();
     void initBvrvb(double,double,double);
@@ -120,13 +121,14 @@ private:
     QString                      _txtFilePath2;
     uint                         _tvaleur[2000];
     QVector< QPoint >            _vectorCallPoints;
-    QVector < int >              _vectorXMin;
-    QVector < int >              _vectorXMax;
-    QStringList                  _versionDirList;
-    bool                         _waiting;
-    QString                      _wavFile;
-    QStringList                  _wavFileList;
-    QString                      _wavPath;
+    QVector < int >         _vectorXMin;
+    QVector < int >        _vectorXMax;
+    QStringList               _versionDirList;
+    int                              **_versionIndicators;
+    bool                           _waiting;
+    QString                     _wavFile;
+    QStringList               _wavFileList;
+    QString                     _wavPath;
 };
 
 #endif
