@@ -66,6 +66,7 @@ private:
     void cleanVerSubdir();
     void cleanSubdir(QDir,QString,bool,QString);
     void createImage(QString);
+    // 4-3-2015 :
     void createVersionsList();
     void endDetec();
     void initBvrvb(double,double,double);

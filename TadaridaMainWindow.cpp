@@ -40,6 +40,7 @@ int RematchClass::PostMatch(bool initial,QString recupVersion,int *cpma)
     nbe2=0;
     nbc2=0;
     TadaridaMainWindow *tgui = (TadaridaMainWindow *)_parent;
+    //tgui->_logText << "postmatch1 "  << _fileName << endl;
     if(initial)
     {
         _fenim2 = new Fenim(_parent,_wavPath,_fileName,_baseDayDir,false,true,2,"2",0,0);
@@ -53,9 +54,16 @@ int RematchClass::PostMatch(bool initial,QString recupVersion,int *cpma)
     }
     if(nbe1>0)
     {
+        //tgui->_logText << "postmatch2 "  << _fileName << endl;
         nbe2 = _fenim2->rematcheEtiquettes(_fenim1,initial,recupVersion,cpma);
+        //tgui->_logText << "postmatch3 "  << _fileName << endl;
+    }
+    else
+    {
+        //tgui->_logText << "pas de rematchage car pas d'étiquette dans le fichier antérieur' "  << _fileName << endl;
     }
     delete _fenim1;
+    //tgui->_logText << "postmatch4 "  << _fileName << endl;
     return(nbe2);
 }
 

@@ -29,6 +29,11 @@ DetecTreatment::DetecTreatment(Detec *pDet)
     //InitializeDetecTreatment();
 }
 
+DetecTreatment::DetecTreatment(Recherche *r)
+{
+    initVectorParams();
+}
+
 DetecTreatment::~DetecTreatment()
 {
 }
@@ -860,6 +865,11 @@ void DetecTreatment::shapesDetects()
     //***_logText << "fin de shapeDetects - nbcris = "<< _callsArray.size() << endl;
     //***_logText << "Avant retrieCris : "<< QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
     sortWaves();
+    /*
+    for(int i=0;i<_callsArray.size();i++)
+        _detec->_logText << "cri " << i+1 << "taille : " << _callsArray.at(i).size() << endl;
+    */
+
 }
 
 void DetecTreatment::sortWaves()
@@ -1562,27 +1572,6 @@ void DetecTreatment::detectsParameter2()
             {
                 for(int j=0;j<nbi;j++) interc[j] = (qAbs((pics[mt][j+1]-pics[mt][j])))*_msPerX;
                 sortFloatArray(interc,nbi);
-                /*
-
-                float conserv;
-                bool ontrie = true;
-                while(ontrie)
-                {
-                    ontrie = false;
-                    for(int j=0;j<nbi-1;j++)
-                    {
-                        bool permuter = false;
-                        if(interc[j]>interc[j+1]) permuter = true;
-                        if(permuter)
-                        {
-                            conserv = interc[j];
-                            interc[j] = interc[j+1];
-                            interc[j+1] = conserv;
-                            ontrie = true;
-                        }
-                    }
-                }
-                */
                 if(halfnbi*2<nbi) medianPicsDistance = interc[halfnbi];
                 else medianPicsDistance= (interc[halfnbi-1] + interc[halfnbi])/2;
                 if(nbi<4)
@@ -1698,39 +1687,42 @@ void DetecTreatment::detectsParameter2()
         float dymax = ((float)qMax(ymaitr-ymin,ymax-ymaitr))*_khzPerY;
         float distLim = pow(dxmax,2)+pow(dymax,2);
         //
-        for(int y=ymin;y<=ymax;y++)
+        if(distLim>0.0f)
         {
-            for(int x=_xMinPerY[y-ymin]-1;x<=_xMaxPerY[y-ymin];x++)
+            for(int y=ymin;y<=ymax;y++)
             {
-                if(x>=0 && x<_sonogramWidth-1)
+                for(int x=_xMinPerY[y-ymin]-1;x<=_xMaxPerY[y-ymin];x++)
                 {
-                    dif = qAbs(_sonogramArray[y][x+1]-_sonogramArray[y][x]);
-                    p = 1.0f - (((    pow(   ((float)(x-xmaitr))*_msPerX , 2)
-                                          +pow(   ((float)(y-ymaitr))*_khzPerY,2))/distLim) * 0.75f);
-                    difTot += dif * p;
-                    ponderTot += p;
-                }
-            }
-        }
-        // _logText << "1) diftot=" << difTot << "  -  pondertot=" << ponderTot << endl;
-        for(int x=xmin;x<=xmax;x++)
-        {
-            if(_yMaxPerX[x-xmin]>0)
-            {
-                for(int y=_yMinPerX[x-xmin]-1;y<=_yMaxPerX[x-xmin];y++)
-                {
-                    if(y>=_minY && y<_maxY-1)
+                    if(x>=0 && x<_sonogramWidth-1)
                     {
-                        dif = qAbs(_sonogramArray[y+1][x]-_sonogramArray[y][x]);
+                        dif = qAbs(_sonogramArray[y][x+1]-_sonogramArray[y][x]);
                         p = 1.0f - (((    pow(   ((float)(x-xmaitr))*_msPerX , 2)
-                                              +pow(   ((float)(y-ymaitr))*_khzPerY,2))/distLim) * 0.75f);
+                                          +pow(   ((float)(y-ymaitr))*_khzPerY,2))/distLim) * 0.75f);
                         difTot += dif * p;
                         ponderTot += p;
                     }
                 }
             }
+            // _logText << "1) diftot=" << difTot << "  -  pondertot=" << ponderTot << endl;
+            for(int x=xmin;x<=xmax;x++)
+            {
+                if(_yMaxPerX[x-xmin]>0)
+                {
+                    for(int y=_yMinPerX[x-xmin]-1;y<=_yMaxPerX[x-xmin];y++)
+                    {
+                        if(y>=_minY && y<_maxY-1)
+                        {
+                            dif = qAbs(_sonogramArray[y+1][x]-_sonogramArray[y][x]);
+                            p = 1.0f - (((    pow(   ((float)(x-xmaitr))*_msPerX , 2)
+                                              +pow(   ((float)(y-ymaitr))*_khzPerY,2))/distLim) * 0.75f);
+                            difTot += dif * p;
+                            ponderTot += p;
+                        }
+                    }
+                }
+            }
+            if(ponderTot!=0) oParam[Stab] = difTot / ponderTot;
         }
-         if(ponderTot!=0) oParam[Stab] = difTot / ponderTot;
         //_logText << "Avant calcul stablr et stabbr"  << endl;
         oParam[EnStabSm] = 0.0f;
         oParam[EnStabLg] = 0.0f;
@@ -2475,6 +2467,7 @@ void DetecTreatment::detectsParameter2()
     //_logText << "Avant traitement des densités..."  << endl;
     int nbb;
     float tsono = _sonogramWidth *  _msPerX;
+    //_detec->_logText << "tsono=" << tsono << endl;
     float interv[MAXCRI];
     float variation[MAXCRI];
     float proxiFreq = 2.0f;
@@ -2555,10 +2548,13 @@ void DetecTreatment::detectsParameter2()
                 }
                 //
             } // fin if nbi>1
+            //_detec->_logText << "medianLittleDistance = " << medianLittleDistance << endl;
+            //_detec->_logText << "medianBigDistance = " << medianBigDistance << endl;
             _paramsArray[icri][SH][MedInt]   = medianDistance;
             _paramsArray[icri][SH][Int25]  = medianLittleDistance;
             _paramsArray[icri][SH][Int75]  = medianBigDistance;
-            _paramsArray[icri][SH][RInt1] = medianBigDistance / medianLittleDistance;
+            if(medianLittleDistance>0.0f) _paramsArray[icri][SH][RInt1] = medianBigDistance / medianLittleDistance;
+            else _paramsArray[icri][SH][RInt1] = 9999;
             //
             // 5) Variations des intervalles
             float medianDistanceVariation = 0;
@@ -2603,7 +2599,7 @@ void DetecTreatment::detectsParameter2()
             _paramsArray[icri][SH][LgIntDev]  = medianBigDistanceVariation;
             //
             _paramsArray[icri][SH][VarInt]  = medianDistanceVariation/medianDistance;
-            _paramsArray[icri][SH][VarSmInt]  = medianLittleDistanceVariation/medianLittleDistance;
+            if(medianLittleDistance>0.0f) _paramsArray[icri][SH][VarSmInt]  = medianLittleDistanceVariation/medianLittleDistance;
             _paramsArray[icri][SH][VarLgInt]  = medianBigDistanceVariation/medianBigDistance;
             //
             if(medianLittleDistanceVariation==0) _paramsArray[icri][SH][RIntDev1] = 0.0f;
@@ -2657,6 +2653,33 @@ void DetecTreatment::sortFloatArray(float *pf,int nbf)
                 conserv = pf[j];
                 pf[j] = pf[j+1];
                 pf[j+1] = conserv;
+                ontrie = true;
+            }
+        }
+    }
+}
+
+void DetecTreatment::sortFloatIndArray(float *pf,int nbf,int *pos)
+{
+    float conserv;
+    int cpos;
+    bool ontrie = true;
+    for(int j=0;j<nbf;j++) pos[j] = j;
+    while(ontrie)
+    {
+        ontrie = false;
+        for(int j=0;j<nbf-1;j++)
+        {
+            bool permuter = false;
+            if(pf[j]>pf[j+1]) permuter = true;
+            if(permuter)
+            {
+                conserv = pf[j];
+                pf[j] = pf[j+1];
+                pf[j+1] = conserv;
+                cpos = pos[j];
+                pos[j] = pos[j+1];
+                pos[j+1] = cpos;
                 ontrie = true;
             }
         }
@@ -2735,7 +2758,7 @@ void DetecTreatment::saveCompressedParameters(const QString& wavFile)
     QStringList  arguments;
     arguments << "a" << "-tgzip" << compressedParametersPath <<  txtFilePath;
     int a=QProcess::execute(program,arguments);
-    _detec->_logText << "résultat d'appel 7z=" << a << endl;
+    //_detec->_logText << "résultat d'appel 7z=" << a << endl;
 
     /*
     _compressedParametersFile.setFileName(compressedParametersPath);

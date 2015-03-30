@@ -31,6 +31,7 @@
 
 
 class Detec;
+class Recherche;
 
 enum NUMTAB {SH,CM,CS,CN,CO,CO2,NBTAB};
 enum NUMPAR {StTime,Dur,PrevSt,Fmax,Fmin,BW,FPk,FPkD,TPk,Slope,HCF,FIF,THCF,UpSl,LoSl,StF,
@@ -67,6 +68,7 @@ class DetecTreatment
 {
 public:
     DetecTreatment(Detec *);
+    DetecTreatment(Recherche *);
     ~DetecTreatment();
     bool CallTreatmentsForOneFile(QString& wavFile,QString &pathFile);
     uint calculateRGB(double);
@@ -76,6 +78,10 @@ public:
     void saveDatFile(QString wavFile);
     void SetDirParameters(QString,QString,bool,QString,QString);
     void SetGlobalParameters(int,int,int,int,int,bool,int,int,int,int,int,int,int);
+    void sortFloatIndArray(float *,int,int *);
+
+    QVector< ParamToSave >       _vectPar;
+
 
 private:
     // methods
@@ -198,7 +204,6 @@ private:
     QVector< QPoint >            _vectorCallPoints;
     QVector < int >              _vectorXMin;
     QVector < int >              _vectorXMax;
-    QVector< ParamToSave >       _vectPar;
     QStringList                  _wavFileList;
     QString                      _wavPath;
     int                          _xMax;

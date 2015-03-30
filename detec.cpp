@@ -16,6 +16,7 @@ Detec::Detec(QMainWindow* parent):QObject(parent)
     MustCancel = false;
     MustCompress = true;
     _fileProblem = false;
+    // 4-3-2015 :
     _collectPreviousVersionsTags = true;
     _detecTreatment = new DetecTreatment(this);
 }

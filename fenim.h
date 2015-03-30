@@ -343,7 +343,7 @@ public:
 
     // pour retraitement :
     bool chargeCrisEtiquettes();
-    int rematcheEtiquettes(Fenim * fenim1,bool initial,QString recupVersion);
+    int rematcheEtiquettes(Fenim * fenim1,bool initial,QString recupVersion,int *cpma);
     bool readVersionRep();
     void writeVersionRep();
     int m_verRepLog,m_verRepUser;

@@ -9,6 +9,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QCheckBox>
 #include <QKeyEvent>
 #include <QToolTip>
 #include <QMessageBox>
@@ -16,9 +17,10 @@
 #include <QStringList>
 #include <QTableView>
 #include <QTableWidget>
-
 #include "TadaridaMainWindow.h"
+#include <QFile>
 
+#include "detectreatment.h"
 
 class Recherche : public QMainWindow
 {
@@ -27,9 +29,16 @@ public:
     Recherche(QMainWindow *parent);
     ~Recherche();
     void afficher_ecran();
+
+private:
     bool findTreat(bool);
     bool controle(QString,int);
     void treatBrowse(int);
+
+    // ajouté le 28/3/2015
+    void initCsvTable();
+    void completeCsvTable(QString,QString,QString);
+    void endCsvTable(QString,QString);
 
     TadaridaMainWindow    *tgui;
     int                   _nbFields;
@@ -59,6 +68,17 @@ public:
     QStringList           _controlTableList;
     bool                  *_withControl;
     QPushButton           *_btnOpen;
+
+    // ajouté le 27/3/2015
+    QLabel                    *_labelSearch2;
+    QLineEdit               *_editSearch2;
+    QCheckBox           *_cpComp;
+    QFile    				    _txtFile;
+    QTextStream          _fileStream;
+    bool                        _csvTableOpen;
+    bool                         _csvTreat;
+    int                            _nCompLines;
+    DetecTreatment    *_detecTreatment;
 
 private slots:
     void                  filesFind();

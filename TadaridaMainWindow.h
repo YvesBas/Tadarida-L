@@ -34,7 +34,7 @@ public:
     ~RematchClass();
     void initialize();
     int PreMatch(QString,QString);
-    int PostMatch(bool,QString);
+    int PostMatch(bool,QString,int *);
     int EndMatch();
     int nbe1;
     int nbc1;

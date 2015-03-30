@@ -1,4 +1,4 @@
-#include "Recherche.h"
+#include "recherche.h"
 #include <QModelIndexList>
 
 Recherche::Recherche(QMainWindow *parent) :
@@ -19,10 +19,13 @@ Recherche::Recherche(QMainWindow *parent) :
         if(i<_controlTableList.size())
             if(_controlTableList.at(i).length()>0) _withControl[i]=true;
     }
+    _detecTreatment = new DetecTreatment(this);
+    // ne sert qu'à utiliser _detecTreatment->_vectPar
 }
 
 Recherche::~Recherche()
 {
+	delete _detecTreatment;
 }
 
 void Recherche::afficher_ecran()
@@ -49,6 +52,15 @@ void Recherche::afficher_ecran()
     _editSearch = new QLineEdit(this);
     _editSearch->setGeometry(150,50,200,20);
     _editSearch->setVisible(true);
+
+	// ajouté le 27/03/2015
+    _labelSearch2 = new QLabel(this);
+    _labelSearch2->setGeometry(400,50,50,20);
+    _labelSearch2->setText("ou");
+    _labelSearch2->setVisible(true);
+    _editSearch2 = new QLineEdit(this);
+    _editSearch2->setGeometry(500,50,200,20);
+    _editSearch2->setVisible(true);
 
     _labelDir = new QLabel(this);
     _labelDir->setGeometry(30,90,100,20);
@@ -86,7 +98,11 @@ void Recherche::afficher_ecran()
     _btnSearch->setText("Rechercher");
     _btnSearch->show();
 
-
+    _cpComp = new QCheckBox(QString("Comparatif"),this);
+    _cpComp->setGeometry(520,190,120,20);
+    _cpComp->setChecked(false);
+    _cpComp->setVisible(true);
+    _cpComp->setEnabled(true);
 
     _labelReplace = new QLabel(this);
     _labelReplace->setGeometry(30,250,110,20);
@@ -190,6 +206,7 @@ bool Recherche:: findTreat(bool findMode)
                              "Texte à rechercher non saisi !",QMessageBox::Ok);
         return(false);
     }
+
     int nfield = _cbField->currentIndex();
     if(nfield < 0 || nfield >= _nbFields)
     {
@@ -254,16 +271,44 @@ bool Recherche:: findTreat(bool findMode)
     }
     //
     _selFileList.clear();
-
+	
+	// ajouté le 27/03/2015
+	_csvTreat = false;	
+    bool fpl;
+    QString searchedText2 = this->_editSearch2->text();
+	bool s2nn = false;
+	if(!searchedText2.isEmpty()) 
+	{
+		s2nn = true;
+        if(findMode && _cpComp->isChecked())
+		{
+			_csvTreat = true;
+            initCsvTable();
+		}
+	}
+	// fin ajout le 27/03/2015
+	
     int nl=0;
     int nt=0;
+	// 27/03/2015
+	QString parFileName,parDirName;
+	QDir parDir;
+    QFile *parFile;
+    QTextStream parStream;
     foreach(QString dayDirName,directoriesList)
     {
+        // 27/03/2015
         QString tagDirName = deb1 + "/" + dayDirName + "/eti";
         QDir searchDir(tagDirName);
         if(!searchDir.exists())continue;
+        if(_csvTreat)
+        {
+            parDirName = deb1 + "/" + dayDirName + "/txt";
+            QDir parDir(parDirName);
+            if(!parDir.exists())continue;
+        }
         QStringList tagList = searchDir.entryList(QStringList("*.eti"), QDir::Files);
-        bool fileToSelect;
+        bool fileToSelect,find1,find2;
         foreach(QString tagfile, tagList)
         {
             QString tagFileName = tagDirName + "/" + tagfile;
@@ -277,22 +322,56 @@ bool Recherche:: findTreat(bool findMode)
                 tagStream.readLine();
                 QString tagLine;
                 QString readText;
+                QString parLine;
+                fpl = false;
+                if(_csvTreat)
+                {
+                    parFileName = parDirName + "/" + tagfile.left(tagfile.length()-3) + "ta";
+                    parFile = new QFile(parFileName);
+                    if(parFile->open(QIODevice::ReadOnly | QIODevice::Text)) fpl=true;
+                    if(fpl)  { parStream.setDevice(parFile); parStream.readLine(); }
+                }
                 while(!tagStream.atEnd())
                 {
                     tagLine =tagStream.readLine();
                     if(tagLine.isNull() or tagLine.isEmpty()) break;
+                    if(_csvTreat && fpl) parLine = parStream.readLine();
                     readText=tagLine.section('\t',nc,nc);
+                    // ajouté le 27/3/2015
+                    find1=false; find2=false;
                     if(!readText.isEmpty())
                     {
                         if(isControlled)
                         {
-                            if(readText==searchedText) fileToSelect = true;
+                            // modifié le 27/3/2015
+                            if(readText==searchedText) {fileToSelect = true; find1=true;}
+                            else
+                            {
+                                if(s2nn && readText==searchedText2) {fileToSelect = true; find2=true;}
+                            }
                         }
                         else
                         {
-                            if(readText.contains(searchedText)) fileToSelect = true;
+                            // modifié le 27/3/2015
+                            if(readText.contains(searchedText)) {fileToSelect = true; find1=true;}
+                            else
+                            {
+                                if(s2nn && readText.contains(searchedText2)) {fileToSelect = true; find2=true;}
+                            }
                         }
-                        if(fileToSelect) break;
+                        if(fileToSelect)
+                        {
+                            if(_csvTreat)
+                            {
+                                if(find1 || find2)
+                                {
+                                    if(find1) completeCsvTable(searchedText,dayDirName,parLine);
+                                    else completeCsvTable(searchedText2,dayDirName,parLine);
+
+                                }
+                            }
+                            else break;
+                        }
                     }
                 }
                 tagFile.close();
@@ -300,12 +379,21 @@ bool Recherche:: findTreat(bool findMode)
             if(fileToSelect)
             {
                 _selFileList << tagFileName;
+
+                // ajouté le 27/03/2015 :
                 if(nl>9) _filesTable->setRowCount(nl+1);
                 _filesTable->setCellWidget(nl,0,new QLabel(tagFileName,this));
+
                 nl++;
+            } // filetoselect = true
+
+            if(_csvTreat)
+            {
+                if(fpl)  parFile->close();
+                delete parFile;
             }
-        }
-    }
+        } // tagfile open
+    } // next tagFile
     if(findMode)
     {
         _lblSelectedNumber->setText(QString("Fichiers sélectionnés : ")+QString::number(nl));
@@ -324,6 +412,11 @@ bool Recherche:: findTreat(bool findMode)
     _dirSaveText1 = dirPath1;
     _dirSaveText2 = dirPath2;
     _fieldSaveNumber = nc;
+	
+    if(_csvTreat)
+    {
+        endCsvTable(searchedText,searchedText2);
+    }
     return(true);
 }
 // --------------------------------------------------------------------
@@ -513,6 +606,130 @@ void Recherche::on_btnOpen_clicked()
         wavf=wavf.replace(".eti",".wav");
         tgui->updateTags(wavf);
     }
+}
+// --------------------------------------------------------------------
+void Recherche::initCsvTable()
+{
+    QString txtFilePath = "comparatif.csv";
+    _txtFile.setFileName(txtFilePath);
+    if(_txtFile.open(QIODevice::WriteOnly | QIODevice::Text)==false)
+    {
+		_csvTableOpen = false;
+        return;
+    }
+	_csvTableOpen = true;
+	//
+    _fileStream.setDevice(&_txtFile);
+    _fileStream.setRealNumberNotation(QTextStream::FixedNotation);
+    _fileStream.setRealNumberPrecision(2);
+    _fileStream << "Espece" << '\t' << "Directory" << '\t' << "Filename" << '\t' << "CallNum"
+               << '\t' << "Version"<< '\t' << "FileDur"<< '\t' << "SampleRate";
+    for(int j=0;j<_detecTreatment->_vectPar.size();j++) _fileStream << '\t' << _detecTreatment->_vectPar[j].ColumnTitle;
+    _fileStream << endl;
+    _nCompLines = 0;
+}
+// --------------------------------------------------------------------
+void Recherche::completeCsvTable(QString tsel,QString pdir,QString parline)
+{
+    _fileStream << tsel << '\t' << pdir << '\t' << parline << endl;
+    _nCompLines++;
+}
+// --------------------------------------------------------------------
+void Recherche::endCsvTable(QString esp1,QString esp2)
+{
+    tgui->_logText << "début endCsvTable" << endl;
+    _txtFile.close();
+    if(_nCompLines < 1) return;
+    if(_txtFile.open(QIODevice::ReadWrite | QIODevice::Text)==false) return;
+    QString resultLine = "";
+    _fileStream.readLine();
+    // traitement pour chaque paramètres
+    //   nt++;
+    int npar = _detecTreatment->_vectPar.size();
+    float **tabPL = new float*[npar];
+    int **sortPL = new int*[npar];
+    for(int j=0;j<npar;j++)
+    {
+        tabPL[j] = new float[_nCompLines];
+        sortPL[j] = new int[_nCompLines];
+    }
+    int *ws = new int[_nCompLines];
+    int ns[2];
+    ns[0]=0; ns[1]=0;
+    tgui->_logText  << "avant alimentation de tabPL..." << endl;
+
+    for(int i=0;i<_nCompLines;i++)
+    {
+        QString parLine = _fileStream.readLine();
+        //if(parLine.isNull() or parLine.isEmpty()) break;
+        QString species = parLine.section('\t',0,0);
+        if(species==esp2) ws[i] = 1;  else ws[i] = 0;
+        ns[ws[i]]++;
+        for(int j=0;j<npar;j++)
+        {
+            int pospar = 7+j;
+            tabPL[j][i] = parLine.section('\t',pospar,pospar).toFloat();
+            if((i & 1)==1) tabPL[j][i] += 0.01f;
+        }
+    }
+    // tri esp1, esp2 pour nb cris < chez esp1
+    if(ns[1]<ns[0])
+    {
+        QString cesp1 = esp1;
+        esp1 = esp2;
+        esp2 = cesp1;
+        int cns0 = ns[0];
+        ns[0] = ns[1];
+        ns[1] = cns0;
+        for(int  i=0;i<_nCompLines;i++) ws[i] = 1-ws[i];
+    }
+    //
+    // ajouter un tri pour mélanger ne pas avoir à la suite toutes les esp1
+    // ce qui pourrait donner un indicateur 1 sur un paramètre où toutesles valeurs sont égales
+
+    tgui->_logText  << "ns0=" << ns[0] << endl;
+    tgui->_logText  << "ns1=" << ns[1] << endl;
+    tgui->_logText  << "esp1=" << esp1 << endl;
+    tgui->_logText  << "esp2=" << esp2 << endl;
+
+    tgui->_logText  << "avant boucle calculant les résultats" << endl;
+
+    if(ns[0]>0)
+    {
+        _fileStream << '\t' << '\t'  << '\t' << '\t' << '\t' << '\t';
+        for(int j=0;j<npar;j++)
+        {
+            tgui->_logText  << "j=" << j << endl;
+            //QString columnTitle = _detecTreatment->_vectPar[j].ColumnTitle;
+            _detecTreatment->sortFloatIndArray(tabPL[j],_nCompLines,sortPL[j]);
+            tgui->_logText  << "après tri des valeurs pour paramètre " << j << endl;
+            //$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+            int ncp = 0, ncg = 0;
+            for(int k=0;k<ns[0];k++) if(ws[sortPL[j][k]]==0) ncp++;
+            tgui->_logText  << "calcul - ncp = " << ncp << endl;
+            if(ncp*2<ns[0])
+            {
+                for(int k=_nCompLines-ns[0];k<_nCompLines;k++) if(ws[sortPL[j][k]]==0) ncg++;
+                tgui->_logText  << "calcul - ncg = " << ncg << endl;
+            }
+            float indic = ((float)qMax(ncp,ncg))/((float)ns[0]);
+            tgui->_logText  << "calcul - indic = " << QString::number(indic) << endl;
+            _fileStream <<  '\t' << QString::number(indic);
+            tgui->_logText  << "résultat enregistré dans filestream "  << endl;
+            //$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+            //tgui->_logText << _detecTreatment->_vectPar[j].ColumnTitle << " min=" << vmin << "max=" << vmax << endl;
+        }
+    }
+    tgui->_logText  << "après boucle calculant les résultats" << endl;
+    _fileStream << endl;
+    // tgui->_logText <<  esp1 << " : " << QString::number(ns[0]) << " lignes" << endl;
+
+    delete[] ws;
+    for(int i=0;i<npar;i++)  {delete[] tabPL[i]; delete[] sortPL[i];}
+    delete[] tabPL;
+    delete[] sortPL;
+    _txtFile.close();
+    tgui->_logText  << "endCsvTable fin" << endl;
 }
 // --------------------------------------------------------------------
 

@@ -1353,7 +1353,7 @@ bool Fenim::loadMatriceCris2(QString da2File,bool principal)
     return(true);
 }
 
-int Fenim::rematcheEtiquettes(Fenim * fenim1,bool initial,QString recupVersion)
+int Fenim::rematcheEtiquettes(Fenim * fenim1,bool initial,QString recupVersion,int *cpma)
 {
     // apriori : rien à changer pour la version contour !
     m_logStream << "rematcheEtiquettes - m_nbcris = " << m_nbcris << endl;
@@ -1373,6 +1373,7 @@ int Fenim::rematcheEtiquettes(Fenim * fenim1,bool initial,QString recupVersion)
             //m_logStream << "j = " << j << endl;
             QPoint p1 = fenim1->m_pointsMaitres.at(j);
             int x1=p1.x(),y1=p1.y();
+            *cpma += (x1+y1);
             int d=(x-x1)*(x-x1)+(y-y1)*(y-y1);
             if(d<9)
             {
