@@ -1,9 +1,7 @@
-// 17/11/2014 : 463 lignes avant grosses modifs
 #ifndef FENIM_H
 #define FENIM_H
 
 #define mlg 500
-#define MAXCRI 2000
 #define NSUPPL 3
 #define NCRETES 5
 
@@ -25,6 +23,13 @@
 #include <QSettings>
 
 #include "etiquette.h"
+
+#if QT_VERSION >= 0x050000
+  #define SCALE(a,b) setTransform(QTransform::fromScale(a,b),true)
+#else
+  #define SCALE(a,b) scale(a,b)
+#endif
+
 class Loupe;
 class Fenim;
 
@@ -306,7 +311,7 @@ public:
     QVector< QPoint >  m_pointsMaitres;
     QVector<QPoint>  m_pointsSuppl[NCRETES][NSUPPL];
     QString            imaNom;
-    int m_iSizeFFTHalf;
+    int _imaHeight;
     int m_xmoitie;
     float m_factorX;
     float m_factorY;

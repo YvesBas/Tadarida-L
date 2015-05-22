@@ -637,7 +637,6 @@ void Recherche::completeCsvTable(QString tsel,QString pdir,QString parline)
 // --------------------------------------------------------------------
 void Recherche::endCsvTable(QString esp1,QString esp2)
 {
-    tgui->_logText << "début endCsvTable" << endl;
     _txtFile.close();
     if(_nCompLines < 1) return;
     if(_txtFile.open(QIODevice::ReadWrite | QIODevice::Text)==false) return;
@@ -656,7 +655,6 @@ void Recherche::endCsvTable(QString esp1,QString esp2)
     int *ws = new int[_nCompLines];
     int ns[2];
     ns[0]=0; ns[1]=0;
-    tgui->_logText  << "avant alimentation de tabPL..." << endl;
 
     for(int i=0;i<_nCompLines;i++)
     {
@@ -686,50 +684,31 @@ void Recherche::endCsvTable(QString esp1,QString esp2)
     //
     // ajouter un tri pour mélanger ne pas avoir à la suite toutes les esp1
     // ce qui pourrait donner un indicateur 1 sur un paramètre où toutesles valeurs sont égales
-
-    tgui->_logText  << "ns0=" << ns[0] << endl;
-    tgui->_logText  << "ns1=" << ns[1] << endl;
-    tgui->_logText  << "esp1=" << esp1 << endl;
-    tgui->_logText  << "esp2=" << esp2 << endl;
-
-    tgui->_logText  << "avant boucle calculant les résultats" << endl;
-
     if(ns[0]>0)
     {
         _fileStream << '\t' << '\t'  << '\t' << '\t' << '\t' << '\t';
         for(int j=0;j<npar;j++)
         {
-            tgui->_logText  << "j=" << j << endl;
-            //QString columnTitle = _detecTreatment->_vectPar[j].ColumnTitle;
             _detecTreatment->sortFloatIndArray(tabPL[j],_nCompLines,sortPL[j]);
-            tgui->_logText  << "après tri des valeurs pour paramètre " << j << endl;
-            //$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
             int ncp = 0, ncg = 0;
             for(int k=0;k<ns[0];k++) if(ws[sortPL[j][k]]==0) ncp++;
-            tgui->_logText  << "calcul - ncp = " << ncp << endl;
             if(ncp*2<ns[0])
             {
                 for(int k=_nCompLines-ns[0];k<_nCompLines;k++) if(ws[sortPL[j][k]]==0) ncg++;
-                tgui->_logText  << "calcul - ncg = " << ncg << endl;
             }
-            float indic = ((float)qMax(ncp,ncg))/((float)ns[0]);
-            tgui->_logText  << "calcul - indic = " << QString::number(indic) << endl;
-            _fileStream <<  '\t' << QString::number(indic);
-            tgui->_logText  << "résultat enregistré dans filestream "  << endl;
-            //$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-            //tgui->_logText << _detecTreatment->_vectPar[j].ColumnTitle << " min=" << vmin << "max=" << vmax << endl;
+            int mpg = qMax(ncp,ncg);
+            float indic = ((float)mpg)/((float)ns[0]);
+            float indic2 = ((float)(ns[1]-ns[0]+mpg))/((float)ns[1]);
+            _fileStream <<  '\t' << QString::number((indic+indic2)/2.0f);
         }
     }
-    tgui->_logText  << "après boucle calculant les résultats" << endl;
     _fileStream << endl;
-    // tgui->_logText <<  esp1 << " : " << QString::number(ns[0]) << " lignes" << endl;
 
     delete[] ws;
     for(int i=0;i<npar;i++)  {delete[] tabPL[i]; delete[] sortPL[i];}
     delete[] tabPL;
     delete[] sortPL;
     _txtFile.close();
-    tgui->_logText  << "endCsvTable fin" << endl;
 }
 // --------------------------------------------------------------------
 

@@ -4,7 +4,7 @@
 #include <QMainWindow>
 #include <QWidget>
 #include <QCheckBox>
-#include <QtGui/QComboBox>
+#include <QComboBox>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>

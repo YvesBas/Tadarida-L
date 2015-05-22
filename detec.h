@@ -26,25 +26,29 @@ class Detec : public QObject
 public:    
     explicit Detec(QMainWindow* parent = 0);
     ~Detec();
-    bool InitializeDetec(const QStringList&, QString,bool,int,int,bool,RematchClass *); 
+    bool InitializeDetec(const QStringList&, QString,bool,int,int,bool,bool,RematchClass *);
     void Pause();
     void Resume();
     void SetGlobalParameters(int,int,int,int,int,
                              bool,int,int,int,int,int,int,int);
     int Treatment();
 
-    DetecTreatment               *_detecTreatment;
+    DetecTreatment    *_detecTreatment;
     bool                         _errorFileOpen;
-    QTextStream                  _errorStream;
+    QTextStream          _errorStream;
+    bool                         _imageData;
+    QTextStream          _timeStream;
+    bool                         _timeFileOpen;
+    bool                 _withTimeCsv;
     bool                         IsRunning;
-    QTextStream                  _logText;
-    int                          _logVersion;
+    QTextStream          _logText;
+    int                             _logVersion;
     bool                         MustCancel;
     bool                         MustCompress;
     bool                         ReprocessingMode;
-    QString                      ResultSuffix;
-    QString                      ResultCompressedSuffix;
-    int                          _userVersion;
+    QString                   ResultSuffix;
+    QString                   ResultCompressedSuffix;
+    int                            _userVersion;
 
 	
 signals:
@@ -102,12 +106,12 @@ private:
     int                          _dirLogVersion;
     int                          _dirUserVersion;
     QFile                        _errorFile;
+    QFile                        _timeFile;
     Fenim                        *_fenim;
     Fenim                        *_fenim2;
     int                          _fileIndex;
     bool                         _fileProblem;
     int                          _filesNumber;
-    bool                         _imageData;
     QString                      _imagePath;
     QFile                        _logFile;
     int                          _numberEndTags;

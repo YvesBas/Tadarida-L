@@ -1,20 +1,20 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QtGui/QApplication>
-#include <QtGui/QCheckBox>
-#include <QtGui/QComboBox>
+#include <QApplication>
+#include <QCheckBox>
+#include <QComboBox>
 #include <QDir>
 #include <QFile>
 #include <QFileDialog>
-#include <QtGui/QGroupBox>
-#include <QtGui/QLabel>
-#include <QtGui/QLineEdit>
-#include <QtGui/QMainWindow>
-#include <QtGui/QProgressBar>
-#include <QtGui/QPushButton>
-#include <QtGui/QRadioButton>
-#include <QtGui/QWidget>
+#include <QGroupBox>
+#include <QLabel>
+#include <QLineEdit>
+#include <QMainWindow>
+#include <QProgressBar>
+#include <QPushButton>
+#include <QRadioButton>
+#include <QWidget>
 #include <QTextStream>
 #include <QTimer>
 //#include "application.h"
@@ -93,13 +93,12 @@ private slots:
     void on_btnPause_toggled(bool checked);
     void on_btnUpdateTags_clicked();
     bool openWavTag(QString);
-    void storeTrace(QString,QString,QString,QString,QString,QString,QString,QString,QString,QString);
+    //void storeTrace(QString,QString,QString,QString,QString,QString,QString,QString,QString,QString);
     void treatCancel();
     void updateProgBarValue(float);
     void treatDirProblem();
-
+    void selectTemps(const QString&);
 private:
-
     // methods
     void afterRetreating();
     void beforeRetreating();
@@ -183,8 +182,10 @@ private:
     QLabel           *_lblPhase1Message2;
     QLabel           *_lblPhase1Title;
     QLabel           *_lblPhase2Title;
+    QLabel           *_lblTemps;
     QLabel           *_lblTreatedDirectory;
     QLineEdit      *_ledTreatedDirectory;
+    QComboBox        *_comboTemps;
     int                    _lbou,_hbou,_lbi,_hbi; // sizes of buttons
     QFile              _logFile;
     int                    _lcw,_hcw; // size of main widget
@@ -213,8 +214,8 @@ private:
     int                  _tagsNumberBefore;
     int                  _tagsNumberFinal;
     int	             _timeExpansion;
-    QFile            _traceFile;
-    QTextStream _traceText;
+    //QFile            _traceFile;
+    //QTextStream _traceText;
     int                  _userVersion;
     QDir             _wavDirectory;
     // à ajouter
@@ -226,6 +227,8 @@ private:
     int _lowThreshold;
     int _qR;
     int _qN;
+    bool _withNewParams;
+    bool _withTimeCsv;
     //
     bool _oneDirProblem;
 };

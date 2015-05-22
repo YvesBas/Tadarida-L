@@ -115,25 +115,25 @@ FieldClass::FieldClass(QWidget *parent,Fenim *pf,QString title,int fieldType,boo
 // $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 void FieldClass::affect(QString text)
 {
-    pfenim->m_logStream << "ZF aff 1" << endl;
+    //pfenim->m_logStream << "ZF aff 1" << endl;
     if(_fieldType==CHB)
     {
-        pfenim->m_logStream << "ZF aff 2" << endl;
+        //pfenim->m_logStream << "ZF aff 2" << endl;
         if(text=="true") _chb->setChecked(true);
         else _chb->setChecked(false);
-        pfenim->m_logStream << "ZF aff 3" << endl;
+        //pfenim->m_logStream << "ZF aff 3" << endl;
     }
     else
     {
-        pfenim->m_logStream << "ZF aff 4" << endl;
+        //pfenim->m_logStream << "ZF aff 4" << endl;
         _le->setText(text);
-        pfenim->m_logStream << "ZF aff 5" << endl;
+        //pfenim->m_logStream << "ZF aff 5" << endl;
         if(_fieldType==EC) _ec->realim_liste("");
-        pfenim->m_logStream << "ZF aff 6" << endl;
+        //pfenim->m_logStream << "ZF aff 6" << endl;
         if(_fieldType == SLI) pfenim->modif_indice(text);
-        pfenim->m_logStream << "ZF aff 7" << endl;
+        //pfenim->m_logStream << "ZF aff 7" << endl;
     }
-    pfenim->m_logStream << "ZF aff 8" << endl;
+    //pfenim->m_logStream << "ZF aff 8" << endl;
 }
 
 QString FieldClass::getText()
@@ -169,7 +169,7 @@ Fenim::Fenim(QMainWindow *parent,QString repwav,QString nomfi,QDir basejour,bool
     m_logFile.open(QIODevice::WriteOnly | QIODevice::Text);
     m_logStream.setDevice(&m_logFile);
 
-    m_logStream << "$$$ Fenim début : " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+    //m_logStream << "$$$ Fenim début : " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
 
     repWav = repwav;
 
@@ -198,7 +198,7 @@ Fenim::Fenim(QMainWindow *parent,QString repwav,QString nomfi,QDir basejour,bool
     ndercrisel = 0;
     nlt=0;
     specTagNumber = 0;
-    m_logStream << "Fenim fin constructeur " << endl;
+    //m_logStream << "Fenim fin constructeur " << endl;
 }
 
 
@@ -213,9 +213,9 @@ Fenim::~Fenim()
 
 void Fenim::cree_fenetre(bool modesaisie)
 {
-    m_logStream << "Fenim cree_fenetre" << endl;
+    //m_logStream << "Fenim cree_fenetre" << endl;
     wfenim = new FenetreFenim(this,fparent);
-    wfenim->setWindowTitle("Tadarida - Image et étiquettes");
+    wfenim->setWindowTitle("Tadarida - Image et Etiquettes");
     m_poltexte=QFont("Arial",10,QFont::Normal);
     m_poltitre=QFont("Arial",10,QFont::Bold);
     labelImage = new MyQLabel(wfenim);
@@ -223,19 +223,19 @@ void Fenim::cree_fenetre(bool modesaisie)
     gbox_gen = new QGroupBox(wfenim);
     gbox_boutons = new QGroupBox(wfenim);
     labelTitreG2 = new QLabel(gbox_gen);
-    m_logStream << "ZFenim avant création des pfc" << endl;
+    //m_logStream << "ZFenim avant création des pfc" << endl;
     pfc[ESPECE]       = new FieldClass((QWidget *)gbox_saisie,this,"Espece",EC,true,false,"especes",true,0,0);
     pfc[TYPE]         = new FieldClass((QWidget *)gbox_saisie,this,"Type",EC,true,false,"types",false,0,0);
     pfc[INDICE]       = new FieldClass((QWidget *)gbox_saisie,this,"Indice",SLI,true,false,"indice",false,1,5);
     pfc[ZONE]         = new FieldClass((QWidget *)gbox_saisie,this,"Zone",EC,false,true,"zone",true,0,0);
     pfc[SITE]         = new FieldClass((QWidget *)gbox_saisie,this,"Site",SLE,false,true,"site",false,0,0);
     pfc[COMMENTAIRE]  = new FieldClass((QWidget *)gbox_saisie,this,"Commentaire",false,SLE,false,"commentaire",false,0,0);
-    pfc[MATERIEL]     = new FieldClass((QWidget *)gbox_saisie,this,"Matériel",EC,false,true,"materiel",true,0,0);
+    pfc[MATERIEL]     = new FieldClass((QWidget *)gbox_saisie,this,"Materiel",EC,false,true,"materiel",true,0,0);
     pfc[CONFIDENTIEL] = new FieldClass((QWidget *)gbox_saisie,this,"Confidentiel",CHB,false,true,"confidentiel",false,0,0);
     pfc[DATENREG]     = new FieldClass((QWidget *)gbox_saisie,this,"Date",SLE,false,true,"datenreg",false,0,0);
     pfc[AUTEUR]       = new FieldClass((QWidget *)gbox_saisie,this,"Auteur",EC,false,true,"auteur",true,0,0);
     pfc[ETIQUETEUR]   = new FieldClass((QWidget *)gbox_saisie,this,"Etiqueteur",EC,false,false,"etiqueteur",true,0,0);
-    m_logStream << "ZFenim après création des pfc" << endl;
+    //m_logStream << "ZFenim après création des pfc" << endl;
     //
     labelMess = new MyQLabel(gbox_saisie);
     labelRep = new MyQLabel(gbox_gen);
@@ -266,14 +266,14 @@ void Fenim::cree_fenetre(bool modesaisie)
         bsaveUneEtiq->setEnabled(false);
         bEnregEtiq->setEnabled(false);
     }
-    m_logStream << "Fenim cree_fenetre fin" << endl;
+    //m_logStream << "Fenim cree_fenetre fin" << endl;
     couleur[0]=QString("QLineEdit {color: blue;}");
     couleur[1]=QString("QLineEdit {color: red;}");
     couleur[2]=QString("QLineEdit {color: green;}");
     couleur[3]=QString("QLineEdit {color: orange;}");
     couleur[4]=QString("QLineEdit {color: black;}");
     _prgSessionEnd = new QProgressBar(gbox_gen);
-    m_logStream << "ZFenim  fin crefen" << endl;
+    //m_logStream << "ZFenim  fin crefen" << endl;
     bFlecheDroiteSpec = new MyQPushButton(gbox_gen);
     bFlecheGaucheSpec = new MyQPushButton(gbox_gen);
     bFlecheDebutSpec = new MyQPushButton(gbox_gen);
@@ -283,7 +283,7 @@ void Fenim::cree_fenetre(bool modesaisie)
 
 void Fenim::afficher_ecran()
 {
-    m_logStream << "afficher_ecran 1" << endl;
+    //m_logStream << "afficher_ecran 1" << endl;
     int hb = (m_h - m_my*4 - m_hbou)/3;
     int lb = (m_l - m_mx*3)/2;
 
@@ -320,7 +320,7 @@ void Fenim::afficher_ecran()
     int larcombo = laredit;
     int espy = (hbs- hpz*7)/10;
     int col,lig,typ;
-    m_logStream << "ZFenim afficher_ecran avant placement des champs" << endl;
+    //m_logStream << "ZFenim afficher_ecran avant placement des champs" << endl;
     for(int iField=0;iField<NBFIELDS;iField++)
     {
         if(iField<(NBFIELDS+1)/2) {col=0;lig=iField;}
@@ -376,11 +376,11 @@ void Fenim::afficher_ecran()
     //bsaveUneEtiq->move(margx*2+larlabel*2,hpz*6+espy*7);
     bsaveUneEtiq->move(espgb*2+larbl,hpz*6+espy*7);
     bsaveUneEtiq->resize(larbl,hgz);
-    bsaveUneEtiq->setText("Valider l'étiquette");
+    bsaveUneEtiq->setText("Valider l'Etiquette");
 
     bEnregEtiq->move(espgb*3+larbl*2,hpz*6+espy*7);
     bEnregEtiq->resize((larbl*3)/2,hgz);
-    bEnregEtiq->setText("Sauvegarder le fichier d'étiquettes");
+    bEnregEtiq->setText("Sauvegarder le fichier d'Etiquettes");
     bEnregEtiq->setFont(QFont("Arial",10,QFont::Bold));
     //
     bClose->move(espgb*4+(larbl*7)/2,hpz*6+espy*7);
@@ -404,7 +404,7 @@ void Fenim::afficher_ecran()
     labelTitreG2->move(margx,espy2);
     labelTitreG2->resize((lbn-margx*3)/2,hpz);
     //
-    labelRep->setText(QString("Répertoire : ")+repEti);
+    labelRep->setText(QString("Dossier : ")+repEti);
     labelRep->move(margx+lbn/2,espy2);
     labelRep->resize((lbn-margx*3)/2,hpz);
     //
@@ -502,24 +502,24 @@ void Fenim::afficher_ecran()
     labelCris->setFont(m_poltitre);
     labelTitreG2->setFont(m_poltitre);
     editCri->setFont(m_poltitre);
-    m_logStream << "afficher_ecran 2" << endl;
+    //m_logStream << "afficher_ecran 2" << endl;
     //
     wfenim->etablit_connexions();
-    m_logStream << "ZFenim afficher_ecran fin" << endl;
+    //m_logStream << "ZFenim afficher_ecran fin" << endl;
 }
 
 void Fenim::initialiseZones()
 {
-    m_logStream << "ZFenim initialiseZones 1" << endl;
+    //m_logStream << "ZFenim initialiseZones 1" << endl;
     // 1)
     for(int i=0;i<NBFIELDS;i++)
     {
         if(pfc[i]->Unic) FileFields[i]="";
     }
     //
-    m_logStream << "ZFenim initialiseZones 2" << endl;
+    //m_logStream << "ZFenim initialiseZones 2" << endl;
     // 2)
-    m_logStream << "m_nbcris=" << m_nbcris << endl;
+    //m_logStream << "m_nbcris=" << m_nbcris << endl;
     for(int i=0;i<m_nbcris;i++)
     {
         if(!lesEtiq[i]->DataFields[ESPECE].isEmpty())
@@ -536,17 +536,17 @@ void Fenim::initialiseZones()
             break;
         }
     }
-    m_logStream << "ZFenim initialiseZones 3" << endl;
+   // m_logStream << "ZFenim initialiseZones 3" << endl;
     // 3)
     for(int i=0;i<NBFIELDS;i++)
     {
-        m_logStream << "ZF IZ 1 - iField=" << i << endl;
+        //m_logStream << "ZF IZ 1 - iField=" << i << endl;
         pfc[i]->affect(tgui->LastFields[i]);
-        m_logStream << "ZF IZ 2" << endl;
+        //m_logStream << "ZF IZ 2" << endl;
         pfc[i]->colour(couleur[0]);
-        m_logStream << "ZF IZ 3" << endl;
+        //m_logStream << "ZF IZ 3" << endl;
     }
-    m_logStream << "ZFenim initialiseZones fin" << endl;
+    //m_logStream << "ZFenim initialiseZones fin" << endl;
 }
 
 QRect Fenim::getFenetre()
@@ -841,22 +841,22 @@ void Fenim::repeint_en_vert()
 
 bool Fenim::afficher_image(bool modesaisie)
 {
-    m_logStream << "ZFenim afficher_image debut" << endl;
+    //m_logStream << "ZFenim afficher_image debut" << endl;
 
     if(m_verRepLog <m_verLog || m_verRepUser < m_verUser)
     {
-        QMessageBox::warning(fparent,"Accès interdit","Répertoire à retraiter préalablement : version en retard", QMessageBox::Ok);
+        QMessageBox::warning(fparent,"Fichier inaccessible","Version en retard : retraiter d'abord le dossier !", QMessageBox::Ok);
         return(false);
     }
     initialise_cris();
     if(loadMatriceCris2(da2File,true)==false)
     {
-        QMessageBox::warning(fparent,"Accès interdit","Fichier da2 pas à jour - retraiter préalablement le répertoire", QMessageBox::Ok);
+        QMessageBox::warning(fparent,"Fichier inaccessible","Retraiter d'abord le dossier", QMessageBox::Ok);
         return(false);
     }
-    m_logStream << "ZFenim afficher_image appelle cree_fenetre" << endl;
+    //m_logStream << "ZFenim afficher_image appelle cree_fenetre" << endl;
     cree_fenetre(modesaisie);
-    m_logStream << "ZFenim afficher_image retour de cree_fenetre" << endl;
+    //m_logStream << "ZFenim afficher_image retour de cree_fenetre" << endl;
     m_mx = 10 ; m_my=12; // marges entre grandes parties de l'écran
     m_hbou = 18;
     wfenim->resize(1150,630);
@@ -868,7 +868,7 @@ bool Fenim::afficher_image(bool modesaisie)
 
     //
     //
-    if(m_iSizeFFTHalf<=128)
+    if(_imaHeight<=128)
     {
         view->setFixedSize(1060,fenima->height()+200);
     }
@@ -879,7 +879,7 @@ bool Fenim::afficher_image(bool modesaisie)
     view->move(m_mx,m_my);
     fenouv = true;
     pix=(scene->addPixmap(QPixmap::fromImage(*fenima))); // ajout du pixmap dans la scene
-    m_logStream << "ZFenim afficher_image 11" << endl;
+    //m_logStream << "ZFenim afficher_image 11" << endl;
     // ------------------- 29/1/2014
     wfenim->showMaximized();
     m_l = wfenim->width();
@@ -899,13 +899,13 @@ bool Fenim::afficher_image(bool modesaisie)
 
     // edit yves - changer echelle xy
     m_rl =   (float)m_h * (1+m_xmoitie) / (float)(tgui->Divrl);
-    m_rh = ((float)hv * m_iSizeFFTHalf) / ((float)fenima->height() * 160);
+    m_rh = ((float)hv * _imaHeight) / ((float)fenima->height() * 160);
 
     // m_rl *= 2;
-    view->scale(m_rl,m_rh);
+    view->SCALE(m_rl,m_rh);
     //view->setAlignment(Qt::AlignBottom);
     //int dy = m_iSizeFFTHalf - 121;
-    int yc = m_iSizeFFTHalf + m_iSizeFFTHalf - 121;
+    int yc = _imaHeight + _imaHeight - 121;
     // yc : point central pour forcer le scrolling
     view->centerOn(0,yc); // yes : cela marche
 
@@ -914,26 +914,26 @@ bool Fenim::afficher_image(bool modesaisie)
     //m_logStream << "m_rl = " << m_rl << endl;
     // -----------------------------
     // --
-    m_logStream << "avant chargeEtiquettes" << endl;
+    //m_logStream << "avant chargeEtiquettes" << endl;
     if(chargeEtiquettes()==false)
     {
         if(crefen) wfenim->close();
         return(true);
     }
-    m_logStream << "après chargeEtiquettes et avant afficher_ecran" << endl;
+    //m_logStream << "apres chargeEtiquettes et avant afficher_ecran" << endl;
 
     afficher_ecran();
-    m_logStream << "ZFenim après afficher_ecran et avant iz" << endl;
+    //m_logStream << "ZFenim après afficher_ecran et avant iz" << endl;
 
     initialiseZones();
-    m_logStream << "ZFenim après initialiseZones" << endl;
+    //m_logStream << "ZFenim après initialiseZones" << endl;
 
-    m_logStream << "après afficher_ecran" << endl;
+    //m_logStream << "après afficher_ecran" << endl;
     cree_points_maitres();
     initialise_traits();
-    m_logStream << "ai 12" << endl;
+    //m_logStream << "ai 12" << endl;
     //
-    //m_logStream << "$$$ Fenim afficher_image après chargement étiquettes : " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+    //m_logStream << "$$$ Fenim afficher_image apres chargement etiquettes : " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
     //if(m_iSizeFFTHalf<=128) view->scale(1,2);
     afficher_grille(true);
     afficher_cris();
@@ -951,7 +951,7 @@ bool Fenim::afficher_image(bool modesaisie)
 
 bool Fenim::chargeCrisEtiquettes()
 {
-    m_logStream << "Fenim charge_cris_etiquettes" << endl;
+    //m_logStream << "Fenim charge_cris_etiquettes" << endl;
     if(!m_casRetraitement) initialise_cris();
     if(loadMatriceCris2(da2File,true)==false)
     {
@@ -960,7 +960,7 @@ bool Fenim::chargeCrisEtiquettes()
     }
     else fenouv = true;
     if(chargeEtiquettes()==false) return(false);
-    m_logStream << "Fenim charge_cris_etiquettes fin" << endl;
+    //m_logStream << "Fenim charge_cris_etiquettes fin" << endl;
     return(true);
 }
 
@@ -976,7 +976,7 @@ void Fenim::dezoome()
 void Fenim::zoomef(float iz)
 {
     //QMessageBox::warning(wfenim,"zoom","Passe dans zoome !", QMessageBox::Ok);
-    view->scale(iz,1);
+    view->SCALE(iz,1);
     m_rl *= iz;
     /*
     rafraichit_image();
@@ -1057,7 +1057,7 @@ void Fenim::afficher_grille(bool afficher)
     while(igt<tmax && nliv < 500 && nte<250)
     {
         float x=getx(igt);
-        gliv[nliv] = scene->addLine(x,0,x,m_iSizeFFTHalf-1,qp);
+        gliv[nliv] = scene->addLine(x,0,x,_imaHeight-1,qp);
         if((nliv & 1)==0 && nliv>0)
         {
             int nigt =(int)igt; int ns = nigt/1000;
@@ -1065,8 +1065,9 @@ void Fenim::afficher_grille(bool afficher)
             if(nigt == ns * 1000) affi = QString::number(ns)+" sec";
             else affi = QString::number(nigt)+" ms";
             gte[nte] = scene->addSimpleText(affi,qf);
-            gte[nte]->setPos(x+invsx*2,m_iSizeFFTHalf-((float)30/m_rh));
-            gte[nte]->scale(invsx,invsy);
+            gte[nte]->setPos(x+invsx*2,_imaHeight-((float)30/m_rh));
+            //gte[nte]->scale(invsx,invsy);
+            gte[nte]->SCALE(invsx,invsy);
             nte++;
         }
         nliv++;
@@ -1087,7 +1088,7 @@ void Fenim::afficher_grille(bool afficher)
         {
             gte[nte] = scene->addSimpleText(QString::number(igf)+" kHz",qf);
             gte[nte]->setPos(1+invsx,y-8+m_rh);
-            gte[nte]->scale(invsx,invsy);
+            gte[nte]->SCALE(invsx,invsy);
             nte++;
         }
         //m_logStream << "grille x = " << x << " nliv = " << nliv <<  endl;
@@ -1131,7 +1132,7 @@ void Fenim::afficher_un_cri(int ncri,bool crisel,bool affichercri)
             for(int j=0;j<m_matrixCalls[0][ncri].size();j++)
             {
                 int x=m_matrixCalls[0][ncri][j].x()/(1+m_xmoitie);
-                int y=m_iSizeFFTHalf-m_matrixCalls[0][ncri][j].y()-1;
+                int y=_imaHeight-m_matrixCalls[0][ncri][j].y()-1;
                 polygone << QPointF(x,y);
             }
             QPainterPath path = QPainterPath();
@@ -1158,7 +1159,7 @@ void Fenim::afficher_un_point_maitre(int ncri,bool crisel,bool afficherpm)
 {
     if(!(ncri<MAXCRI)) return;
     int x = m_pointsMaitres[ncri].x()/(1+m_xmoitie);
-    int y = m_iSizeFFTHalf - m_pointsMaitres[ncri].y()-1;
+    int y = _imaHeight - m_pointsMaitres[ncri].y()-1;
     //QPen qpm = QPen(QColor(160-80*crisel,128*crisel,255-160*crisel),0);
     //QBrush qb = QBrush(QColor(160-80*crisel,128*crisel,255-160*crisel),Qt::SolidPattern);
     //QPen qpm = QPen(QColor(96*(1-crisel),96*(1-crisel),96*(1-crisel)),0);
@@ -1213,14 +1214,14 @@ void Fenim::afficher_un_point_maitre(int ncri,bool crisel,bool afficherpm)
 bool Fenim::loadMatriceCris2(QString da2File,bool principal)
 {
 
-    m_logStream << "loadMatriceCris2 " << endl;
-    m_logStream << " fichier cris :  " << da2File << endl;
+    //m_logStream << "loadMatriceCris2 " << endl;
+    //m_logStream << " fichier cris :  " << da2File << endl;
     m_cris2File.setFileName(da2File);
     if(m_cris2File.open(QIODevice::ReadOnly)==false)
     {
-        m_logStream << "fichier cris non trouvé : " << da2File << endl;
+        m_logStream << "fichier cris inexistant : " << da2File << endl;
         if(!m_casRetraitement && principal == true)
-        QMessageBox::warning(wfenim, "Fin", "Fichier de cris non trouvé", QMessageBox::Ok);
+        QMessageBox::warning(wfenim, "Fin", "Fichier de cris inexistant", QMessageBox::Ok);
         return(false);
     }
     if(principal==false)
@@ -1263,7 +1264,8 @@ bool Fenim::loadMatriceCris2(QString da2File,bool principal)
     m_cris2Stream >> m_nbcris;
     m_logStream << "loadmatricecris2  -->  nbre cris = " << m_nbcris << endl;
 
-    m_cris2Stream >> m_iSizeFFTHalf;
+    m_cris2Stream >> _imaHeight;
+    m_logStream << "loadmatricecris2  -->  _imaHeight " << _imaHeight << endl;
     if(numver > 1) m_cris2Stream >> m_xmoitie;
     //m_logStream << "2 m_xmoitie=" << m_xmoitie << endl;
 
@@ -1375,7 +1377,7 @@ int Fenim::rematcheEtiquettes(Fenim * fenim1,bool initial,QString recupVersion,i
             int x1=p1.x(),y1=p1.y();
             *cpma += (x1+y1);
             int d=(x-x1)*(x-x1)+(y-y1)*(y-y1);
-            if(d<9)
+            if(d<20)
             {
                 QString esp = fenim1->lesEtiq[j]->DataFields[ESPECE];
                 if(!esp.isEmpty())
@@ -1399,8 +1401,8 @@ int Fenim::rematcheEtiquettes(Fenim * fenim1,bool initial,QString recupVersion,i
         for(int i=0;i<listSpecrecup.size();i++)
         {
             QString esp = listSpecrecup.at(i);
-        tgui->RetreatText << "Récupératon de l'espèce " << esp << " pour le fichier " << nomFic
-                          << " dans le répertoire de la version " << recupVersion << endl;
+        tgui->RetreatText << "Recuperaton de l'espèce " << esp << " pour le fichier " << nomFic
+                          << " dans le dossier de la version " << recupVersion << endl;
         }
     }
     return(nrecup);
@@ -1518,7 +1520,7 @@ bool Fenim::chargeEtiquettes()
                 if(ncrilus>0)
                 {
                     reinitialise_etiquettes();
-                    if(QMessageBox::question(wfenim, "Attention", "Le fichier d'étiquettes ne correspond pas : confirmer son écrasement ?",
+                    if(QMessageBox::question(wfenim, "Attention", "Le fichier d'Etiquettes ne correspond pas : confirmer son ecrasement ?",
                                              QMessageBox::Yes|QMessageBox::No)
                             == QMessageBox::No)
                     {
@@ -1552,7 +1554,7 @@ void Fenim::reinitialise_etiquettes()
 
 void Fenim::EnregEtiquettes()
 {
-    m_logStream << "EnregEtiquettes - début" << endl;
+    m_logStream << "EnregEtiquettes - debut" << endl;
     if(m_ecraserFichier) m_etiFile.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate);
     else m_etiFile.open(QIODevice::WriteOnly | QIODevice::Text);
     m_etiStream.setDevice(&m_etiFile);
@@ -1670,7 +1672,7 @@ void Fenim::selectionneCri(int n,bool specSelect)
     if(affloupe)
     {
         int x = m_pointsMaitres[n].x()/(1+m_xmoitie);
-        int y = m_iSizeFFTHalf - m_pointsMaitres[n].y()-1;
+        int y = _imaHeight - m_pointsMaitres[n].y()-1;
         floupe->lview->centerOn(x,y);
     }
 }
@@ -1746,7 +1748,7 @@ void Fenim::selectionneCri(int x,int y,bool isCTRL)
 {
     float distmax = 3000;
     int ntrouve = -1;
-    int xr=x*(1+m_xmoitie),yr=m_iSizeFFTHalf-y-1;
+    int xr=x*(1+m_xmoitie),yr=_imaHeight-y-1;
     for(int i=0;i<m_nbcris;i++)
     {
         float dist=pow(xr-m_pointsMaitres[i].x(),2)+pow(yr-m_pointsMaitres[i].y(),2);
@@ -1779,7 +1781,7 @@ QString Fenim::calculebulle(int x,int y)
     QString retour("");
     float distmax = 2000;
     int ntrouve = -1;
-    int xr=x,yr=m_iSizeFFTHalf-y-1;
+    int xr=x,yr=_imaHeight-y-1;
     if(m_xmoitie) xr*=2;
     for(int i=0;i<m_nbcris;i++)
     {
@@ -1799,7 +1801,7 @@ QString Fenim::calculebulle(int x,int y)
         if(!esp.isEmpty() || !typ.isEmpty())
             retour=QString("Cri ")+QString::number(ntrouve+1)+" : "+esp+" - "+typ+ "    ("+ind+")";
         else
-            retour=QString("Cri ")+QString::number(ntrouve+1)+" : cri non étiqueté";
+            retour=QString("Cri ")+QString::number(ntrouve+1)+" : cri sans Etiquette";
     }
     return(retour);
 }
@@ -1812,8 +1814,8 @@ void Fenim::affbulle(QString sbulle)
 
 void Fenim::selectionneRectCri(int x1,int y1,int x2,int y2,bool isCTRL)
 {
-    y1 = m_iSizeFFTHalf-y1-1;
-    y2 = m_iSizeFFTHalf-y2-1;
+    y1 = _imaHeight-y1-1;
+    y2 = _imaHeight-y2-1;
     if(m_xmoitie) {x1*=2; x2*=2;}
     archive_crisel();
     if(!isCTRL)
@@ -1871,7 +1873,7 @@ void Fenim::enableMoreArrows()
 
 void Fenim::videfenim()
 {
-    m_logStream << "début videfenim" << endl;
+    m_logStream << "debut videfenim" << endl;
     neplus=true;
     if(fenouv == true)
     {
@@ -1917,7 +1919,7 @@ void Fenim::termine_session()
     // cas b : modif de fichier d'étiquettes directement dans la base
     // et bien éliminer le cas du retraitement !
     //
-    m_logStream << "ts1" << endl;
+    //m_logStream << "ts1" << endl;
 
     bool version_a_ecrire = false;
     // 0) tester s'il y a eu enregistrement - sinon retour
@@ -1936,7 +1938,7 @@ void Fenim::termine_session()
     if(!baseJourEti.exists()) baseJourEti.mkdir(baseJourEti.path());
     if(!baseJourTxt.exists()) baseJourTxt.mkdir(baseJourTxt.path());
     //
-    m_logStream << "ts1" << endl;
+    //m_logStream << "ts1" << endl;
     // 2) recopie des fichiers wav-dat-ima-eti dans ce répertoire
     QString nomFicWav = nomFic+".wav";
     QFile wavFile(repWav+"/"+nomFicWav);
@@ -1954,7 +1956,7 @@ void Fenim::termine_session()
     QFile imaFile(imaNom);
     imaFile.copy(baseJourIma.path() + "/" + nomFic + ".jpg");
     //
-    m_logStream << "ts2" << endl;
+    //m_logStream << "ts2" << endl;
     // 3) effacement du répertoire source des fichiers : wav,dat,ima,eti
     wavFile.remove();
     imaFile.remove();
@@ -1964,7 +1966,7 @@ void Fenim::termine_session()
     // pour version contour
     m_cris2File.remove();
     //
-    m_logStream << "ts3" << endl;
+    //m_logStream << "ts3" << endl;
     //
     // 4) écriture du fichier version.ini s'il n'existait pas
     if(version_a_ecrire) writeVersionRep();
@@ -2026,12 +2028,12 @@ float Fenim::getx(float t)
 
 float Fenim::getkhz(int y)
 {
-    return(m_factorY * (m_iSizeFFTHalf - y -1));
+    return(m_factorY * (_imaHeight - y -1));
 }
 
 float Fenim::gety(float f)
 {
-    return((float)m_iSizeFFTHalf - 1 - f/m_factorY );
+    return((float)_imaHeight - 1 - f/m_factorY );
 }
 
 /*
@@ -2062,7 +2064,7 @@ void MyQGraphicsScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * mouseEvent )
     // revoir le calcul de bulle en mode contour : n'afficher que lorsqu'on est au-dessus du contour !
 
     QString bulle = pfenim->calculebulle(x,y);
-    int xr=x,yr=pfenim->m_iSizeFFTHalf-y-1;
+    int xr=x,yr=pfenim->_imaHeight-y-1;
     if(pfenim->m_xmoitie) xr*=2;
     if(iloupe) ploupe->affbulle(bulle);
     else pfenim->affbulle(bulle);

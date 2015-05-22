@@ -6,7 +6,6 @@
 #include "fenim.h"
 class Fenim;
 
-#define MAXCRI 2000
 #define NCRETES 5
 
 class Loupe : public QMainWindow

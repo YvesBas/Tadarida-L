@@ -287,7 +287,7 @@ void Loupe::afficher_un_cri(int ncri,bool crisel,bool affichercri)
                 for(int j=0;j<pfm->m_matrixCalls[jcrete][ncri].size();j++)
                 {
                     float x=0.5f+(float)(pfm->m_matrixCalls[jcrete][ncri][j].x()/(1+pfm->m_xmoitie));
-                    float y=0.5f+(float)(pfm->m_iSizeFFTHalf-pfm->m_matrixCalls[jcrete][ncri][j].y()-1);
+                    float y=0.5f+(float)(pfm->_imaHeight-pfm->m_matrixCalls[jcrete][ncri][j].y()-1);
                     /*
                     if(jcrete<3) x+=0.5f; else x+=0.05f;
                     if(jcrete==1) y+=1.0f;
@@ -359,7 +359,7 @@ void Loupe::afficher_une_crete_suppl(int ncri,bool affichersuppl)
                     pfm->m_logStream << "acs - 71 - jcrete=" << jcrete
                                      << "  j=" << j << endl;
                     float x=(float)(pfm->m_matrixCalls[jcrete][ncri][j].x()/(1+pfm->m_xmoitie));
-                    float y=(float)(pfm->m_iSizeFFTHalf-pfm->m_matrixCalls[jcrete][ncri][j].y()-1);
+                    float y=(float)(pfm->_imaHeight-pfm->m_matrixCalls[jcrete][ncri][j].y()-1);
                     pfm->m_logStream << "acs - 72 - jcrete=" << jcrete
                                      << "  x,y=" << x << "," << y << endl;
                     if(jcrete!=3) x+=0.5f; else x+=0.05f;
@@ -423,7 +423,7 @@ pfm->m_logStream << "aps 4" << endl;
                     int k=kos+(kos==0)-(kos==1);
                     pfm->m_logStream << "apm7 - jcrete,k=" << jcrete << "," << k << endl;
                     float x2=(float)(pfm->m_pointsSuppl[jcrete][k][ncri].x()/(float)(1+pfm->m_xmoitie));
-                    float y2=(float)pfm->m_iSizeFFTHalf - (float)pfm->m_pointsSuppl[jcrete][k][ncri].y()-1.0f;
+                    float y2=(float)pfm->_imaHeight - (float)pfm->m_pointsSuppl[jcrete][k][ncri].y()-1.0f;
                     float w2=(6.0f+l_iaj+(float)kos)/l_rl;
                     float h2=(6.0f+l_iaj+(float)kos)/l_rh;
 
@@ -456,7 +456,7 @@ void Loupe::afficher_un_point_maitre(int ncri,bool crisel,bool afficherpm)
     pfm->m_logStream << "apm1 - ncri= " << ncri << endl;
     if(!(ncri<2000)) return;
     float x = 0.5f+(pfm->m_pointsMaitres[ncri].x()/(1+pfm->m_xmoitie));
-    float y = 0.5f+(pfm->m_iSizeFFTHalf - pfm->m_pointsMaitres[ncri].y()-1.0f);
+    float y = 0.5f+(pfm->_imaHeight - pfm->m_pointsMaitres[ncri].y()-1.0f);
     //QPen qpm = QPen(QColor(96*(1-crisel),96*(1-crisel),96*(1-crisel)),0);
     //QBrush qb = QBrush(QColor(96*(1-crisel),96*(1-crisel),96*(1-crisel)),Qt::SolidPattern);
     //QPen qpm = QPen(QColor(255*(1-crisel),0,0,0));
