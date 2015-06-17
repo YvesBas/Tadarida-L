@@ -10,6 +10,15 @@ ParamToSave::ParamToSave(int numTableau,int numPar,QString columnTitle)
     NumTableau=numTableau;
     NumPar=numPar;
     ColumnTitle=columnTitle;
+    NeedVer = 0;
+}
+
+ParamToSave::ParamToSave(int numTableau,int numPar,QString columnTitle,int needVer)
+{
+    NumTableau=numTableau;
+    NumPar=numPar;
+    ColumnTitle=columnTitle;
+    NeedVer = needVer;
 }
 
 ParamToSave::ParamToSave()
@@ -24,16 +33,19 @@ DetecTreatment::DetecTreatment(Detec *pDet)
 {
     _detec = pDet;
     _freqCallMin=8.0f;
-    _paramVersion = 1;
     _compressedVersion = 1;
     ResultSuffix = QString("ta");
     ResultCompressedSuffix = QString("tac");
+    _paramVersion = 1; // pour TadaridaD4 - modifié par config.ini (via setglobalparameters)
+    // à revoir avec Yves
     initVectorParams();
     //InitializeDetecTreatment();
 }
 
 DetecTreatment::DetecTreatment(Recherche *r)
 {
+    //_withNewParams = true;
+    _paramVersion = 1; // TODO : à revoir
     initVectorParams();
 }
 
@@ -139,7 +151,7 @@ void DetecTreatment::SetDirParameters(QString wavPath,QString txtPath,bool image
 void DetecTreatment::SetGlobalParameters(int timeExpansion,int seuilDetect,int seuilStop,
                                  int freqMin,int nbo,bool useValflag,
                                 int jumpThreshold,int widthBigControl,int widthLittleControl,
-                                int highThreshold,int lowThreshold,int qR,int qN,bool withNewParams)
+                                int highThreshold,int lowThreshold,int qR,int qN,int parVer)
 {
     _timeExpansion = timeExpansion;
     _detectionThreshold = seuilDetect;
@@ -154,7 +166,7 @@ void DetecTreatment::SetGlobalParameters(int timeExpansion,int seuilDetect,int s
     _lowThreshold = lowThreshold;
     _qR = qR;
     _qN = qN;
-    _withNewParams = withNewParams;
+    _paramVersion = parVer;
 }
 
 void DetecTreatment::initVectorParams()
@@ -208,7 +220,9 @@ void DetecTreatment::initVectorParams()
     for(int i=CM;i<=CO2;i++) _vectPar.push_back(ParamToSave(i,Slope,prefix[i]+"Slope"));
     // ajouté le 30/03
     // RAR : for(int i=CO;i<=CO2;i++) _vectPar.push_back(ParamToSave(i,ISlope,prefix[i]+"ISlope"));
-    if(_withNewParams) for(int i=CO;i<=CO2;i++) _vectPar.push_back(ParamToSave(i,ISlope,prefix[i]+"ISlope"));
+    // if(_withNewParams) for(int i=CO;i<=CO2;i++) _vectPar.push_back(ParamToSave(i,ISlope,prefix[i]+"ISlope"));
+    for(int i=CO;i<=CO2;i++) _vectPar.push_back(ParamToSave(i,ISlope,prefix[i]+"ISlope",1));
+
     for(int i=CM;i<=CO2;i++) _vectPar.push_back(ParamToSave(i,HCF,prefix[i]+"HCF"));
     for(int i=CM;i<=CO2;i++) _vectPar.push_back(ParamToSave(i,THCF,prefix[i]+"THCF"));
     for(int i=CM;i<=CO2;i++) _vectPar.push_back(ParamToSave(i,FIF,prefix[i]+"FIF"));
@@ -317,79 +331,78 @@ void DetecTreatment::initVectorParams()
     _vectPar.push_back(ParamToSave(SH,VDPPicsT,"VDPPicsT"));
     _vectPar.push_back(ParamToSave(SH,VLDPPicsT,"VLDPPicsT"));
     _vectPar.push_back(ParamToSave(SH,VBDPPicsT,"VBDPPicsT"));
-    if(_withNewParams)
     {
+        // bloc des nouveaux paramètres
         for(int i=CM;i<=CO2;i++)
         {
-            _vectPar.push_back(ParamToSave(i,SDC,prefix[i]+"SDC"));
-            _vectPar.push_back(ParamToSave(i,SDCR,prefix[i]+"SDCR"));
+            _vectPar.push_back(ParamToSave(i,SDC,prefix[i]+"SDC",1));
+            _vectPar.push_back(ParamToSave(i,SDCR,prefix[i]+"SDCR",1));
         }
-        _vectPar.push_back(ParamToSave(CM,SDCRY,"CM_SDCRY"));
-        _vectPar.push_back(ParamToSave(CS,SDCRY,"CS_SDCRY"));
-        _vectPar.push_back(ParamToSave(CM,SDCRXY,"CM_SDCRXY"));
-        _vectPar.push_back(ParamToSave(CS,SDCRXY,"CS_SDCRXY"));
+        _vectPar.push_back(ParamToSave(CM,SDCRY,"CM_SDCRY",1));
+        _vectPar.push_back(ParamToSave(CS,SDCRY,"CS_SDCRY",1));
+        _vectPar.push_back(ParamToSave(CM,SDCRXY,"CM_SDCRXY",1));
+        _vectPar.push_back(ParamToSave(CS,SDCRXY,"CS_SDCRXY",1));
         //
 
         for(int i=CM;i<=CS;i++)
         {
-            _vectPar.push_back(ParamToSave(i,SDCL,prefix[i]+"SDCL"));
-            _vectPar.push_back(ParamToSave(i,SDCLR,prefix[i]+"SDCLR"));
-            _vectPar.push_back(ParamToSave(i,SDCLRY,prefix[i]+"SDCLRY"));
-            _vectPar.push_back(ParamToSave(i,SDCLRXY,prefix[i]+"SDCLRXY"));
-            _vectPar.push_back(ParamToSave(i,SDCLRXY2,prefix[i]+"SDCLRXY2"));
+            _vectPar.push_back(ParamToSave(i,SDCL,prefix[i]+"SDCL",1));
+            _vectPar.push_back(ParamToSave(i,SDCLR,prefix[i]+"SDCLR",1));
+            _vectPar.push_back(ParamToSave(i,SDCLRY,prefix[i]+"SDCLRY",1));
+            _vectPar.push_back(ParamToSave(i,SDCLRXY,prefix[i]+"SDCLRXY",1));
+            _vectPar.push_back(ParamToSave(i,SDCLRXY2,prefix[i]+"SDCLRXY2",1));
             //
-            _vectPar.push_back(ParamToSave(i,SDCLOP,prefix[i]+"SDCLOP"));
-            _vectPar.push_back(ParamToSave(i,SDCLROP,prefix[i]+"SDCLROP"));
-            _vectPar.push_back(ParamToSave(i,SDCLRYOP,prefix[i]+"SDCLRYOP"));
-            _vectPar.push_back(ParamToSave(i,SDCLRXYOP,prefix[i]+"SDCLRXYOP"));
+            _vectPar.push_back(ParamToSave(i,SDCLOP,prefix[i]+"SDCLOP",1));
+            _vectPar.push_back(ParamToSave(i,SDCLROP,prefix[i]+"SDCLROP",1));
+            _vectPar.push_back(ParamToSave(i,SDCLRYOP,prefix[i]+"SDCLRYOP",1));
+            _vectPar.push_back(ParamToSave(i,SDCLRXYOP,prefix[i]+"SDCLRXYOP",1));
             //
-            _vectPar.push_back(ParamToSave(i,SDCLWB,prefix[i]+"SDCLWB"));
-            _vectPar.push_back(ParamToSave(i,SDCLRWB,prefix[i]+"SDCLRWB"));
-            _vectPar.push_back(ParamToSave(i,SDCLRYWB,prefix[i]+"SDCLRYWB"));
-            _vectPar.push_back(ParamToSave(i,SDCLRXYWB,prefix[i]+"SDCLRXYWB"));
+            _vectPar.push_back(ParamToSave(i,SDCLWB,prefix[i]+"SDCLWB",1));
+            _vectPar.push_back(ParamToSave(i,SDCLRWB,prefix[i]+"SDCLRWB",1));
+            _vectPar.push_back(ParamToSave(i,SDCLRYWB,prefix[i]+"SDCLRYWB",1));
+            _vectPar.push_back(ParamToSave(i,SDCLRXYWB,prefix[i]+"SDCLRXYWB",1));
             //
-            _vectPar.push_back(ParamToSave(i,SDCLOPWB,prefix[i]+"SDCLOPWB"));
-            _vectPar.push_back(ParamToSave(i,SDCLROPWB,prefix[i]+"SDCLROPWB"));
-            _vectPar.push_back(ParamToSave(i,SDCLRYOPWB,prefix[i]+"SDCLRYOPWB"));
-            _vectPar.push_back(ParamToSave(i,SDCLRXYOPWB,prefix[i]+"SDCLRXYOPWB"));
+            _vectPar.push_back(ParamToSave(i,SDCLOPWB,prefix[i]+"SDCLOPWB",1));
+            _vectPar.push_back(ParamToSave(i,SDCLROPWB,prefix[i]+"SDCLROPWB",1));
+            _vectPar.push_back(ParamToSave(i,SDCLRYOPWB,prefix[i]+"SDCLRYOPWB",1));
+            _vectPar.push_back(ParamToSave(i,SDCLRXYOPWB,prefix[i]+"SDCLRXYOPWB",1));
             //
-            _vectPar.push_back(ParamToSave(i,SDCL_DNP,prefix[i]+"SDCL_DNP"));
-            _vectPar.push_back(ParamToSave(i,SDCLR_DNP,prefix[i]+"SDCLR_DNP"));
-            _vectPar.push_back(ParamToSave(i,SDCLRY_DNP,prefix[i]+"SDCLRY_DNP"));
-            _vectPar.push_back(ParamToSave(i,SDCLRXY_DNP,prefix[i]+"SDCLRXY_DNP"));
-            _vectPar.push_back(ParamToSave(i,SDCLRXY2_DNP,prefix[i]+"SDCLRXY2_DNP"));
+            _vectPar.push_back(ParamToSave(i,SDCL_DNP,prefix[i]+"SDCL_DNP",1));
+            _vectPar.push_back(ParamToSave(i,SDCLR_DNP,prefix[i]+"SDCLR_DNP",1));
+            _vectPar.push_back(ParamToSave(i,SDCLRY_DNP,prefix[i]+"SDCLRY_DNP",1));
+            _vectPar.push_back(ParamToSave(i,SDCLRXY_DNP,prefix[i]+"SDCLRXY_DNP",1));
+            _vectPar.push_back(ParamToSave(i,SDCLRXY2_DNP,prefix[i]+"SDCLRXY2_DNP",1));
         }
-        _vectPar.push_back(ParamToSave(CM,ELBPOS,"CM_ELBPOS"));
-        _vectPar.push_back(ParamToSave(CS,ELBPOS,"CS_ELBPOS"));
-        _vectPar.push_back(ParamToSave(CM,ELBSB,"CM_ELBSB"));
-        _vectPar.push_back(ParamToSave(CS,ELBSB,"CS_ELBSB"));
+        _vectPar.push_back(ParamToSave(CM,ELBPOS,"CM_ELBPOS",1));
+        _vectPar.push_back(ParamToSave(CS,ELBPOS,"CS_ELBPOS",1));
+        _vectPar.push_back(ParamToSave(CM,ELBSB,"CM_ELBSB",1));
+        _vectPar.push_back(ParamToSave(CS,ELBSB,"CS_ELBSB",1));
         //
-        _vectPar.push_back(ParamToSave(CM,ELB2POS,"CM_ELB2POS"));
-        _vectPar.push_back(ParamToSave(CS,ELB2POS,"CS_ELB2POS"));
-        _vectPar.push_back(ParamToSave(CM,ELB2SB,"CM_ELB2SB"));
-        _vectPar.push_back(ParamToSave(CS,ELB2SB,"CS_ELB2SB"));
+        _vectPar.push_back(ParamToSave(CM,ELB2POS,"CM_ELB2POS",1));
+        _vectPar.push_back(ParamToSave(CS,ELB2POS,"CS_ELB2POS",1));
+        _vectPar.push_back(ParamToSave(CM,ELB2SB,"CM_ELB2SB",1));
+        _vectPar.push_back(ParamToSave(CS,ELB2SB,"CS_ELB2SB",1));
         //
-        _vectPar.push_back(ParamToSave(CM,RAF,"CM_RAF"));
-        _vectPar.push_back(ParamToSave(CM,RAE,"CM_RAE"));
-        _vectPar.push_back(ParamToSave(CM,RAFE,"CM_RAFE"));
-        _vectPar.push_back(ParamToSave(CM,RAFP,"CM_RAFP"));
-        _vectPar.push_back(ParamToSave(CM,RAFP2,"CM_RAFP2"));
-        _vectPar.push_back(ParamToSave(CM,RAFP3,"CM_RAFP3"));
+        _vectPar.push_back(ParamToSave(CM,RAF,"CM_RAF",1));
+        _vectPar.push_back(ParamToSave(CM,RAE,"CM_RAE",1));
+        _vectPar.push_back(ParamToSave(CM,RAFE,"CM_RAFE",1));
+        _vectPar.push_back(ParamToSave(CM,RAFP,"CM_RAFP",1));
+        _vectPar.push_back(ParamToSave(CM,RAFP2,"CM_RAFP2",1));
+        _vectPar.push_back(ParamToSave(CM,RAFP3,"CM_RAFP3",1));
         //
-        _vectPar.push_back(ParamToSave(CM,SBMP,"CM_SBMP"));
-        _vectPar.push_back(ParamToSave(CM,SAMP,"CM_SAMP"));
-        _vectPar.push_back(ParamToSave(CM,SBAR,"CM_SBAR"));
+        _vectPar.push_back(ParamToSave(CM,SBMP,"CM_SBMP",1));
+        _vectPar.push_back(ParamToSave(CM,SAMP,"CM_SAMP",1));
+        _vectPar.push_back(ParamToSave(CM,SBAR,"CM_SBAR",1));
         //
-        _vectPar.push_back(ParamToSave(CM,RAHP2,"RAHP2"));
-        _vectPar.push_back(ParamToSave(CM,RAHP4,"RAHP4"));
-        _vectPar.push_back(ParamToSave(CM,RAHP8,"RAHP8"));
-        _vectPar.push_back(ParamToSave(CM,RAHP16,"RAHP16"));
-        _vectPar.push_back(ParamToSave(CM,RAHE2,"RAHE2"));
-        _vectPar.push_back(ParamToSave(CM,RAHE4,"RAHE4"));
-        _vectPar.push_back(ParamToSave(CM,RAHE8,"RAHE8"));
-        _vectPar.push_back(ParamToSave(CM,RAHE16,"RAHE16"));
-    }
-
+        _vectPar.push_back(ParamToSave(CM,RAHP2,"RAHP2",1));
+        _vectPar.push_back(ParamToSave(CM,RAHP4,"RAHP4",1));
+        _vectPar.push_back(ParamToSave(CM,RAHP8,"RAHP8",1));
+        _vectPar.push_back(ParamToSave(CM,RAHP16,"RAHP16",1));
+        _vectPar.push_back(ParamToSave(CM,RAHE2,"RAHE2",1));
+        _vectPar.push_back(ParamToSave(CM,RAHE4,"RAHE4",1));
+        _vectPar.push_back(ParamToSave(CM,RAHE8,"RAHE8",1));
+        _vectPar.push_back(ParamToSave(CM,RAHE16,"RAHE16",1));
+    } // fin bloc des nouveaux paramètres
 }
 
 void DetecTreatment::EndDetecTreatment()
@@ -531,6 +544,23 @@ bool DetecTreatment::openWavFile(QString& wavFile)
         if(_detec->_errorFileOpen) _detec->_errorStream << wavFile << ": " << "multi-channel non traité" << endl;
         return  false;
     }
+    // £££ 27/05/2015
+    if(_detec->ReprocessingMode)
+    {
+        if(_detec->_numVer > 19)
+        {
+            _timeExpansion = _detec->_tE;
+            //_detec->_logText << "timeExpansion lu (version > 19)  " << _timeExpansion << endl;
+        }
+        else
+        {
+            float ate = (_detec->_numtE) / ((float)_soundFileInfo.samplerate);
+            //_detec->_logText << "test " << wavFile << "  ate=" << ate  <<  endl;
+            if(ate < 2) _timeExpansion = 1; else _timeExpansion = 10;
+            //_detec->_logText << "timeExpansion recalculé =  " << _timeExpansion << endl;
+        }
+    }
+    // fin £££ 27/05/2015
     // edit yves - prise en compte tx ech Vigie Chiro
     if (_soundFileInfo.samplerate*_timeExpansion >= 2400000 ) _fftHeight = 4096;
 
@@ -2173,7 +2203,7 @@ void DetecTreatment::detectsParameter2()
                 oParamCrete[jcrete][FPSl]  = pj[2];
                 //
                 // RAR : début
-                if(_withNewParams)
+                if(_paramVersion>=1)
                 {
                     oParamCrete[jcrete][SDC]  = 0;
                     oParamCrete[jcrete][SDCR]  = 0;
@@ -2206,11 +2236,6 @@ void DetecTreatment::detectsParameter2()
                     oParamCrete[jcrete][SDCLRXY_DNP]  = 0;
                     oParamCrete[jcrete][SDCLRXY2_DNP]  = 0;
                     //
-                    oParamCrete[jcrete][SDCLOP_DNP]  = 0;
-                    oParamCrete[jcrete][SDCLROP_DNP]  = 0;
-                    oParamCrete[jcrete][SDCLRYOP_DNP]  = 0;
-                    oParamCrete[jcrete][SDCLRXYOP_DNP]  = 0;
-
                     float derdif1=0.0f;
                     float dif1,dif2;
                     float totdif2 = 0.0f;
@@ -2244,36 +2269,36 @@ void DetecTreatment::detectsParameter2()
                         if((jcrete == (CS-1) || jcrete == (CM-1)) && (dif1>1 || x==xmax) && findSdcl==false)
                         {
                             prem = x;
-                            oParamCrete[jcrete][SDCL]  = totdif2;
-                            oParamCrete[jcrete][SDCLR]  = ((float)totdif2) /  ((float)(x-xmin)+0.5f);
-                            oParamCrete[jcrete][SDCLWB]  = totdif2wb;
-                            oParamCrete[jcrete][SDCLRWB]  = (float)totdif2wb/((float)(x-xmin)+0.5f);
+                            oParamCrete[jcrete][SDCL]  = totdif2*_khzPerY;
+                            oParamCrete[jcrete][SDCLR]  = (   ((float)totdif2) * _khzPerY) / ( ((float)(x-xmin)+0.5f)*_msPerX);
+                            oParamCrete[jcrete][SDCLWB]  = totdif2wb * _khzPerY;
+                            oParamCrete[jcrete][SDCLRWB]  = (((float)totdif2wb)*_khzPerY) / (((float)(x-xmin)+0.5f)*_msPerX);
                             if(qAbs(pc[x-xmin]-pc[0])>0)
                             {
                                 float ratioY = (totdif2*10.0f)/(float)(qAbs(pc[x-xmin]-pc[0]));
-                                oParamCrete[jcrete][SDCLRY]  = ratioY;
+                                oParamCrete[jcrete][SDCLRY]  = ratioY/_msPerX;
                                 oParamCrete[jcrete][SDCLRXY]  = ratioY / ((float)(x-xmin)+0.5f);
                                 oParamCrete[jcrete][SDCLRXY2]  = ratioY / ((float)(x-xmin)+0.5f);
                                 //
                                 float ratioYwb = (totdif2wb*10.0f)/(float)(qAbs(pc[x-xmin]-pc[0]));
-                                oParamCrete[jcrete][SDCLRYWB]  = ratioYwb;
+                                oParamCrete[jcrete][SDCLRYWB]  = ratioYwb / _msPerX;
                                 oParamCrete[jcrete][SDCLRXYWB]  = ratioYwb / ((float)(x-xmin)+0.5f);
                             }
                             findSdcl = true;
                         }
                         if((jcrete == (CS-1) || jcrete == (CM-1)) && (dif1>1 || x==xmax) && findSdclOp==false && seenMasterPoint)
                         {
-                            oParamCrete[jcrete][SDCLOP]  = totdif2Op;
-                            oParamCrete[jcrete][SDCLROP]  = (float)totdif2Op/((float)(x-xdOp)+0.5f);
-                            oParamCrete[jcrete][SDCLOPWB]  = totdif2opwb;
-                            oParamCrete[jcrete][SDCLROPWB]  = (float)totdif2opwb/((float)(x-xdOp)+0.5f);
+                            oParamCrete[jcrete][SDCLOP]  = totdif2Op*_khzPerY;
+                            oParamCrete[jcrete][SDCLROP]  = (((float)totdif2Op)*_khzPerY) / (((float)(x-xdOp)+0.5f)*_msPerX);
+                            oParamCrete[jcrete][SDCLOPWB]  = totdif2opwb * _khzPerY;
+                            oParamCrete[jcrete][SDCLROPWB]  = (((float)totdif2opwb)*_khzPerY) / (((float)(x-xdOp)+0.5f)*_msPerX);
                             if(qAbs(pc[x-xmin]-pc[xdOp-xmin])>0)
                             {
                                 float ratioYOp = (totdif2Op*100.0f)/(float)(qAbs(pc[x-xmin]-pc[xdOp-xmin]));
-                                oParamCrete[jcrete][SDCLRYOP]  = ratioYOp;
+                                oParamCrete[jcrete][SDCLRYOP]  = ratioYOp/_msPerX;
                                 oParamCrete[jcrete][SDCLRXYOP]  = ratioYOp / ((float)(x-xdOp)+0.5f);
                                 float ratioYopwb = (totdif2opwb*10.0f)/(float)(qAbs(pc[x-xmin]-pc[xdOp-xmin]));
-                                oParamCrete[jcrete][SDCLRYOPWB]  = ratioYopwb;
+                                oParamCrete[jcrete][SDCLRYOPWB]  = ratioYopwb/_msPerX;
                                 oParamCrete[jcrete][SDCLRXYOPWB]  = ratioYopwb / ((float)(x-xdOp)+0.5f);
                             }
                             findSdclOp = true;
@@ -2286,11 +2311,18 @@ void DetecTreatment::detectsParameter2()
                         if(x>=(xdOp+xmaitr)/2) totdif2opwb += dif2;
                         derdif1 = dif1;
                     }
-                    oParamCrete[jcrete][SDC]  = totdif2;
-                    oParamCrete[jcrete][SDCR]  = (float)totdif2/((float)(xmax-xmin)+0.5f);
+
+                    // oParamCrete[jcrete][SDC]  = totdif2;
+                    oParamCrete[jcrete][SDC]  = totdif2 * _khzPerY;
+
+                    //oParamCrete[jcrete][SDCR]  = (float)totdif2/((float)(xmax-xmin)+0.5f);
+                    oParamCrete[jcrete][SDCR]  = ((float)totdif2*_khzPerY) / (((float)(xmax-xmin)+0.5f)*_msPerX);
+
                     float labs = qAbs(pc[xmax-xmin]-pc[0])+1;
                     float ratioY = (float)totdif2*10.0f/labs;
-                    oParamCrete[jcrete][SDCRY]  = ratioY;
+                    // oParamCrete[jcrete][SDCRY]  = ratioY;
+                    oParamCrete[jcrete][SDCRY]  = ratioY/_msPerX;
+
                     oParamCrete[jcrete][SDCRXY]  = ratioY / ((float)(xmax-xmin)+0.5f);
 
                     float fncs = (float) ncs/100.0f;
@@ -2300,10 +2332,6 @@ void DetecTreatment::detectsParameter2()
                     oParamCrete[jcrete][SDCLRXY_DNP]  = oParamCrete[jcrete][SDCLRXY]/fncs;
                     oParamCrete[jcrete][SDCLRXY2_DNP]  = oParamCrete[jcrete][SDCLRXY2]/fncs;
                     //
-                    oParamCrete[jcrete][SDCLOP_DNP]  = oParamCrete[jcrete][SDCLOP]/fncs;
-                    oParamCrete[jcrete][SDCLROP_DNP]  = oParamCrete[jcrete][SDCLROP]/fncs;
-                    oParamCrete[jcrete][SDCLRYOP_DNP]  = oParamCrete[jcrete][SDCLRYOP]/fncs;
-                    oParamCrete[jcrete][SDCLRXYOP_DNP]  = oParamCrete[jcrete][SDCLRXYOP]/fncs;
                     // -----------------------------------------------------------------------------------------
                     // Paramètres de la série Coudes
                     // _detec->_logText << "jcrete=" << jcrete << " série coudes" << endl;
@@ -2335,7 +2363,7 @@ void DetecTreatment::detectsParameter2()
                                 }
                                 if(x>xmin)
                                 {
-                                    oParamCrete[jcrete][ELBSB]  = ((float)(y1-pc[0]))/((float)(x-xmin));
+                                    oParamCrete[jcrete][ELBSB]  = (   (  (float)(y1-pc[0])  ) *_khzPerY)     / ( ((float)(x-xmin))*_msPerX );
                                 }
                                 break;
                             }
@@ -2372,9 +2400,8 @@ void DetecTreatment::detectsParameter2()
                                 }
                                 if(x>xmin)
                                 {
-                                    oParamCrete[jcrete][ELB2SB]  = ((float)(y1-pc[0]))/((float)(x-xmin));
+                                    oParamCrete[jcrete][ELB2SB]  = (  ( (float)(y1-pc[0]))*_khzPerY)      / ( ((float)(x-xmin))*_msPerX );
                                     //_detec->_logText << "elb2sb = " << ((float)(y1-pc[0]))/((float)(x-xmin)) << endl;
-
                                 }
                                 break;
                             }
@@ -2519,42 +2546,44 @@ void DetecTreatment::detectsParameter2()
                             oParamCrete[jcrete][RAF]  = ratioF;
                             oParamCrete[jcrete][RAE]  = ratioE;
                             oParamCrete[jcrete][RAFE]  = ratioF+ratioE;
-                            oParamCrete[jcrete][RAFP]  = ratioFP;
-                            oParamCrete[jcrete][RAFP2]  = ratioFP2;
-                            oParamCrete[jcrete][RAFP3]  = ratioFP3;
-                            oParamCrete[jcrete][SBMP]  = ( (float)  (pc[xmaitr-xmin] - pc[xdep-xmin] ))  /  ((float)(xmaitr-xdep));
-                            oParamCrete[jcrete][SAMP]  = ( (float)  (pc[xfin-xmin] - pc[xmaitr-xmin]     ))   /  ((float)(xfin-xmaitr));
+                            oParamCrete[jcrete][RAFP]  = ratioFP*_khzPerY;
+                            oParamCrete[jcrete][RAFP2]  = ratioFP2*_khzPerY;
+                            oParamCrete[jcrete][RAFP3]  = ratioFP3*_khzPerY;
+                            //
+                            oParamCrete[jcrete][SBMP]  = ( ((float)  (pc[xmaitr-xmin] - pc[xdep-xmin] ))*_khzPerY)  / (((float)(xmaitr-xdep))*_msPerX);
+                            oParamCrete[jcrete][SAMP]  = ( ((float)  (pc[xfin-xmin] - pc[xmaitr-xmin]))*_khzPerY)   / (((float)(xfin-xmaitr))*_msPerX);
                             oParamCrete[jcrete][SBAR]  = oParamCrete[jcrete][SAMP]  - oParamCrete[jcrete][SBMP];
                             //
                             if(nra2[0]>0 && nra2[1]>0 )
                             {
                                 if(hx2[1]>0)
-                                    oParamCrete[jcrete][RAHP2]  = (((float)hx2[0]*10.0f)/((float)nra2[0]))  / (((float)hx2[1])/((float)nra2[1]));
+                                    oParamCrete[jcrete][RAHP2]  = ((((float)hx2[0]*10.0f)/((float)nra2[0]))  / (((float)hx2[1])/((float)nra2[1]))) * _khzPerY;
+                                                                                               ;
                                 //
                                 if(totE2[1] >0)
-                                    oParamCrete[jcrete][RAHE2]  = ((totE2[0]*10.0f)/((float)nra2[0])) / ((totE2[1])/((float)nra2[1]));
+                                    oParamCrete[jcrete][RAHE2]  = (((totE2[0]*10.0f)/((float)nra2[0])) / ((totE2[1])/((float)nra2[1]))) * _khzPerY;
                             }
                             if(nra4[0]>0 && nra4[1]>0)
                             {
                                 if(hx4[1]>0)
-                                    oParamCrete[jcrete][RAHP4]     = (((float)hx4[0]*10.0f)/((float)nra4[0])) / (((float)hx4[1])/((float)nra4[1]));
+                                    oParamCrete[jcrete][RAHP4]     = ((((float)hx4[0]*10.0f)/((float)nra4[0])) / (((float)hx4[1])/((float)nra4[1])))*_khzPerY;
                                 if(totE4[1] >0)
-                                    oParamCrete[jcrete][RAHE4]  = ((totE4[0]*10.0f)/((float)nra4[0])) / ((totE4[1])/((float)nra4[1]));
+                                    oParamCrete[jcrete][RAHE4]  = (((totE4[0]*10.0f)/((float)nra4[0])) / ((totE4[1])/((float)nra4[1])))*_khzPerY;
 
                             }
                             if(nra8[0]>0 && nra8[1]>0 && hx8[1]>0)
                             {
                                 if(hx8[1]>0)
-                                    oParamCrete[jcrete][RAHP8]  = (((float)hx8[0]*10.0f)/((float)nra8[0])) / (((float)hx8[1])/((float)nra8[1]));
+                                    oParamCrete[jcrete][RAHP8]  = ((((float)hx8[0]*10.0f)/((float)nra8[0])) / (((float)hx8[1])/((float)nra8[1])))*_khzPerY;
                                 if(totE8[1] >0)
-                                    oParamCrete[jcrete][RAHE8]  = ((totE8[0]*10.0f)/((float)nra8[0])) / (totE8[1]/((float)nra8[1]));
+                                    oParamCrete[jcrete][RAHE8]  = (((totE8[0]*10.0f)/((float)nra8[0])) / (totE8[1]/((float)nra8[1])))*_khzPerY;
                             }
                             if(nra16[0]>0 && nra16[1]>0 && hx16[1]>0)
                             {
                                 if(hx16[1]>0)
-                                    oParamCrete[jcrete][RAHP16]  = (((float)hx16[0]*10.0f)/((float)nra16[0])) / (((float)hx16[1])/((float)nra16[1]));
+                                    oParamCrete[jcrete][RAHP16]  = ((((float)hx16[0]*10.0f)/((float)nra16[0])) / (((float)hx16[1])/((float)nra16[1])))*_khzPerY;
                                 if(totE16[1] >0)
-                                    oParamCrete[jcrete][RAHE16]  = ((totE16[0]*10.0f)/((float)nra16[0])) / (totE16[1]/((float)nra16[1]));
+                                    oParamCrete[jcrete][RAHE16]  = (((totE16[0]*10.0f)/((float)nra16[0])) / (totE16[1]/((float)nra16[1])))*_khzPerY;
                             }
                             //
                         }
@@ -2799,7 +2828,7 @@ void DetecTreatment::detectsParameter2()
                 oParamCrete[jcrete][FISl]  = pj[3];
                 oParamCrete[jcrete][FPSl]  = pj[2];
 
-                if(_withNewParams)
+                if(_paramVersion>=1)
                 {
                     // calcul du nouveau paramètre SDC
                     oParamCrete[jcrete][SDC]  = 0;
@@ -2814,9 +2843,9 @@ void DetecTreatment::detectsParameter2()
                         totdif2 += dif2;
                         derdif1 = dif1;
                     }
-                    oParamCrete[jcrete][SDC]  = totdif2;
+                    oParamCrete[jcrete][SDC]  = totdif2*_msPerX;
                     float labs = qAbs(pc[ymax-ymin]-pc[0])+1;
-                    oParamCrete[jcrete][SDCR]  = (float)totdif2/labs;
+                    oParamCrete[jcrete][SDCR]  = ((float)totdif2/labs)*(_msPerX/_khzPerY);
                 }
                 //
                 // calcul des paramètres ...5db pour crête ouest 2
@@ -3356,7 +3385,8 @@ void DetecTreatment::saveParameters(const QString& wavFile)
     fileStream.setRealNumberPrecision(2);
     fileStream << "Filename"<< '\t' << "CallNum"
                << '\t' << "Version"<< '\t' << "FileDur"<< '\t' << "SampleRate";
-    for(int j=0;j<_numberCallParameters;j++) fileStream << '\t' << _vectPar[j].ColumnTitle;
+    for(int j=0;j<_numberCallParameters;j++)
+        if(_vectPar[j].NeedVer<=_paramVersion)  fileStream << '\t' << _vectPar[j].ColumnTitle;
     fileStream << endl;
     //float **parArray;
     //float u_f;
@@ -3372,7 +3402,7 @@ void DetecTreatment::saveParameters(const QString& wavFile)
             //u_f = callArray[_vectPar[j].NumTableau][_vectPar[j].NumPar];
             //u_f = ((float)qRound(u_f*100.0f))/100.0f;
             //_simpleParamsArray[i][j]=u_f;
-            fileStream << '\t' <<  callArray[_vectPar[j].NumTableau][_vectPar[j].NumPar];
+            if(_vectPar[j].NeedVer<=_paramVersion) fileStream << '\t' <<  callArray[_vectPar[j].NumTableau][_vectPar[j].NumPar];
         }
         fileStream << endl;
     }
@@ -3387,423 +3417,9 @@ void DetecTreatment::saveCompressedParameters(const QString& wavFile)
     QStringList  arguments;
     arguments << "a" << "-tgzip" << compressedParametersPath <<  txtFilePath;
     QProcess::execute(program,arguments);
-    //_detec->_logText << "résultat d'appel 7z=" << a << endl;
-
-    /*
-    _compressedParametersFile.setFileName(compressedParametersPath);
-    if(_compressedParametersFile.open(QIODevice::WriteOnly)==false)
-    {
-        _detec->_logText  << "Ouverture en écriture du fichier " << compressedParametersPath << " impossible !" << endl;
-        return;
-    }
-    // entête
-    _compressedParametersStream.setDevice(&_compressedParametersFile);
-    _compressedParametersStream << (qint8)_compressedVersion;
-    //_compressedParametersStream << wavFile;
-    _compressedParametersStream << (qint16)_callsNumber;
-    if(_numberCallParameters>=255)
-    {
-        _compressedParametersStream << (qint8)255;
-        _compressedParametersStream << (qint8)(_numberCallParameters-255);
-    }
-    else _compressedParametersStream << (qint8)_numberCallParameters;
-    // compression des paramètres
-
-    for(int i=0;i<_callsNumber;i++)
-        for(int j=0;j<_numberCallParameters;j++)
-        if(i==0) _valuesToCompressArray[i][j]=_simpleParamsArray[i][j];
-        else _valuesToCompressArray[i][j]=_simpleParamsArray[i][j]-_simpleParamsArray[i-1][j];
-    //
-    qint8 octet1,octet2,decimal;
-    int casrepet,nsepar,nsuite;
-    int signe;
-    float treated;
-    int entier;
-    bool avoir = false;
-    int c=0;
-    for(int i=0;i<_callsNumber;i++) for(int j=0;j<_numberCallParameters;j++)
-    {
-       // if(i==83 && j>160) avoir = true; else avoir = false;
-        //if(i==92 && j>156) avoir = true; else avoir = false;
-        // recherche si paramètre répété
-        casrepet=0;
-        treated=_simpleParamsArray[i][j];
-        if(avoir) _detec->_logText << "i,j="<<i<<","<<j<<" valeur traitée = "<<treated << endl;
-        if(j>=0)
-        {
-            if(treated==_simpleParamsArray[i][j-1])
-            {
-                casrepet=1;
-                nsuite=0;
-                for(int j2=j+1;j<qMin(_numberCallParameters-1,j+32);j2++)
-                    if(treated==_simpleParamsArray[i][j2]) nsuite++;
-                    else break;
-            }
-        }
-        else
-        {
-            if(casrepet==0 && i>0)
-            {
-                for(int i2=i-1;i2>=qMax(0,i-64);i2--)
-                    if(treated==_simpleParamsArray[i2][j])
-                    {
-                        casrepet=3; nsepar=i-1-i2; break;
-                    }
-            }
-            else
-            {
-                if(casrepet==0 && j>0)
-                {
-                    for(int j2=j-1;j2>=qMax(0,j-32);j2--)
-                        if(treated==_simpleParamsArray[i][j2])
-                        {
-                            casrepet=2; nsepar=j-1-j2; break;
-                        }
-                }
-            }
-        } // fin détermination de cas de répétition
-        // codage de la répétition
-        if(casrepet>0)
-        {
-            if(casrepet==1) octet1=224+nsuite;
-            if(casrepet==2) octet1=192+nsepar;
-            if(casrepet==3) octet1=128+nsepar;
- if(avoir) _detec->_logText << "i,j="<<i<<","<<j<<" casrepet="<<casrepet
-            << " octet1=" << octet1 << endl;
-            _compressedParametersStream << octet1;
-        }
-        // codage du cas non répétition
-        else
-        {
-            treated = _valuesToCompressArray[i][j];
-            if(treated>=0) octet1=64;
-            else {octet1=0; treated = - treated;}
-            entier=(int)treated;
-            decimal=qRound((treated-entier)*100.0f);
-            if(decimal==100) {decimal=0;entier++;}
-            if(entier<32)
-            {
-                octet1+=32+entier;
-                if(avoir) _detec->_logText << "C__ i,j="<<i<<","<<j<<" cas simple < 32"
-                         << "octet1=" << octet1 << endl;
-                _compressedParametersStream << octet1;
-            }
-            else
-            {
-                int acoder=entier-32;
-                int reste1=0,reste2=0;
-                if(acoder>=8191) {reste1=acoder-8191;acoder=8191;}
-                octet1+=acoder>>8;
-                octet2 = acoder & 255;
-                _compressedParametersStream << octet1;
-                _compressedParametersStream << octet2;
-                if(avoir)
-                {
-                    _detec->_logText << "C__ i,j="<<i<<","<<j<<" cas simple > 32"
-                             << "octet1=" << octet1
-                             << "octet2" << octet2 << endl;
-                }
-                if(acoder==8191)
-                {
-                    if(reste1>=65535) {reste2=reste1-65535;reste1=65535;}
-                    _compressedParametersStream << (qint16)reste1;
-                    if(avoir)
-                    {
-                        _detec->_logText << "C__ reste1="<<reste1<<endl;
-                    }
-                    if(reste1==65535)
-                    {
-                        _compressedParametersStream << (qint32)reste2;
-                        if(avoir)
-                        {
-                            _detec->_logText << "C__ reste2="<<reste2<<endl;
-                        }
-                    }
-                }
-            } // fin du cas entier>=32
-            // codage de la partie décimale
-            if(avoir) _detec->_logText << "C__  decimal = " << decimal << endl;
-            _compressedParametersStream << (qint8)decimal;
-        } // fin du codage cas non répétition
-        if(casrepet==1) j+=nsuite;
-        // if(i>0 || j>13) avoir=false;
-        if(avoir) _detec->_logText << endl;
-    } // fin boucles i,j
-    //
-    _compressedParametersFile.close();
-    */
-
 }
 
-/*
-void DetecTreatment::expandParameters(const QString& wavFile)
-{
-    //QString txtFilePath = _txtPath+"/"+wavFile.left(wavFile.length()-3)+ ResultSuffix;
-    QString txtFilePath = _txtPath+"/"+wavFile.left(wavFile.length()-3)+ "ta2";
-    QFile txtFile;
-    txtFile.setFileName(txtFilePath);
-    if(txtFile.open(QIODevice::WriteOnly | QIODevice::Text)==false)
-    {
-        _detec->_logText  << "ouverture en écriture du fichier " << _txtFilePath << " impossible !" << endl;
-        return;
-    }
-    QTextStream fileStream;
-    fileStream.setDevice(&txtFile);
-    fileStream.setRealNumberNotation(QTextStream::FixedNotation);
-    fileStream.setRealNumberPrecision(2);
-    // décomprresssion
-    QString compressedParametersPath = _txtPath+"/"+wavFile.left(wavFile.length()-3) + ResultCompressedSuffix;
-    _compressedParametersFile.setFileName(compressedParametersPath);
-    if(_compressedParametersFile.open(QIODevice::ReadOnly)==false)
-    {
-        _detec->_logText  << "Ouverture en lecture du fichier " << compressedParametersPath << " impossible !" << endl;
-        return;
-    }
-    _compressedParametersStream.setDevice(&_compressedParametersFile);
-    // lecture entete
-    qint8 compressVersion;
-    _compressedParametersStream >> compressVersion;
-    if(compressVersion !=1)
-    {
-        _detec->_logText  << "Version de compression non gérée !" << endl;
-        return;
-    }
-    //_compressedParametersStream << wavFile;
-    qint16 nbcris;
-    _compressedParametersStream >> nbcris;
-    if(nbcris <0 || nbcris>MAXCRI)
-    {
-        _detec->_logText  << "Nombre de cris incorrect !" << endl;
-        return;
-    }
-    int nbparam;
-    qint8 nbp1,nbp2;
-    _compressedParametersStream >> nbp1;
-    nbparam=(unsigned char)nbp1;
-    if(nbparam==255)
-    {
-        _compressedParametersStream >> nbp2;
-        nbparam+=(unsigned char)nbp2;
-    }
-    if(nbparam!=_numberCallParameters)
-    {
-        _detec->_logText  << "Nombre de parametres incorrect : " << nbparam << endl;
-        return;
-    }
-    // décompression des paramètres
-    for(int i=0;i<nbcris;i++)
-        for(int j=0;j<nbparam;j++)
-            _simpleParamsArray[i][j]=0.0f;
-    qint8 octet1,octet2,decimal,valRepet;
-    qint16 sisuppl;
-    qint32 lisuppl;
-    int casrepet;
-    int entier,signe;
-    float lastValue;
-    bool avoir=false;
-    for(int i=0;i<_callsNumber;i++)
-    {
-        for(int j=0;j<_numberCallParameters;j++)
-        {
-            //if(i==83 && j>160) avoir = true; else avoir = false;
-            //if(i==0) avoir = true; else avoir = false;
-            //if(i==92 && j>156) avoir = true; else avoir = false;
-            _compressedParametersStream >> octet1;
-            if(avoir) _detec->_logText << "D__ i,j="<<i<<","<<j
-                     << " octet1=" << octet1 << endl;
-            // cas repetition
-            if(((octet1>>7)&1)==1)
-            {
-                if(avoir) _detec->_logText << "D__ cas repet"<<endl;
-                if(((octet1>>6)&1)==1)
-                {
-                    valRepet = octet1 & 31;
-                    if(((octet1>>5)&1)==1)
-                    {
-                        lastValue = _simpleParamsArray[i][j-1];
-                        for(int j2=j;j2<=j+valRepet;j2++)
-                            _simpleParamsArray[i][j2]=lastValue;
-if(avoir) _detec->_logText << "D__  série de répétitions valRepet =" << valRepet << endl;
-                        j+=valRepet;
-                    }
-                    else
-                    {
-                        if(j-1-valRepet>=0)
-              _simpleParamsArray[i][j]=_simpleParamsArray[i][j-1-valRepet];
-if(avoir) _detec->_logText << "D__  récupère le paramètre précédant de "
-                           << valRepet << endl;
-                    }
-                }
-                else
-                {
-                    valRepet = octet1 & 63;
-                    if(i-1-valRepet>=0)
-             _simpleParamsArray[i][j]=_simpleParamsArray[i-valRepet][j];
-if(avoir) _detec->_logText << "D__  récupère le param. du cri précédant de "
-                       << valRepet << endl;
-                }
-            } // fin des cas répétition
-            // cas valeur simple (non repetition)
-            else
-            {
 
-                signe = (octet1>>6)&1;
-                if(((octet1>>5)&1)==1)
-                {
-                    entier=octet1 & 31;
-                    if(avoir) _detec->_logText << "D__ cas < 32  entier="<<entier <<endl;
-                }
-                else
-                {
-                    entier=32;
-                    _compressedParametersStream >> octet2;
-                    entier+=(int)((octet1 & 31)*256)+(unsigned char)octet2;
-                    if(avoir) _detec->_logText << "D__ cas>32  "
-                             << " octet2=" << octet2
-                             << " entier=" << entier
-                             << endl;
-                    if(entier==8223)
-                    {
-                        _compressedParametersStream >> sisuppl;
-                        entier+=(unsigned qint16)sisuppl;
-                        if(avoir) _detec->_logText << "D__ cas>8223  "
-                                 << " sisuppl=" << sisuppl
-                                 << " entier=" << entier
-                                 << endl;
-                        if(entier==73758)
-                        {
-                            _compressedParametersStream >> lisuppl;
-                            entier+=(unsigned long int)lisuppl;
-                        }
-                    }
-                }
-                //
-                _compressedParametersStream >> decimal;
-                if(avoir) _detec->_logText << "D__  decimal = " << decimal << endl;
-                float value = (float) entier +(float)decimal/100.0f;
-                if(signe==0) value = -value;
-                if(avoir) _detec->_logText << "D__  value = " << value << endl;
-
-                if(i==0) _simpleParamsArray[i][j]=value;
-                else _simpleParamsArray[i][j]=_simpleParamsArray[i-1][j]+value;
-            } // fin cas valeur normale (non repetition)
-            //if(i>0 || j>13) avoir=false;
-            if(avoir) _detec->_logText << endl;
-        } // fin boucle j
-    } // fin boucle i
-    // enregisstrement dans le fichier
-    for(int i=0;i<nbcris;i++)
-    {
-        fileStream << wavFile << '\t' << QString::number(i);
-        //_simplesParamsArray
-        for(int j=0;j<_numberCallParameters;j++)
-        {
-            fileStream << '\t' <<  _simpleParamsArray[i][j];
-        }
-        fileStream << endl;
-    }
-    _compressedParametersFile.close();
-    txtFile.close();
-}
-*/
-
-void DetecTreatment::createImage(QString wavFile)
-{
-    if(_sonogramWidth > 32767) {_xmoitie = true; _imaWidth=(_sonogramWidth+1)/2;}
-    else  {_xmoitie = false; _imaWidth=_sonogramWidth;}
-    QImage ima = QImage(_imaWidth, _fftHeightHalf,QImage::Format_RGB32);
-    // initBvrvb(_energyMin,(double)_medianNoise,_energyMax);
-    initBvrvb(_energyMin,_energyMax);
-    // refuser le traitement si imax > 2000
-    int imax=((int)(_energyMax-_energyMin)*5)+1;
-    uint crgb;
-    for(int i=0;i<imax;i++)
-    {
-        _tvaleur[i]=calculateRGB((double)i/5.0f);
-    }
-    //£ float *ydl;
-    qint16 *ydl;
-    //& char *mzc;
-    int exceptions = 0;
-    //µ :
-    int lyi = qMin(_fftHeightHalf,_limY);
-    //µ for(int y = 0; y < _fftHeightHalf ; y++)
-    for(int y = 0; y < lyi ; y++)
-    {
-        ydl=_sonogramArray[y];
-        //& mzc=_pointFlagsArray[y];
-        int digitPos = 0;
-        char *pBoolChar = _pointFlagsArray[y];;
-        char boolChar = *pBoolChar;
-
-        for (int x = 0 ; x < _imaWidth ; x++)
-        {
-            //£ int valeur=(int)(           ( (*ydl)-_energyMin ) * 5.0f   );
-            int valeur=(int)(((float)(*ydl)/20.0f)  - _energyMin*5.0f);
-            if(valeur>=0 && valeur<imax)crgb=_tvaleur[valeur];
-            else {crgb=0; exceptions++;}
-            //& if(*mzc) crgb |= 224 << 16;
-            if((boolChar & (1 << digitPos))!=0) crgb |= 224 << 16;
-            ima.setPixel(x, _fftHeightHalf-y-1,crgb);
-            //& ydl++;
-            //& mzc++;
-            //& if(_xmoitie) {ydl++; mzc++;}
-            for(int k=0;k<1+_xmoitie;k++)
-            {
-                ydl++;
-                digitPos++;
-                if(digitPos==8) {pBoolChar++; boolChar = *pBoolChar; digitPos=0;}
-            }
-        }
-    }
-    //
-    QString imageName = _imagePath + '/' + wavFile.replace(QString(".wav"), QString(".jpg"), Qt::CaseInsensitive);
-    ima.save(imageName,0,100); // save image
-}
-
-// void DetecTreatment::initBvrvb(double bornemin,double median,double bornemax)
-void DetecTreatment::initBvrvb(double bornemin,double bornemax)
-{
-    /*
-    _bRGB[0][0]=bornemin;
-    _bRGB[1][0]=median;
-    _bRGB[2][0]=median+(double)_stopThreshold;
-    _bRGB[3][0]=median+(double)_detectionThreshold;
-    _bRGB[4][0]=bornemax+1;
-    */
-    _bRGB[0][0]=bornemin;
-    // _bRGB[1][0]=0;
-    // _bRGB[2][0]=(double)_stopThreshold;
-    // _bRGB[3][0]=(double)_detectionThreshold;
-    _bRGB[1][0]=bornemin/2;
-    _bRGB[2][0]=(double)_energyStopThreshold;
-    _bRGB[3][0]=(double)_energyShapeThreshold;
-    _bRGB[4][0]=bornemax+1;
-    for(int i=0;i<5;i++) _bRGB[i][0]-=bornemin;
-    _bRGB[0][1]=0;   _bRGB[0][2]=0;   _bRGB[0][3]=32;
-    _bRGB[1][1]=0;   _bRGB[1][2]=32;  _bRGB[1][3]=64;
-    _bRGB[2][1]=0;   _bRGB[2][2]=64; _bRGB[2][3]=96;
-    _bRGB[3][1]=0;   _bRGB[3][2]=96; _bRGB[3][3]=128;
-    _bRGB[4][1]=0;   _bRGB[4][2]=128; _bRGB[4][3]=160;
-}
-
-uint DetecTreatment::calculateRGB(double value)
-{
-    double rgb[3];
-    for(int j=0;j<3;j++) rgb[j] =0.0f;
-    for(int i=0;i<4;i++)
-    {
-        if(value>=_bRGB[i][0] && value<_bRGB[i+1][0])
-        {
-            for(int j=0;j<3;j++)
-                rgb[j]=_bRGB[i][j+1]
-                        +((_bRGB[i+1][j+1]-_bRGB[i][j+1])*(value-_bRGB[i][0]))/(_bRGB[i+1][0]-_bRGB[i][0]);
-            break;
-        }
-    }
-    uint urgb = qRgb(qRound(rgb[0]),qRound(rgb[1]),qRound(rgb[2]));
-    return(urgb);
-}
 
 void DetecTreatment::saveDatFile(QString wavFile)
 {
@@ -3819,16 +3435,17 @@ void DetecTreatment::saveDatFile(QString wavFile)
     _callMatrixStream << nbcris;
     _detec->_logText << "   nbcris = " << nbcris << endl;
 
-    //µ :
     int lyi = qMin(_fftHeightHalf,_limY);
 
-    //µ _callMatrixStream << _fftHeightHalf;
     _callMatrixStream << lyi;
-
-    _callMatrixStream << (int)_xmoitie;
+    _callMatrixStream << (int)_detec->_xmoitie;
     _callMatrixStream << (float)_msPerX;
     _callMatrixStream << (float)_khzPerY;
-   // _detec->_logText << "savedatfile 2" << endl;
+
+    // £££ 27/05/2015
+    _callMatrixStream << (int)_timeExpansion;
+    // fin £££ 27/05/2015
+
     for(int i=0;i<nbcris;i++)
     {
         //_logText << "  cri num. = " << i << endl;

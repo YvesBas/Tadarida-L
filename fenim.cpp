@@ -849,7 +849,7 @@ bool Fenim::afficher_image(bool modesaisie)
         return(false);
     }
     initialise_cris();
-    if(loadMatriceCris2(da2File,true)==false)
+    if(loadMatriceCris2(da2File)==false)
     {
         QMessageBox::warning(fparent,"Fichier inaccessible","Retraiter d'abord le dossier", QMessageBox::Ok);
         return(false);
@@ -953,7 +953,7 @@ bool Fenim::chargeCrisEtiquettes()
 {
     //m_logStream << "Fenim charge_cris_etiquettes" << endl;
     if(!m_casRetraitement) initialise_cris();
-    if(loadMatriceCris2(da2File,true)==false)
+    if(loadMatriceCris2(da2File)==false)
     {
         fenouv = false;
         return(false);
@@ -1211,7 +1211,7 @@ void Fenim::afficher_un_point_maitre(int ncri,bool crisel,bool afficherpm)
 }
 
 
-bool Fenim::loadMatriceCris2(QString da2File,bool principal)
+bool Fenim::loadMatriceCris2(QString da2File)
 {
 
     //m_logStream << "loadMatriceCris2 " << endl;
@@ -1220,14 +1220,9 @@ bool Fenim::loadMatriceCris2(QString da2File,bool principal)
     if(m_cris2File.open(QIODevice::ReadOnly)==false)
     {
         m_logStream << "fichier cris inexistant : " << da2File << endl;
-        if(!m_casRetraitement && principal == true)
+        if(!m_casRetraitement)
         QMessageBox::warning(wfenim, "Fin", "Fichier de cris inexistant", QMessageBox::Ok);
         return(false);
-    }
-    if(principal==false)
-    {
-        m_cris2File.close();
-        return(true);
     }
     // gérer les retours...
     m_cris2Stream.setDevice(&m_cris2File);
@@ -1236,6 +1231,7 @@ bool Fenim::loadMatriceCris2(QString da2File,bool principal)
     int numver=0,numveruser=0;
 
     m_cris2Stream >> numver;
+
 
     if(numver>3) m_cris2Stream >> numveruser;
     if(numver<11)
@@ -1274,6 +1270,19 @@ bool Fenim::loadMatriceCris2(QString da2File,bool principal)
         m_cris2Stream >> m_factorX;
         m_cris2Stream >> m_factorY;
     }
+
+    // £££ 27/05/2015
+    _numVer = numver;
+    _tE = 10;
+    if(numver>19)
+    {
+        m_cris2Stream >> _tE;
+    }
+    else
+    {
+        _numtE = m_factorY * _imaHeight * 2000;
+    }
+    // fin £££ 27/05/2015
 
     // m_logStream << "nbre de cris : " << nbcris << endl;
     // m_logStream << "sizeffthalf = " << m_iSizeFFTHalf << endl;
@@ -2386,6 +2395,7 @@ MyQLabel::MyQLabel(QWidget *parent):QLabel(parent)
 {
     qmaitre = parent;
     setFont(QFont("Arial",10,QFont::Normal));
+    setStyleSheet("background-color: #F8F8FE");
 }
 
 MyQComboBox::MyQComboBox(QWidget *parent,Fenim *fen,QString esp):QComboBox(parent)

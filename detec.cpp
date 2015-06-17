@@ -116,22 +116,21 @@ void Detec::Resume()
     _waiting = false;
 }
 
-int Detec::Treatment()
+void Detec::Treatment()
 {
     readDirectoryVersion();
-    int nbTreatedFiles = 0;
+    _nbTreatedFiles = 0;
+    _nbErrorFiles = 0;
     _filesNumber = _wavFileList.size();
     _fileIndex=0;
     _numberStartTags=0;
     _numberEndTags=0;
     _numberRecupTags=0;
-    // 4-3-2015
     if(ReprocessingMode && _collectPreviousVersionsTags) createVersionsList();
     _treating = false;
     _clock = new QTimer(this);
     connect(_clock,SIGNAL(timeout()),this,SLOT(treatOneFile()));
     _clock->start(50);
-    return(nbTreatedFiles);
 }
 
 void Detec::createVersionsList()
@@ -267,6 +266,9 @@ bool Detec::treatOneFile()
     {
         _remObject->initialize();
         _numberStartTags+=_remObject->PreMatch(wavFile,_wavPath);
+        _numVer = _remObject->_fenim1->_numVer;
+        _tE = _remObject->_fenim1->_tE;
+        _numtE = _remObject->_fenim1->_numtE;
     }
     //
     emit information(nomfic);
@@ -287,12 +289,14 @@ bool Detec::treatOneFile()
         if(_imageData)
         {
             // _logText << "Avant enregistrement image et fichier dat - "<< QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
-            _detecTreatment->createImage(wavFile);
+            createImage(wavFile);
             // _logText << "Entre createimage et savedatfile - "<< QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
             _detecTreatment->saveDatFile(wavFile);
             // _logText << "Fin enregistrement image et fichier dat - "<< QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
         }
+        _nbTreatedFiles++;
 	}
+    else _nbErrorFiles++;
     // -------------------------------------------------------
     if(ReprocessingMode)
     {
@@ -345,6 +349,7 @@ bool Detec::treatOneFile()
             _remObject->EndMatch();
         }
     }
+    else emit information4(_nbTreatedFiles,_nbErrorFiles);
     _logText << "fin de traitement du fichier" << endl;
     emit moveBar((float)_fileIndex/(float)_filesNumber);
     _treating = false;
@@ -410,4 +415,88 @@ bool Detec::checkAssociatedFiles(QString pathName,QString wavName)
     }
     //
     return(resu);
+}
+
+void Detec::createImage(QString wavFile)
+{
+    if(_detecTreatment->_sonogramWidth > 32767) {_xmoitie = true; _imaWidth=(_detecTreatment->_sonogramWidth+1)/2;}
+    else  {_xmoitie = false; _imaWidth=_detecTreatment->_sonogramWidth;}
+    QImage ima = QImage(_imaWidth, _detecTreatment->_fftHeightHalf,QImage::Format_RGB32);
+    initBvrvb(_detecTreatment->_energyMin,_detecTreatment->_energyMax);
+    int imax=((int)(_detecTreatment->_energyMax-_detecTreatment->_energyMin)*5)+1;
+    uint crgb;
+    for(int i=0;i<imax;i++)
+    {
+        _tvaleur[i]=calculateRGB((double)i/5.0f);
+    }
+    qint16 *ydl;
+    int exceptions = 0;
+    int lyi = qMin(_detecTreatment->_fftHeightHalf,_detecTreatment->_limY);
+    for(int y = 0; y < lyi ; y++)
+    {
+        ydl=_detecTreatment->_sonogramArray[y];
+        int digitPos = 0;
+        char *pBoolChar = _detecTreatment->_pointFlagsArray[y];;
+        char boolChar = *pBoolChar;
+        for (int x = 0 ; x < _imaWidth ; x++)
+        {
+            int valeur=(int)(((float)(*ydl)/20.0f)  -  _detecTreatment->_energyMin*5.0f);
+            if(valeur>=0 && valeur<imax)crgb=_tvaleur[valeur];
+            else {crgb=0; exceptions++;}
+            if((boolChar & (1 << digitPos))!=0) crgb |= 224 << 16;
+            ima.setPixel(x, _detecTreatment->_fftHeightHalf-y-1,crgb);
+            for(int k=0;k<1+_xmoitie;k++)
+            {
+                ydl++;
+                digitPos++;
+                if(digitPos==8) {pBoolChar++; boolChar = *pBoolChar; digitPos=0;}
+            }
+        }
+    }
+    QString imageName = _imagePath + '/' + wavFile.replace(QString(".wav"), QString(".jpg"), Qt::CaseInsensitive);
+    ima.save(imageName,0,100); // save image
+}
+
+// void DetecTreatment::initBvrvb(double bornemin,double median,double bornemax)
+void Detec::initBvrvb(double bornemin,double bornemax)
+{
+    /*
+    _bRGB[0][0]=bornemin;
+    _bRGB[1][0]=median;
+    _bRGB[2][0]=median+(double)_stopThreshold;
+    _bRGB[3][0]=median+(double)_detectionThreshold;
+    _bRGB[4][0]=bornemax+1;
+    */
+    _bRGB[0][0]=bornemin;
+    // _bRGB[1][0]=0;
+    // _bRGB[2][0]=(double)_stopThreshold;
+    // _bRGB[3][0]=(double)_detectionThreshold;
+    _bRGB[1][0]=bornemin/2;
+    _bRGB[2][0]=(double)_detecTreatment->_energyStopThreshold;
+    _bRGB[3][0]=(double)_detecTreatment->_energyShapeThreshold;
+    _bRGB[4][0]=bornemax+1;
+    for(int i=0;i<5;i++) _bRGB[i][0]-=bornemin;
+    _bRGB[0][1]=0;   _bRGB[0][2]=0;   _bRGB[0][3]=32;
+    _bRGB[1][1]=0;   _bRGB[1][2]=32;  _bRGB[1][3]=64;
+    _bRGB[2][1]=0;   _bRGB[2][2]=64; _bRGB[2][3]=96;
+    _bRGB[3][1]=0;   _bRGB[3][2]=96; _bRGB[3][3]=128;
+    _bRGB[4][1]=0;   _bRGB[4][2]=128; _bRGB[4][3]=160;
+}
+
+uint Detec::calculateRGB(double value)
+{
+    double rgb[3];
+    for(int j=0;j<3;j++) rgb[j] =0.0f;
+    for(int i=0;i<4;i++)
+    {
+        if(value>=_bRGB[i][0] && value<_bRGB[i+1][0])
+        {
+            for(int j=0;j<3;j++)
+                rgb[j]=_bRGB[i][j+1]
+                        +((_bRGB[i+1][j+1]-_bRGB[i][j+1])*(value-_bRGB[i][0]))/(_bRGB[i+1][0]-_bRGB[i][0]);
+            break;
+        }
+    }
+    uint urgb = qRgb(qRound(rgb[0]),qRound(rgb[1]),qRound(rgb[2]));
+    return(urgb);
 }

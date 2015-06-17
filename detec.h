@@ -31,7 +31,7 @@ public:
     void Resume();
     void SetGlobalParameters(int,int,int,int,int,
                              bool,int,int,int,int,int,int,int);
-    int Treatment();
+    void Treatment();
 
     DetecTreatment    *_detecTreatment;
     bool                         _errorFileOpen;
@@ -49,13 +49,19 @@ public:
     QString                   ResultSuffix;
     QString                   ResultCompressedSuffix;
     int                            _userVersion;
+    RematchClass       *_remObject;
 
-	
+    float _numtE;
+    int _tE;
+    int _numVer;
+    bool _xmoitie;
+
 signals:
     void errorDetec(int);
     void information(QString);
     void information2(QString);
     void information3(int,int,int);
+    void information4(int,int);
     void moveBar(float);
     void threadFinished();
     void infoTrace(QString,QString,QString,QString,QString,QString,QString,QString,QString,QString);
@@ -64,12 +70,16 @@ private slots:
     bool treatOneFile();
 
 private:
+    void createImage(QString);
+    void initBvrvb(double,double);
+    int _imaWidth;
+    double                       _bRGB[5][4];
 
     // methods
     uint calculateRGB(double);
     void cleanVerSubdir();
     void cleanSubdir(QDir,QString,bool,QString);
-    void createImage(QString);
+
     // 4-3-2015 :
     void createVersionsList();
     void endDetec();
@@ -114,11 +124,13 @@ private:
     int                          _filesNumber;
     QString                      _imagePath;
     QFile                        _logFile;
+    int                         _nbErrorFiles;
+    int                         _nbTreatedFiles;
     int                          _numberEndTags;
     int                          _numberRecupTags;
     int                          _numberStartTags;
     QMainWindow                  *_parent;
-    RematchClass                 *_remObject;
+    float                         _numTe;
     bool                         _treating;
     QFile                        _txtFile;
     QString                      _txtPath;

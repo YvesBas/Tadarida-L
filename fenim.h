@@ -354,7 +354,7 @@ public:
     int m_verRepLog,m_verRepUser;
     int m_verLog,m_verUser;
     // pour version contour
-    bool loadMatriceCris2(QString,bool);
+    bool loadMatriceCris2(QString);
     QVector< QVector< QPoint > > m_matrixContours;
     QVector< QVector< float > > m_matrixEnergie;
     QString m_sufeti;
@@ -364,6 +364,11 @@ public:
     int m_nbeti;
     void repeint_en_vert();
     QString couleur[5];
+    // £££ 27/05/2015
+    float _numtE;
+    int _tE;
+    int _numVer;
+     // fin £££ 27/05/2015
 
 protected:
     void reinitialise_etiquettes();

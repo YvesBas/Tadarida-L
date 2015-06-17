@@ -26,10 +26,11 @@ int RematchClass::PreMatch(QString wavName,QString wavPath)
     int postab = _fileName.lastIndexOf(".");
     if(postab>0) _fileName = _fileName.left(postab);
     _fenim1 = new Fenim(_parent,_wavPath,_fileName,_baseDayDir,false,true,1,"1",0,0);
-    _fenim1->m_logStream << "Prematch 2" << endl;
+    //_fenim1->m_logStream << "Prematch 2" << endl;
     nbc1=0; nbe1=0;
     if(_fenim1->chargeCrisEtiquettes()==false) return(0);
-    _fenim1->m_logStream << "Prematch 3" << "nb eti=" <<_fenim1->m_nbeti << endl;
+
+    //_fenim1->m_logStream << "Prematch 3" << "nb eti=" <<_fenim1->m_nbeti << endl;
     nbc1=_fenim1->m_nbcris;
     nbe1=_fenim1->m_nbeti;
     return(nbe1);
@@ -112,8 +113,9 @@ TadaridaMainWindow::TadaridaMainWindow(QWidget *parent) : QMainWindow(parent)
     _lastWav = QString("");
     _tadaridaMode = SIMPLE; // mode simple
     _userVersion = 0;
-    _programVersion = 19;
+    _programVersion = 20;
     _baseDir   = QDir::current();
+    _paramVersion = 1;
     readConfigFile();
     ResultSuffix = "ta";
     if(_tadaridaMode==ETIQUETAGE)
@@ -154,6 +156,7 @@ TadaridaMainWindow::TadaridaMainWindow(QWidget *parent) : QMainWindow(parent)
     connect(_detec, SIGNAL(information(QString)),this, SLOT(infoShow(QString)));
     connect(_detec, SIGNAL(information2(QString)),this, SLOT(infoShow2(QString)));
     connect(_detec, SIGNAL(information3(int,int,int)),this, SLOT(matchingInfoTreat(int,int,int)));
+    connect(_detec, SIGNAL(information4(int,int)),this, SLOT(detecInfoTreat(int,int)));
     /*
     connect(_detec, SIGNAL(infoTrace(QString,QString,QString,QString,QString,QString,QString,QString,QString,QString)),
                this, SLOT(storeTrace(QString,QString,QString,QString,QString,QString,QString,QString,QString,QString)));
@@ -162,7 +165,7 @@ TadaridaMainWindow::TadaridaMainWindow(QWidget *parent) : QMainWindow(parent)
     _clock = new QTimer(this);
     connect(_clock,SIGNAL(timeout()),this,SLOT(manageDetecCall()));
     setWindowTitle("Tadarida");
-    window()->setWindowTitle("Tadarida");
+    window()->setWindowTitle("Tadarida   version 1.0");
     window()->setWindowIconText("Tadarida");
     show();
     if(_tadaridaMode==ETIQUETAGE)
@@ -180,7 +183,7 @@ TadaridaMainWindow::TadaridaMainWindow(QWidget *parent) : QMainWindow(parent)
             {
                 if(!CanContinue) return;
                 QMessageBox::warning(this, "Base inexitante",
-                                     "Chosir le dossier de la base !",QMessageBox::Ok);
+                                     "Choisir le dossier de la base !",QMessageBox::Ok);
                 QString basepath = "";
                 basepath=selectBase();
                 if(basepath.isEmpty())
@@ -400,6 +403,8 @@ void TadaridaMainWindow::readConfigFile()
     int mode = settings.value("mode").toInt();
     if(mode==ETIQUETAGE) _tadaridaMode = ETIQUETAGE;
     else _tadaridaMode = SIMPLE;
+    _paramVersion = settings.value("paramVersion").toInt();
+
     settings.endGroup();
 }
 
@@ -425,6 +430,7 @@ void TadaridaMainWindow::writeConfigFile()
     settings.setValue("log", QString::number(_programVersion));
     settings.setValue("user",QString::number(_userVersion));
     settings.setValue("mode",QString::number(_tadaridaMode));
+    settings.setValue("paramVersion",QString::number(_paramVersion));
     settings.endGroup();
 }
 
@@ -514,7 +520,7 @@ void TadaridaMainWindow::on_btnParam_clicked()
     param->creeParametre(QString("Pourcentage q5"),&_qR,1,1,20);
     param->creeParametre(QString("Nb pixel min q5"),&_qN,1,2,10);
 
-    param->creeParametre(QString("Nouveaux parametres"),&_withNewParams ,3);
+    param->creeParametre(QString("Version parametres"),&_paramVersion ,1,0,1);
 
     param->creeParametre(QString("Fichiers time.csv"),&_withTimeCsv,3);
 
@@ -548,6 +554,7 @@ void TadaridaMainWindow::on_btnOk_clicked()
         blockUnblock(true);
         return;
     }
+    MustCancel = false;
     directoryTreat(_wavDirectory,_chkSubDirectories->isChecked());
 }
 
@@ -575,6 +582,7 @@ void TadaridaMainWindow::blockUnblock(bool acdesac)
         _btnOpenPreviousWav->setEnabled(condi);
         _btnOpenNextWav->setEnabled(condi);
     }
+    //if(acdesac) MustCancel = false;
 }
 
 void TadaridaMainWindow::infoShow(QString mess)
@@ -595,8 +603,32 @@ void TadaridaMainWindow::matchingInfoTreat(int nbeav,int nbeap,int nbere)
     _tagsNumberFinal  += nbere;
 }
 
+void TadaridaMainWindow::detecInfoTreat(int nbt,int nbe)
+{
+    QString mess,singpur,mess2;
+    _nbTreated =  _stockNbTreated + nbt;
+    _nbError = _stockNbError + nbe;
+    if(_nbTreated>0)
+    {
+        if(_nbTreated>1) singpur ="s"; else singpur = "";
+        mess = QString::number(_nbTreated) + " fichier"+singpur+" traité"+singpur;
+    }
+    if(_nbError>0)
+    {
+        if(_nbError>1) singpur =QString("s"); else singpur = QString("");
+        mess2 = QString::number(_nbError) + " fichier"+singpur+" non traité"+singpur;
+        if(_nbTreated==0) mess = mess2; else mess += " - " + mess2;
+    }
+    _lblPhase1Message2->setText(mess);
+    _treatDirMess = mess;
+}
+
 void TadaridaMainWindow::detecFinished()
 {
+     _stockNbTreated += _nbTreated;
+     _stockNbError += _nbError;
+     _nbTreated = 0;
+     _nbError = 0;
     _btnPause->setEnabled(false);
     _prgProgression->setFormat("");
     _prgProgression->setValue(10000);
@@ -846,7 +878,8 @@ void TadaridaMainWindow::initializeGlobalParameters()
     _lowThreshold = -4;
     _qR = 5;
     _qN = 10;
-    _withNewParams = false;
+    //_withNewParams = false;
+    // mis à true le 27/5/2015 pour que les nx paramètres soient inclus dans un retraitement général
     _withTimeCsv = false;
 }
 
@@ -992,7 +1025,19 @@ bool TadaridaMainWindow::directoryTreat(QDir repToTreat,bool subDirTreat)
         _directoriesRetreatMode = false;
         _isGeneralReprocessing=false;
         _oneDirProblem = false;
+        _nbTreated = 0;
+        _nbError = 0;
+        _stockNbTreated = 0;
+        _stockNbError = 0;
+
         _clock->start(50);
+    }
+    else
+    {
+        QMessageBox::warning(this, "Traitement impossible",
+                 "Aucun fichier wav !",QMessageBox::Ok);
+        blockUnblock(true);
+        return(false);
     }
     _logText << "___ directorytreat __fin"  << endl;
     return(true);
@@ -1064,8 +1109,16 @@ void TadaridaMainWindow::manageDetecCall()
                     {
                         if(!MustCancel)
                         {
-                            QMessageBox::warning(this, tr("Remarque"), "Fin du traitement du dossier", QMessageBox::Ok);
-                            _logText << endl << "Fin de traitement du dossier" << endl;
+                            QString mess = _treatDirMess;
+                            if((_nbError+_stockNbError)>0) mess += " (voir error.log)";
+                            if((_stockNbTreated+_nbTreated)>0 || (_nbError>0+_stockNbError)>0)
+                            QMessageBox::warning(this,"Fin du traitement", mess, QMessageBox::Ok);
+                            _logText << endl << mess << endl;
+                            //_logText << "...mustcancel = false" << endl;
+                        }
+                        else
+                        {
+                            //_logText << "...mustcancel = true" << endl;
                         }
                     }
 
@@ -1204,7 +1257,7 @@ bool TadaridaMainWindow::detecCall(QDir dirToReprocess,bool ReprocessingCase)
     _detec->_detecTreatment->SetGlobalParameters(_timeExpansion,_detectionThreshold,_stopThreshold,
                  _minimumFrequency,_overlapsNumber,
                  _useValflag,_jumpThreshold,_widthBigControl,_widthLittleControl,
-                 _highThreshold,_lowThreshold,_qR,_qN,_withNewParams);
+                 _highThreshold,_lowThreshold,_qR,_qN,_paramVersion);
     _logText << "detecCall 4" << endl;
     bool generateImagesDat = false;
     if(_tadaridaMode==ETIQUETAGE)
@@ -1219,12 +1272,7 @@ bool TadaridaMainWindow::detecCall(QDir dirToReprocess,bool ReprocessingCase)
     {
         _logText << "avant lancement de detec" << endl;
         _btnPause->setEnabled(true);
-        if(_detec->Treatment()<0)
-        {
-            QMessageBox::critical(this, tr("Erreur"), tr("Traitement impossible !"), QMessageBox::Ok);
-            blockUnblock(true);
-            return(false);
-        }
+        _detec->Treatment();
     }
     _logText << "detecCall 6" << endl;
     return(true);
@@ -1257,14 +1305,18 @@ bool TadaridaMainWindow::writeDirectoryVersion(QString dirpath)
 
 void TadaridaMainWindow::createWindow()
 {
+    setStyleSheet("background-image : url(tadarida.jpg);");
     _pmx = 4; _pmy=4;
     _margx = 8; _margy = 8;
-    _lt  = 860; _ht  = 600;
+    if(_tadaridaMode == SIMPLE) _lt = 1100;
+    else _lt  = 860;
+    _ht  = 600;
     _lcw = _lt-_pmx; _hcw = _ht - _pmy;
     _lg1= (_lcw-_pmx*4)/2; _hg1 = _hcw-_pmy*3;
     _lbou = 150; _hbou=30; _lbi = 30; _hbi = 30;
     // £££££
-    _hab1 = (_hg1*2)/19;
+    _hab1 = (_hg1*2)/17;
+    //_hab1 = _hg1/9;
     if(_tadaridaMode==SIMPLE) _ltc = _lt/2; else _ltc = _lt;
     resize(_ltc, _ht);
     QFont font1("Times New Roman",11);
@@ -1283,11 +1335,13 @@ void TadaridaMainWindow::createWindow()
     _grpPhase1 = new QGroupBox(_mainWidget);
     _grpPhase1->setGeometry(_pmx,_pmy,_lg1,_hg1);
     _grpPhase1->setFont(font1);
-    _lblWavDirectory = new QLabel(_grpPhase1);
+    _grpPhase1->setStyleSheet("background-image : url(none);");
+
+    _lblWavDirectory = new MyQLabel(_grpPhase1);
     int larl5= (_lg1-_margx*4)/5;
     _lblWavDirectory->setGeometry(_margx,_hab1*3,larl5*2,_hbou);
     _lblWavDirectory->setFont(font2);
-    _lblTreatedDirectory = new QLabel(_grpPhase1);
+    _lblTreatedDirectory = new MyQLabel(_grpPhase1);
     _lblTreatedDirectory->setGeometry(_margx*2+larl5*2,_hab1*3,larl5*2,_hbou);
     _lblTreatedDirectory->setFont(font1);
     _ledTreatedDirectory = new QLineEdit(_grpPhase1);
@@ -1325,18 +1379,30 @@ void TadaridaMainWindow::createWindow()
     _btnCancel->setGeometry(mar6*2+_lbou,_hab1*6,_lbou,_hbou);
     _btnCancel->setFont(font1);
     _btnCancel->setEnabled(false);
-    _lblPhase1Message = new QLabel(_grpPhase1);
+    _lblPhase1Message = new MyQLabel(_grpPhase1);
     _lblPhase1Message->setGeometry(_margx,_hab1*7,_lg1-_margx*2,_hbou);
-    _lblPhase1Message->setFont(font1);
-    _lblPhase1Message2 = new QLabel(_grpPhase1);
+    _lblPhase1Message->setFont(font2);
+    _lblPhase1Message2 = new MyQLabel(_grpPhase1);
     _lblPhase1Message2->setGeometry(_margx,(_hab1*31)/4,_lg1-_margx*2,_hbou);
-    _lblPhase1Message2->setFont(font1);
-    _lblPhase1Title = new QLabel(_grpPhase1);
-    _lblPhase1Title->setGeometry(_lg1/8,(_hab1*3)/4,_lg1-_margx*2,_hbou);
+    _lblPhase1Message2->setFont(font2);
+    //
+    //
+    _lblPhase1Title = new MyQLabel(_grpPhase1);
     _lblPhase1Title->setText("Traitement des fichiers de sons");
     _lblPhase1Title->setFont(fontG);
+
+    _lblPhase1Title->setGeometry(_lg1/4,(_hab1*7)/10,(_lg1*2)/3,_hbou);
+    _labelImage = new MyQLabel(_grpPhase1);
+    //_labelImage->setGeometry(_margx*3,_margy*3,_hbou*3,_hbou*2);
+    _labelImage->setGeometry(_margx,_margy,_hbou*3,_hbou*3);
+    _labelImage->setPixmap(QPixmap("PictoVigieChiro.jpg"));
+    _labelImage->show();
+
+
     if(_tadaridaMode==ETIQUETAGE)
     {
+        //_lblPhase1Title->setGeometry(_lg1/6,(_hab1*7)/10,_lg1-_margx*2,_hbou);
+
         _chkCreateImage = new QCheckBox(_grpPhase1);
         _chkCreateImage->setGeometry(_margx,_hab1*5,_lg1/2,_hbou);
         _chkCreateImage->setEnabled(true);
@@ -1347,13 +1413,14 @@ void TadaridaMainWindow::createWindow()
         _grpPhase2 = new QGroupBox(_mainWidget);
         _grpPhase2->setGeometry(_pmx*2+_lg1,_pmy,_lg1,_hg1);
         _grpPhase2->setFont(font1);
+        _grpPhase2->setStyleSheet("background-image : url(none);");
         int larw2 = (_lg1*3)/4;
         int mxw2 = _lg1/8;
-        _lblPhase2Title = new QLabel(_grpPhase2);
-        _lblPhase2Title->setGeometry(mxw2,(_hab1*3)/4,_lg1-_margx*2,_hbou);
+        _lblPhase2Title = new MyQLabel(_grpPhase2);
+        _lblPhase2Title->setGeometry(mxw2*3,(_hab1*7)/10,_lg1/3,_hbou);
         _lblPhase2Title->setFont(fontG);
         _lblPhase2Title->setText("Etiquetage");
-        _lblBase = new QLabel(_grpPhase2);
+        _lblBase = new MyQLabel(_grpPhase2);
         _lblBase->setGeometry(mxw2,_hab1*2,larw2,_hbou);
         _lblBase->setFont(font1);
         _lblBase->setText("Base : ");
@@ -1378,7 +1445,7 @@ void TadaridaMainWindow::createWindow()
     }
     else
     {
-        _lblTemps = new QLabel(_grpPhase1);
+        _lblTemps = new MyQLabel(_grpPhase1);
         _lblTemps->setGeometry(_margx,_hab1*2,larl5*2,_hbou);
         _lblTemps->setFont(font1);
         _lblTemps->setVisible(true);
@@ -1389,10 +1456,6 @@ void TadaridaMainWindow::createWindow()
         QStringList lte;
         lte << "10" << "1";
         _comboTemps->insertItems(0,lte);
-
-
-
-
     }
     updatesTexts();
 }
@@ -1400,11 +1463,11 @@ void TadaridaMainWindow::createWindow()
 void TadaridaMainWindow::updatesTexts()
 {
     setWindowTitle("Tadarida");
-    _chkSubDirectories->setText("Traiter les sous-dossiers");
+    _chkSubDirectories->setText("Inclure les sous-dossiers");
     _lblWavDirectory->setText("Dossier des fichiers WAV");
     _btnBrowse->setText("Parcourir");
     _btnPause->setText(QString());
-    _btnOk->setText("Ok");
+    _btnOk->setText("Traiter");
     _btnCancel->setText("Annuler");
     if(_tadaridaMode==ETIQUETAGE)
     {

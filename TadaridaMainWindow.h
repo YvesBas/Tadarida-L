@@ -26,6 +26,7 @@ enum MODES {SIMPLE,ETIQUETAGE};
 class Param;
 class Recherche;
 class fenim;
+class MyQLabel;
 
 class RematchClass
 {
@@ -41,10 +42,11 @@ public:
     int nbe2;
     int nbc2;
     bool Ok;
-private:
-    QMainWindow *_parent;
     Fenim *_fenim1;
     Fenim *_fenim2;
+
+private:
+    QMainWindow *_parent;
     QString _fileName;
     QString _wavPath;
     QDir _baseDayDir;
@@ -76,6 +78,7 @@ signals:
     
 private slots:
     void detecFinished();
+    void detecInfoTreat(int,int);
     void exitProgram();
     void infoShow(QString);
     void infoShow2(QString);
@@ -176,14 +179,15 @@ private:
     bool             _isGeneralReprocessing;
     bool             _isRechercheOpen;
     QString          _lastWav;
-    QLabel           *_lblBase;
-    QLabel           *_lblWavDirectory;
-    QLabel           *_lblPhase1Message;
-    QLabel           *_lblPhase1Message2;
-    QLabel           *_lblPhase1Title;
-    QLabel           *_lblPhase2Title;
-    QLabel           *_lblTemps;
-    QLabel           *_lblTreatedDirectory;
+    MyQLabel           *_lblBase;
+    MyQLabel           *_lblWavDirectory;
+    MyQLabel           *_lblPhase1Message;
+    MyQLabel           *_lblPhase1Message2;
+    MyQLabel           *_lblPhase1Title;
+    MyQLabel           *_lblPhase2Title;
+    MyQLabel           *_lblTemps;
+    MyQLabel           *_lblTreatedDirectory;
+    MyQLabel           *_labelImage;
     QLineEdit      *_ledTreatedDirectory;
     QComboBox        *_comboTemps;
     int                    _lbou,_hbou,_lbi,_hbi; // sizes of buttons
@@ -227,10 +231,15 @@ private:
     int _lowThreshold;
     int _qR;
     int _qN;
-    bool _withNewParams;
+    int _paramVersion;
     bool _withTimeCsv;
     //
     bool _oneDirProblem;
+    int _nbTreated;
+    int _nbError;
+    int _stockNbTreated;
+    int _stockNbError;
+    QString _treatDirMess;
 };
 
 #endif // MAINWINDOW_H
