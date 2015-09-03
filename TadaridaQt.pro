@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui widgets
+QT       += core gui widgets network
 
 
 TARGET = TadaridaQt
@@ -26,7 +26,8 @@ SOURCES += main.cpp\
     detec.cpp \
     TadaridaMainWindow.cpp \
     recherche.cpp \
-    detectreatment.cpp
+    detectreatment.cpp \
+    transparameters.cpp
 
 HEADERS  += \
     fenim.h \
@@ -36,7 +37,8 @@ HEADERS  += \
     detec.h \
     TadaridaMainWindow.h \
     recherche.h \
-    detectreatment.h
+    detectreatment.h \
+    transparameters.h
 
 INCLUDEPATH += "C:/Program Files (x86)/Mega-Nerd/libsndfile/include" "Headers" 
 

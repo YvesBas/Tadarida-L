@@ -11,36 +11,37 @@ class RematchClass;
 #include <QDir>
 #include <QFile>
 #include <QMainWindow>
+#include <QThread>
 #include <QtCore/qmath.h>
 #include <QTextStream>
-#include <QTimer>
 #include <QProcess>
 #include "sndfile.h"
 #include "fftw3.h"
 #include "detectreatment.h"
+#include "TadaridaMainWindow.h"
 
+class TadaridaMainWindow;
 
-class Detec : public QObject
+class Detec : public QThread
 {
     Q_OBJECT
 public:    
-    explicit Detec(QMainWindow* parent = 0);
+    explicit Detec(QMainWindow* parent = 0,int iThread=0);
     ~Detec();
+    void run();
     bool InitializeDetec(const QStringList&, QString,bool,int,int,bool,bool,RematchClass *);
     void Pause();
     void Resume();
     void SetGlobalParameters(int,int,int,int,int,
                              bool,int,int,int,int,int,int,int);
-    void Treatment();
 
+    TadaridaMainWindow *PDL;
     DetecTreatment    *_detecTreatment;
-    bool                         _errorFileOpen;
-    QTextStream          _errorStream;
     bool                         _imageData;
     QTextStream          _timeStream;
     bool                         _timeFileOpen;
     bool                 _withTimeCsv;
-    bool                         IsRunning;
+    //bool                         IsRunning;
     QTextStream          _logText;
     int                             _logVersion;
     bool                         MustCancel;
@@ -55,17 +56,25 @@ public:
     int _tE;
     int _numVer;
     bool _xmoitie;
+    int IThread;
+    bool IDebug;
+    QString                     _errorFilePath;
+    QFile                        _errorFile;
+    bool                         _errorFileOpen;
+    QTextStream          _errorStream;
 
 signals:
     void errorDetec(int);
     void information(QString);
-    void information2(QString);
+    void information2(QString,bool);
+    void information2b(QString,bool);
     void information3(int,int,int);
-    void information4(int,int);
+    void information4(int,int,int);
     void moveBar(float);
-    void threadFinished();
+    void threadFinished(int);
     void infoTrace(QString,QString,QString,QString,QString,QString,QString,QString,QString,QString);
     void dirProblem();
+
 private slots:
     bool treatOneFile();
 
@@ -115,7 +124,6 @@ private:
     QString                      _datPath;
     int                          _dirLogVersion;
     int                          _dirUserVersion;
-    QFile                        _errorFile;
     QFile                        _timeFile;
     Fenim                        *_fenim;
     Fenim                        *_fenim2;

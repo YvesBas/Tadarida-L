@@ -17,11 +17,11 @@
 
 #include <QPoint>
 
+#define	FFT_HEIGHT_MAX 4096
 #define	FFT_HEIGHT_HALF_MAX 2048
 #define FREQ_MAX 250 // KHz
 //£ #define MAXLARCRI 10000
 #define MAXLARCRI 10000
-#define MAXHEIGHT 500
 #define MAXHEIGHT 500
 #define PI	3.14159265358979
 
@@ -32,7 +32,7 @@
 #define SONOGRAM_WIDTH_MIN 64
 
 //£ #define MAXCRI 2000
-#define MAXCRI 2000
+#define MAXCRI 1500
 #define NCRETES 5
 #define EMIN -100
 
@@ -67,11 +67,15 @@ enum NUMPAR {StTime,Dur,PrevSt,Fmax,Fmin,BW,FPk,FPkD,TPk,Slope,ISlope,HCF,FIF,TH
      RAHP2,RAHP4,RAHP8,RAHP16,RAHE2,RAHE4,RAHE8,RAHE16,
      NBPAR};
 
+enum NUMERROR {FNREC,MCNT,DTP,DTG,TNT,NTERRORS};
+
+
 class ParamToSave
 {
 public:
     ParamToSave(int,int,QString);
     ParamToSave(int,int,QString,int);
+    ParamToSave(int,int,QString,int,int);
     ParamToSave();
     ~ParamToSave();
 
@@ -80,6 +84,7 @@ public:
     QString ColumnTitle;
     QString InfoLabel;
     int NeedVer;
+    int LimVer;
 };
 
 
@@ -94,7 +99,7 @@ public:
     void InitializeDetecTreatment();
     void saveDatFile(QString wavFile);
     void SetDirParameters(QString,QString,bool,QString,QString);
-    void SetGlobalParameters(int,int,int,int,int,bool,int,int,int,int,int,int,int,int);
+    void SetGlobalParameters(int,int,int,int,int,int,bool,int,int,int,int,int,int,int,int,int,int);
     void sortFloatIndArray(float *,int,int *);
 
     QVector< ParamToSave >       _vectPar;
@@ -107,6 +112,11 @@ public:
     float                        _energyShapeThreshold;
     float                        _energyStopThreshold;
     char**                       _pointFlagsArray;
+    int NError;
+    int TabErrors[NTERRORS];
+    bool                         *_flagGoodColInitial;
+    bool                         *_flagGoodCol;
+    bool _withSilence;
 
 
 private:
@@ -117,7 +127,7 @@ private:
     void correctNoise();
     void detectsParameter2();
     void initVectorParams();
-    bool openWavFile(QString &wavFile);
+    bool openWavFile(QString &);
     void saveParameters(const QString&);
     void saveCompressedParameters(const QString&);
     //void expandParameters(const QString&);
@@ -125,6 +135,8 @@ private:
     void sortWaves();
     void sortFloatArray(float *,int);
     void sortIntArrays(int *,int,int *);
+    void aff(QString,qint64,int);
+    bool determineLeftOrRight(QString &);
 
     // attributes
     Detec                        *_detec;
@@ -152,7 +164,7 @@ private:
     char *                       _charTabYX;
     char *                       _charYEmaxPerX;
     float                        *_coeff;
-    fftwf_complex*	             _complexInput;
+    //fftwf_complex*	             _complexInput;
     QFile                        _compressedParametersFile;
     QDataStream                  _compressedParametersStream;
     int                          _paramVersion;
@@ -166,9 +178,8 @@ private:
     float                        *_energyMoyCol;
     QFile                        _expandParametersFile;
     QDataStream                  _expandParametersStream;
-    bool                         *_flagGoodCol;
     int			                 _fftHeight;
-    fftwf_complex*	             _fftRes;
+    //fftwf_complex*	             _fftRes;
     float                        _freqCallMin;
     int                          _freqMin;
     int                          **_harmonic;
@@ -188,7 +199,6 @@ private:
     int                          _minY;
     float                        _msPerX;
     int	                         _nbo;
-    float**                      _noiseArray;
     int                          _numberCallParameters;
     int                          *_numberPixelsPerX;
     int                          *_numberPixelsPerY;
@@ -197,7 +207,11 @@ private:
     float**                      _valuesToCompressArray;
 
     int                          _patience;
-    fftwf_plan		             _plan;
+    //fftwf_plan		         _plan;
+    fftwf_plan		             *_pPlan;
+    int                          _iH;
+    fftwf_complex*	             _complexInput;
+    fftwf_complex*	             _fftRes;
     QString                      ResultSuffix;
     QString                      ResultCompressedSuffix;
     bool                         _saveTitleLine;
@@ -210,6 +224,8 @@ private:
     float                        *_tabY;
     float                        **_tabYX;
     int	                         _timeExpansion;
+    int	                         _timeExpansionLeft;
+    int	                         _timeExpansionRight;
     bool                         _treating;
     QFile                        _txtFile;
     QString                      _txtPath;
@@ -240,19 +256,26 @@ private:
     //£ int                     *_yMinPerX;
     quint16                   *_yMinPerX;
     int                          **_ypm;
+    char                     *_charSonogramArray;
+    char                     *_charPointFlagsArray;
     // ajouté pour nouveaux paramètres
     bool _useValflag;
     int _jumpThreshold;
     int _widthBigControl;
     int _widthLittleControl;
-    int _highThreshold;
-    int _lowThreshold;
+    int _highThresholdJB;
+    int _lowThresholdJB;
+    int _lowThresholdC;
+    int _highThresholdC;
     int _qR;
     int _qN;
     bool _fileProblem;
-    int *_tabr1;
     //bool _withNewParams;
-
+    int *sortMp;
+    int *invMp;
+    int *xMp;
+    bool _firstFile;
+    //
 };
 
 #endif // DETECTREATMENT_H

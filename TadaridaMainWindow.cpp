@@ -4,7 +4,6 @@
 #include "fenim.h"
 #include "recherche.h"
 
-
 RematchClass::RematchClass(QMainWindow *parent)
 {
     _parent = parent;
@@ -41,7 +40,6 @@ int RematchClass::PostMatch(bool initial,QString recupVersion,int *cpma)
     nbe2=0;
     nbc2=0;
     TadaridaMainWindow *tgui = (TadaridaMainWindow *)_parent;
-    //tgui->_logText << "postmatch1 "  << _fileName << endl;
     if(initial)
     {
         _fenim2 = new Fenim(_parent,_wavPath,_fileName,_baseDayDir,false,true,2,"2",0,0);
@@ -55,56 +53,25 @@ int RematchClass::PostMatch(bool initial,QString recupVersion,int *cpma)
     }
     if(nbe1>0)
     {
-        //tgui->_logText << "postmatch2 "  << _fileName << endl;
         nbe2 = _fenim2->rematcheEtiquettes(_fenim1,initial,recupVersion,cpma);
-        //tgui->_logText << "postmatch3 "  << _fileName << endl;
-    }
-    else
-    {
-        //tgui->_logText << "pas de rematchage car pas d'étiquette dans le fichier antérieur' "  << _fileName << endl;
     }
     delete _fenim1;
-    //tgui->_logText << "postmatch4 "  << _fileName << endl;
     return(nbe2);
 }
 
 int RematchClass::EndMatch()
 {
     TadaridaMainWindow *tgui = (TadaridaMainWindow *)_parent;
-    //tgui->_logText << "endmatch1 " <<  endl;
     _fenim2->EnregEtiquettes();
-    //tgui->_logText << "endmatch2 " <<  endl;
     delete _fenim2;
-    //tgui->_logText << "endmatch3 " <<  endl;
     return(0);
 }
 
 TadaridaMainWindow::TadaridaMainWindow(QWidget *parent) : QMainWindow(parent)
 {
-
     _logFile.setFileName(QString("tadarida.log"));
     _logFile.open(QIODevice::WriteOnly | QIODevice::Text);
     _logText.setDevice(&_logFile);
-    /*
-    _traceFile.setFileName(QString("trace.txt"));
-    _traceFile.open(QIODevice::WriteOnly | QIODevice::Text);
-    _traceText.setDevice(&_traceFile);
-    _traceText.setRealNumberNotation(QTextStream::FixedNotation);
-    _traceText.setRealNumberPrecision(2);
-    _traceText << "Répertoire    "<< '\t'
-               << "Fichier       " << '\t'
-               << "Sens    " << '\t'
-               << "Colonne (x) " << '\t'
-               << "Colonne (ms) " << '\t'
-               << "Début descendu" << '\t'
-               << "Moy. avant (l)"<< '\t'
-               << "Moy. avant (L)" << '\t'
-               << "Moy. après (l)" << '\t'
-               << "Moy. après (L)"
-               << endl;
-    */
-
-    //
     _iniPath = QString("/config/config.ini");
     CanContinue = true;
     MustEnd = false;
@@ -113,17 +80,47 @@ TadaridaMainWindow::TadaridaMainWindow(QWidget *parent) : QMainWindow(parent)
     _lastWav = QString("");
     _tadaridaMode = SIMPLE; // mode simple
     _userVersion = 0;
-    _programVersion = 20;
+    _programVersion = 21;
+    // 21 : version avec enregistrement de _floagGoodCol...
     _baseDir   = QDir::current();
-    _paramVersion = 1;
+    _paramVersion = 2;
+    _tadaridaMode = SIMPLE;
+    _maxThreads = 4; // (à remettre à 1)
+    // attention _maxTheads pourra bouger par config.ini et aussi en cours de session
+    initThreads();
+    _transferAuthorized = false;
+    _transLastTransfer = true;
+    _transDirPath = "";
+    TransSuffix = "";
+    TransAddress="";
+    TransLogin="";
+    TransPassword="";
+    TransCommand="";
+    TransChangeDirectory="";
+    TransGetCommand = false;
+    //
+    _transLastTransferedNumber = 0;
+    _transLastFilesNumber = 0;
+    _pMessageBox = 0;
+
+    _alreadyMessage = false;
+    IDebug = false;
+   //
+    DayPath = "";
+    SearchDir1 = "";
+    SearchDir2 = "";
+    //
+    _timeExpansionLeft = 10;
+    _timeExpansionRight = 0;
+
     readConfigFile();
+    //
     ResultSuffix = "ta";
     if(_tadaridaMode==ETIQUETAGE)
     {
         _previousWav = QString("");
         _nextWav = QString("");
         _imagesDirectory   = QDir::current();
-        DayPath = "";
         _baseUpToDate=false;
         _dayBaseUpToDate=false;
         _baseIniFile = QString("/version.ini");
@@ -140,8 +137,9 @@ TadaridaMainWindow::TadaridaMainWindow(QWidget *parent) : QMainWindow(parent)
     {
         _canTag = false;
     }
-    _remObject = new RematchClass(this);
-    _detec = new Detec(this);
+    for(int i=0;i<MAXTHREADS;i++) _remObject[i] = new RematchClass(this);
+    // -----------------------------------------------
+    // -----------------------------------------------
     initializeGlobalParameters();
     createWindow();
     _isFenimWindowOpen = false;
@@ -149,19 +147,14 @@ TadaridaMainWindow::TadaridaMainWindow(QWidget *parent) : QMainWindow(parent)
     connect(_btnBrowse,SIGNAL(clicked()),this,SLOT(on_btnBrowse_clicked()));
     connect(_ledTreatedDirectory,SIGNAL(textChanged(const QString&)),this,SLOT(on_ledTreatedDirectory_textChanged(const QString&)));
     connect(_btnOk,SIGNAL(clicked()),this,SLOT(on_btnOk_clicked()));
+    if(_transferAuthorized) 
+	{
+		connect(_btnTransfer,SIGNAL(clicked()),this,SLOT(on_btnTransfer_clicked()));
+		connect(_btnResume,SIGNAL(clicked()),this,SLOT(on_btnResume_clicked()));
+	}
+
     QObject::connect(_btnCancel, SIGNAL(clicked(bool)), this, SLOT(treatCancel()));
-    connect(_btnPause,SIGNAL(toggled(bool)),this,SLOT(on_btnPause_toggled(bool)));
-    connect(_detec, SIGNAL(threadFinished()),this, SLOT(detecFinished()));
-    connect(_detec, SIGNAL(moveBar(float)),this, SLOT(updateProgBarValue(float)));
-    connect(_detec, SIGNAL(information(QString)),this, SLOT(infoShow(QString)));
-    connect(_detec, SIGNAL(information2(QString)),this, SLOT(infoShow2(QString)));
-    connect(_detec, SIGNAL(information3(int,int,int)),this, SLOT(matchingInfoTreat(int,int,int)));
-    connect(_detec, SIGNAL(information4(int,int)),this, SLOT(detecInfoTreat(int,int)));
-    /*
-    connect(_detec, SIGNAL(infoTrace(QString,QString,QString,QString,QString,QString,QString,QString,QString,QString)),
-               this, SLOT(storeTrace(QString,QString,QString,QString,QString,QString,QString,QString,QString,QString)));
-    */
-    connect(_detec, SIGNAL(dirProblem()),this, SLOT(treatDirProblem()));
+    //connect(_btnPause,SIGNAL(toggled(bool)),this,SLOT(on_btnPause_toggled(bool)));
     _clock = new QTimer(this);
     connect(_clock,SIGNAL(timeout()),this,SLOT(manageDetecCall()));
     setWindowTitle("Tadarida");
@@ -229,22 +222,33 @@ TadaridaMainWindow::TadaridaMainWindow(QWidget *parent) : QMainWindow(parent)
     }
     else
     {
-        connect(_comboTemps,SIGNAL(activated(const QString&)), this, SLOT(selectTemps(const QString&)));
-
-
+        //connect(_comboTemps,SIGNAL(activated(const QString&)), this, SLOT(selectTemps(const QString&)));
     }
+    connect(_sliderThreads,SIGNAL(valueChanged(int)),this,SLOT(modifyMaxThreads(int)));
+
+	// todo : utilisation de la possibilité de transférer à mettre sous condition de paramètre dans config.ini
+    _transState = TRANSNOTRANS;
+    _transParameters = 0;
+    if(_transferAuthorized)
+    {
+        _transCancel = false;
+        if(!_transLastTransfer) _btnResume->setEnabled(true);
+        _transClock = new QTimer(this);
+        connect(_transClock,SIGNAL(timeout()),this,SLOT(manageTransfer()));
+    }
+    // ---
 }
 
 TadaridaMainWindow::~TadaridaMainWindow()
 {
-    delete _detec;
-    delete _remObject;
+    //delete _detec;
+    for(int i=0;i<_nbDetecCreated;i++) delete _pDetec[i];
+    for(int i=0;i<MAXTHREADS;i++) delete _remObject[i];
     if(_isFenimWindowOpen)
     {
         delete fenim;
     }
     if(_isRechercheOpen) delete _precherche;
-    _logText << "tdmc" << endl;
     _logFile.close();
 }
 
@@ -285,7 +289,6 @@ void TadaridaMainWindow::updateBaseVariables()
 
 bool TadaridaMainWindow::testBase()
 {
-    // _logText << "avant test base ouverte" << endl;
     if(readBaseVersion())
     {
         if(_baseProgramVersion != _programVersion || _baseUserVersion != _userVersion)
@@ -349,22 +352,15 @@ void TadaridaMainWindow::endTadarida()
 
 void TadaridaMainWindow::closeEvent(QCloseEvent* event)
 {
-    //emit endOfMainWindow();
-    _logText << "closeevent" << endl;
-    if(_detec->IsRunning)
+    //if(_detec->isRunning())
+    if(countThreadsRunning()>0)
     {
-        //_logText << "closeevent - passe mustend à true" << endl;
         MustEnd = true;
-        if(!_detec->ReprocessingMode)
-        {
-            MustCancel = true;
-            _detec->MustCancel = true;
-        }
+        treatCancel();
         event->ignore();
     }
     else
     {
-        _logText << "closeevent - accepte fermeture" << endl;
         endTadarida();
         event->accept();
         QMainWindow::closeEvent(event);
@@ -388,6 +384,11 @@ void TadaridaMainWindow::readConfigFile()
     if(imgDir.exists()) _imagesDirectory = imgDir;
     QDir baseDir(settings.value("basePath").toString());
     if(baseDir.exists()) _baseDir = baseDir;
+
+
+    SearchDir1 = settings.value("searchDir1").toString();
+    SearchDir2 = settings.value("searchDir2").toString();
+
     QString jourTraite(settings.value("jourTraite").toString());
     if(QDir(jourTraite).exists()) DayPath = jourTraite;
     settings.endGroup();
@@ -404,7 +405,42 @@ void TadaridaMainWindow::readConfigFile()
     if(mode==ETIQUETAGE) _tadaridaMode = ETIQUETAGE;
     else _tadaridaMode = SIMPLE;
     _paramVersion = settings.value("paramVersion").toInt();
-
+    _timeExpansionLeft = settings.value("timeExpansionLeft").toInt();
+    _timeExpansionRight = settings.value("timeExpansionRight").toInt();
+    if(_timeExpansionLeft == 0 && _timeExpansionRight==0) _timeExpansionLeft = 10;
+    //
+    int transferAuthorized = settings.value("transfer").toInt();
+    if(transferAuthorized == 1) _transferAuthorized  = true;
+    else _transferAuthorized  = false;
+    _transLastTransfer= settings.value("transLastTransfer").toInt();
+    _transDirPath = settings.value("transDirPath").toString();
+    TransSuffix = settings.value("transSuffix").toString();
+    TransAddress = settings.value("transAddress").toString();
+    TransLogin = settings.value("transLogin").toString();
+    TransPassword = settings.value("transPassword").toString();
+    if(TransLogin.isEmpty()) StockLogin = false; else StockLogin = true;
+    if(TransPassword.isEmpty()) StockPassword = false; else StockPassword = true;
+    //
+    int transCommand = settings.value("transCommand").toInt();
+    if(transCommand == 1) TransGetCommand  = true;
+    else TransGetCommand  = false;
+    //
+    TransChangeDirectory = settings.value("transChangeDirectory").toString();
+    //
+    _transLastTransferedNumber = settings.value("transLastTransferedNumber").toInt();
+    _transLastFilesNumber = settings.value("transLastFilesNumber").toInt();
+    //
+    int threadAuthorized = settings.value("thread").toInt();
+    if(threadAuthorized == 1) _threadAuthorized  = true;
+    else _threadAuthorized  = false;
+    _maxThreads = settings.value("threadNumber").toInt();
+    if(_maxThreads < 1) _maxThreads =1;
+    else
+    {
+    if(_maxThreads > MAXTHREADS) _maxThreads = MAXTHREADS;
+    }
+    //
+    IDebug = settings.value("debug").toInt();
     settings.endGroup();
 }
 
@@ -423,7 +459,9 @@ void TadaridaMainWindow::writeConfigFile()
         settings.setValue("nextWav",_nextWav);
         settings.setValue("imgPath",_imagesDirectory.path());
         settings.setValue("basePath",_baseDir.path());
-        if(DayPath != "") settings.setValue("jourTraite",DayPath);
+        if(!DayPath.isEmpty()) settings.setValue("jourTraite",DayPath);
+        settings.setValue("searchDir1",SearchDir1);
+        settings.setValue("searchDir2",SearchDir2);
     }
     settings.endGroup();
     settings.beginGroup("version");
@@ -431,6 +469,27 @@ void TadaridaMainWindow::writeConfigFile()
     settings.setValue("user",QString::number(_userVersion));
     settings.setValue("mode",QString::number(_tadaridaMode));
     settings.setValue("paramVersion",QString::number(_paramVersion));
+    settings.setValue("timeExpansionLeft",QString::number(_timeExpansionLeft));
+    settings.setValue("timeExpansionRight",QString::number(_timeExpansionRight));
+
+    settings.setValue("transfer",QString::number((int)_transferAuthorized));
+    settings.setValue("transLastTransfer",QString::number((int)_transLastTransfer));
+    settings.setValue("transDirPath",_transDirPath);
+    settings.setValue("transSuffix",TransSuffix);
+    settings.setValue("transAddress",TransAddress);
+    if(StockLogin) settings.setValue("transLogin",TransLogin);
+    else settings.setValue("transLogin","");
+    if(StockPassword) settings.setValue("transPassword",TransPassword);
+    else settings.setValue("transPassword","");
+    //settings.setValue("transCommand",TransCommand);
+    settings.setValue("transCommand",QString::number((int)TransGetCommand));
+    settings.setValue("transChangeDirectory",TransChangeDirectory);
+    //
+    settings.setValue("threadNumber",QString::number(_maxThreads));
+    //
+    settings.setValue("transLastTransferedNumber",QString::number((int)_transLastTransferedNumber));
+    settings.setValue("transLastFilesNumber",QString::number((int)_transLastFilesNumber));
+    settings.setValue("debug",QString::number((int)IDebug));
     settings.endGroup();
 }
 
@@ -456,7 +515,6 @@ void TadaridaMainWindow::writeLastTexts()
 bool TadaridaMainWindow::readBaseVersion()
 {
     QString cbase = _baseDir.path()+ _baseIniFile;
-    //_logText << "rbv cbase=" << cbase << endl;
     if(!QFile::exists(cbase))
     {
         _logText << "rbv retour fichier ini " << cbase << "n'existe pas !" << endl;
@@ -487,6 +545,7 @@ void TadaridaMainWindow::writeBaseVersion()
 
 void TadaridaMainWindow::on_btnParam_clicked()
 {
+    transStopAutomaticWait();
     /*
     QFile wavFile("c:/wav/wav10000/o.wav");
     if(wavFile.exists())
@@ -503,7 +562,7 @@ void TadaridaMainWindow::on_btnParam_clicked()
     QStringList lte;
     lte << "10" << "1" ;
     // types : 1 entier  2 double 3 booléen 4 entier en combo avec liste en paramètre
-    param->creeParametre(QString("Facteur temp."),&_timeExpansion,4,0,0,0,0,&lte);
+    // param->creeParametre(QString("Facteur temp."),&_timeExpansion,4,0,0,0,0,&lte);
     param->creeParametre(QString("Seuil de detection"),&_detectionThreshold,1,10,30);
     param->creeParametre(QString("Seuil d'arret"),&_stopThreshold,1,5,25);
     param->creeParametre(QString("Frequence minimum"),&_minimumFrequency,1,0,20);
@@ -515,8 +574,10 @@ void TadaridaMainWindow::on_btnParam_clicked()
     param->creeParametre(QString("Seuil de silence "),&_jumpThreshold,1,10,50);
     param->creeParametre(QString("Bande verticale large"),&_widthBigControl,1,10,500);
     param->creeParametre(QString("Bande verticale etroite"),&_widthLittleControl,1,1,20);
-    param->creeParametre(QString("Seuil haut"),&_highThreshold,1,0,20);
-    param->creeParametre(QString("Seuil bas"),&_lowThreshold,1,-20,0);
+    param->creeParametre(QString("Seuil haut"),&_highThresholdJB,1,9,20);
+    param->creeParametre(QString("Seuil bas"),&_lowThresholdJB,1,-20,9);
+    param->creeParametre(QString("Seuil bas 2"),&_lowThresholdC,1,-5,10);
+    param->creeParametre(QString("Seuil haut 2"),&_highThresholdC,1,1,30);
     param->creeParametre(QString("Pourcentage q5"),&_qR,1,1,20);
     param->creeParametre(QString("Nb pixel min q5"),&_qN,1,2,10);
 
@@ -530,6 +591,7 @@ void TadaridaMainWindow::on_btnParam_clicked()
 
 void TadaridaMainWindow::on_btnBrowse_clicked()
 {
+    transStopAutomaticWait();
     QString soundsPath  = QFileDialog::getExistingDirectory( this,
                             tr("Choisir le dossier de fichiers wav"),
                             _wavDirectory.path(),
@@ -541,13 +603,31 @@ void TadaridaMainWindow::on_btnBrowse_clicked()
 
 void TadaridaMainWindow::on_ledTreatedDirectory_textChanged(const QString &txt)
 {
-    if(!txt.isEmpty()) _btnOk->setEnabled(true);
-    else _btnOk->setEnabled(false);
+    if(!txt.isEmpty())
+    {
+        _btnOk->setEnabled(true);
+        if(_transferAuthorized)
+        {
+            _btnTransfer->setEnabled(true);
+            //_btnResume->setEnabled(true);
+        }
+    }
+    else
+    {
+        _btnOk->setEnabled(false);
+        if(_transferAuthorized)
+        {
+            _btnTransfer->setEnabled(false);
+            //_btnResume->setEnabled(false);
+        }
+
+    }
     _wavDirectory.setPath(txt);
 }
 
 void TadaridaMainWindow::on_btnOk_clicked()
 {
+    transStopAutomaticWait();
     if(!getDirectoryType(_wavDirectory.path()))
     {
         QMessageBox::warning(this, tr("Erreur"), tr("Ne pas lancer ce traitement sur un dossier de la base !"), QMessageBox::Ok);
@@ -558,10 +638,711 @@ void TadaridaMainWindow::on_btnOk_clicked()
     directoryTreat(_wavDirectory,_chkSubDirectories->isChecked());
 }
 
+void TadaridaMainWindow::on_btnTransfer_clicked()
+{
+    transStopAutomaticWait();
+    _transNbReprisesAutoConsecutives = 0;
+    openTransParameters();
+    _transState = TRANSINITIALIZE;
+    if(IDebug) _logText << "affecte état INITIALIZE" << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+    _transClock->start(15);
+}
+
+bool TadaridaMainWindow::openTransParameters()
+{
+    TransParametersResponse = 0;
+    if(_transParameters != 0) delete _transParameters;
+    _transParameters     = new TransParameters(this);
+    _transParameters->showWindow();
+}
+
+void TadaridaMainWindow::on_btnResume_clicked()
+{
+    transStopAutomaticWait();
+    _transNbReprisesAutoConsecutives = 0;
+    transReprise();
+}
+
+void TadaridaMainWindow::transReprise()
+{
+    initTransfer(true);
+    _logText << "Reprise du transfert - " << QDateTime::currentDateTime().toString("hh:mm:ss") << endl;
+    _transClock->start(15);
+}
+
+
+void TadaridaMainWindow::commandBegin(int nCommand)
+{
+    _transBegin =  QDateTime::currentDateTime().toMSecsSinceEpoch();
+    _transBegin2 = _transBegin;
+    int nuc = _ftp->currentCommand();
+    if(IDebug) _logText << "Commande " << nCommand << " nuc= " << nuc << " lancée " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+
+}
+
+void TadaridaMainWindow::messageNonModal(QString title,QString mess)
+{
+    if(_alreadyMessage) _pMessageBox->close();
+   _pMessageBox = new QMessageBox( this );
+   //_pMessageBox->setAttribute( Qt::WA_DeleteOnClose );
+   _pMessageBox->setStandardButtons( QMessageBox::Ok );
+   _pMessageBox->setWindowTitle(title );
+   _pMessageBox->setText(mess );
+   _pMessageBox->setIcon(QMessageBox::Information);
+   _pMessageBox->setWindowModality(Qt::NonModal);
+   //msgBox->open( this, SLOT(msgBoxClosed(QAbstractButton*)) );
+   _pMessageBox->show();
+   _alreadyMessage = true;
+}
+
+
+void TadaridaMainWindow::commandEnd(int nCommand,bool error)
+{
+	int memoTransState = _transState;
+    int nuc = _ftp->currentCommand();
+    if(IDebug) _logText << "Commande " << nCommand << " nuc= " << nuc << " terminée " ;
+    if(error) 
+	{
+        if(IDebug) _logText << " avec erreur : " << _ftp->errorString() << " ";
+        if(memoTransState == TRANSCONNECT)
+        {
+            _transState = TRANSERROR;
+            if(IDebug) _logText << "affecte état ERROR" << endl;
+            QString titre = "Echec de la connexion";
+            QString info =  _ftp->errorString() + "  -  " + QDateTime::currentDateTime().toString("hh:mm:ss");
+            _logText << titre << " : " << info  << endl;
+            messageNonModal(titre,info);
+        }
+        if(memoTransState == TRANSLOGIN)
+        {
+            _transState = TRANSERROR;
+            if(IDebug) _logText << "affecte état ERROR (2)" << endl;
+            QString titre = "Echec de l'identification";
+            QString info =  _ftp->errorString() + "  -  " + QDateTime::currentDateTime().toString("hh:mm:ss");
+            _logText << titre << " : " << info  << endl;
+            messageNonModal(titre,info);
+        }
+        if(memoTransState == TRANSPUT)
+        {
+            _transState = TRANSERROR;
+            if(IDebug) _logText << "affecte état ERROR (3)" << endl;
+
+            QString titre = "Transfert interrompu";
+            QString info =  QString("Echec du transfert d'un fichier") + "  -  " + QDateTime::currentDateTime().toString("hh:mm:ss");
+            _logText << titre << " : " << info  << endl;
+            messageNonModal(titre,info);
+
+
+            _transFileCursor--;
+        }
+    }
+    else 
+	{
+        if(IDebug) _logText << " sans erreur " << endl;
+        if(memoTransState == TRANSCONNECT)
+        {
+            _transState = TRANSCONNECTED;
+            if(IDebug) _logText << "affecte état CONNECTED" << endl;
+
+            _logText << "Connexion réussie " ;
+        }
+        if(memoTransState == TRANSDISCONNECT)
+        {
+            _transState = TRANSFINISH;
+            if(IDebug) _logText << "affecte état FINISH" << endl;
+
+            _logText << "Déconnexion réussie " ;
+        }
+
+        if(memoTransState == TRANSPUT)
+        {
+            _transNbReprisesAutoConsecutives = 0; // pour le cas où
+            _logText << "Fin de transfert du fichier " << _transFile << endl;
+            QString singpur = "";
+            if(_transFileCursor > 1) singpur = "s";
+            QString info = QString("Transféré ") + QString::number(_transFileCursor) + " fichier"+singpur
+                    + " sur "  + QString::number(_transFilesNumber);
+            //_logText << info << endl;
+            infoShow2(info,true);
+            _transState = TRANSREADY; // = attente de transfert du prochain fichier
+            if(IDebug) _logText << "affecte état READY" << endl;
+
+        }
+        if(memoTransState == TRANSLOGIN)
+        {
+            _logText << "Login réussi " << endl;
+            if(!TransCommand.isEmpty())
+            {
+                _transState = TRANSBEFORECOMMAND;
+                if(IDebug) _logText << "affecte état BEFORECOMMAND" << endl;
+
+            }
+            else
+            {
+                if(!TransChangeDirectory.isEmpty())
+                {
+                    _transState = TRANSBEFORECD;
+                    if(IDebug) _logText << "affecte état BEFORECD" << endl;
+                }
+                else
+                {
+                    _transState = TRANSREADY;
+                    if(IDebug) _logText << "affecte état READY (2)" << endl;
+                }
+
+            }
+        }
+    }
+    if(memoTransState==TRANSCOMMAND)
+    {
+        if(!TransChangeDirectory.isEmpty())
+        {
+            _transState = TRANSBEFORECD;
+            if(IDebug) _logText << "affecte état BEFORECD (2)" << endl;
+
+        }
+        else
+        {
+            _transState = TRANSREADY;
+            if(IDebug) _logText << "affecte état READY (3)" << endl;
+        }
+    }
+    if(memoTransState==TRANSCHANGEDIRECTORY)
+    {
+        _transState = TRANSREADY;
+        if(IDebug) _logText << "affecte état READY (4)" << endl;
+    }
+    if(IDebug) _logText << "  " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+}
+
+void TadaridaMainWindow::infoSend(qint64 ns,qint64 nt)
+{
+    _transSent = (int) ns;
+}
+
+void TadaridaMainWindow::transStopAutomaticWait()
+{
+    if(!_transferAuthorized) return;
+    if(_transState == TRANSATTENTEREPRISE)
+    {
+        _transState = TRANSNOTRANS;
+        _transClock->stop();
+    }
+}
+
+void TadaridaMainWindow::manageTransfer()
+{
+    _transTime =  QDateTime::currentDateTime().toMSecsSinceEpoch() - _transBegin;
+    //
+    int memoTransState = _transState;
+    //
+    if(memoTransState == TRANSATTENTEREPRISE)
+    {
+        _transCountSecondes ++;
+        if(_transCountSecondes>=60)
+        {
+            _transCountMinutes ++;
+            _transCountSecondes = 0;
+            if(_transCountMinutes >=_transMinutesSeuil)
+            {
+                _transNbReprisesAutoConsecutives++;
+                QString info = QString("Reprise automatique  (") + QString::number(_transNbReprisesAutoConsecutives)+") ";
+                infoShow(info);
+                QString titre = "Transfert relancé";
+                info += "  -  " + QDateTime::currentDateTime().toString("hh:mm:ss");
+                _logText << titre << " : " << info  << endl;
+                messageNonModal(titre,info);
+                _transClock->stop();
+                transReprise();
+                return;
+            }
+        }
+        //_logText << "_transMinutesSeuil = " << _transMinutesSeuil << "  _transCountMinutes = " << _transCountMinutes << endl;
+        QString info = QString("Reprise automatique  dans ")
+                + QString::number(_transMinutesSeuil -_transCountMinutes)+ "mn "
+                + QString::number(_transCountSecondes)+ "sec ";
+                ;
+        infoShow(info);
+        _logText << info << " "<< QDateTime::currentDateTime().toString("hh:mm:ss") << endl;
+    }
+    //
+    if(memoTransState == TRANSDISCONNECT)
+    {
+        if(_transTime > TRANSTIMEOUT2)
+        {
+            _transState = TRANSFINISH;
+if(IDebug) _logText << "affecte état FINISH (2 )" << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+
+            QString info;
+            _logText << "Timeout sur déconnexion - force arrêt objet ftp" << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+        }
+        else return;
+    }
+    if(memoTransState == TRANSCONNECT || memoTransState == TRANSLOGIN)
+    {
+        if(_transTime > TRANSTIMEOUT)
+        {
+            if(IDebug) _logText << "affecte état ERROR (4) " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+            _transState = TRANSERROR;
+
+            QString titre = "Echec de la tentative de transfert";
+            QString info;
+            if(memoTransState == TRANSCONNECT) info = QString("Echec de la tentative de connexion (timeout) ");
+            else info = QString("Echec de l'identification (timeout) ");
+            info += "  -  " + QDateTime::currentDateTime().toString("hh:mm:ss");
+            _logText << titre << " : " << info  << endl;
+            messageNonModal(titre,info);
+        }
+        else return;
+    }
+
+    if(memoTransState == TRANSCOMMAND)
+    {
+        if(_transTime > TRANSTIMEOUT)
+        {
+            if(!TransChangeDirectory.isEmpty())
+            {
+                _transState = TRANSBEFORECD;
+                if(IDebug) _logText << "affecte état BEFORECD (3)" << endl;
+
+            }
+            else
+            {
+                _transState = TRANSREADY;
+                if(IDebug) _logText << "affecte état READY (4)" << endl;
+            }
+        }
+    }
+
+    if(memoTransState == TRANSCHANGEDIRECTORY)
+    {
+        if(_transTime > TRANSTIMEOUT)
+        {
+            _transState = TRANSREADY;
+            if(IDebug) _logText << "affecte état READY (5)" << endl;
+        }
+    }
+
+    if(memoTransState == TRANSPUT)
+    {
+        if(_transSent != _transSentShown)
+        {
+            if(_transSent <= _transSize)
+            {
+                float av = ((float)_transSent)/((float)_transSize);
+                updateProgBarValue(av);;
+            }
+            _transSentShown = _transSent;
+            _transBegin2 = QDateTime::currentDateTime().toMSecsSinceEpoch() ;
+        }
+        else
+        {
+            _transTime2 =  QDateTime::currentDateTime().toMSecsSinceEpoch() - _transBegin2;
+            if(_transTime2 > TRANSTIMEOUT)
+            {
+                _transState = TRANSERROR;
+                if(IDebug) _logText << "affecte état ERROR (5) " << QDateTime::currentDateTime().toString("hh:mm:ss") << endl;
+
+                QString titre = "Transfert interrompu";
+                QString info = QString("Transfert interrompu (timeout) !") + "  -  " + QDateTime::currentDateTime().toString("hh:mm:ss");
+                _logText << titre << " : " << info  << endl;
+                messageNonModal(titre,info);
+
+            }
+        }
+    }
+
+    if(memoTransState == TRANSERROR || memoTransState == TRANSEND)
+	{
+        if(IDebug) _logText << "ftp->state =" << _ftp->state() << endl;
+        if(_ftp->state()==QFtp::Connected || _ftp->state()==QFtp::LoggedIn)
+        {
+            _logText << "Déconnexion lancée " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+            _transState = TRANSDISCONNECT;
+if(IDebug) _logText << "affecte état DISCONNECT (2) " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+
+            _ftp->close();
+            return;
+        }
+        else
+        {
+            if(IDebug) _logText << "N'était pas connecté " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+            _transState = TRANSFINISH;
+            if(IDebug) _logText << "affecte état FINISH (3)" << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+
+        }
+
+	}
+    //
+    if(_transState == TRANSFINISH)
+    {
+        closeTransfer();
+        return;
+    }
+    //
+    if(_transState == TRANSFINISHBEFORE)
+    {
+        closeBeforeTransfer();
+        return;
+    }
+    //
+    if(memoTransState == TRANSINITIALIZE)
+    {
+        if(TransParametersResponse == 1)
+        {
+            _transState = TRANSBEGIN;
+            if(IDebug) _logText << "On a validé les paramètres " << QDateTime::currentDateTime().toString("hh:mm:ss") << endl;
+            if(IDebug) _logText << "affecte état BEGIN (1) " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+            initTransfer(false);
+        }
+        if(TransParametersResponse == 2)
+        {
+            _transState = TRANSFINISHBEFORE;
+            if(IDebug) _logText << "affecte BEFOREFINISH" << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+
+            _logText << "Faute saisie de paramètres validés, on abandonne " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+        }
+        return;
+    }
+    //
+
+    if(memoTransState == TRANSCONNECTED)
+    {
+        _transState = TRANSLOGIN;
+if(IDebug) _logText << "affecte état LOGIN " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+
+        _logText << "Execution du login " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+        //_ftp->login( "pluvier.dore","qnaurd7o" );
+        _ftp->login( TransLogin,TransPassword);
+        return;
+    }
+
+    if(memoTransState == TRANSBEFORECOMMAND)
+    {
+        _transState = TRANSCOMMAND;
+        if(IDebug) _logText << "affecte état COMMAND " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+        int posesp = TransCommand.indexOf((char)32);
+        bool deja=false;
+        QString infodeb;
+        if(posesp>0)
+        {
+            QString debut = TransCommand.left(posesp).toLower();
+            QString suite = TransCommand.right(TransCommand.length()-posesp-1);
+            if(suite.length()>0)
+            {
+                if(debut=="mkdir")
+                {
+                    deja=true;
+                    _ftp->mkdir(suite);
+                    infodeb = QString("exécution de mkdir ") + suite;
+                }
+                if(debut=="rmdir")
+                {
+                    deja=true;
+                    _ftp->rmdir(suite);
+                    infodeb = QString("exécution de rmdir ") + suite;
+                }
+                if(debut=="remove")
+                {
+                    deja=true;
+                    _ftp->remove(suite);
+                    infodeb = QString("exécution de remove ") + suite;
+                }
+            }
+        }
+        if(deja==false)
+        {
+            _ftp->rawCommand(TransCommand);
+            infodeb = QString("exécution de ") + TransCommand;
+        }
+        _logText << infodeb << QDateTime::currentDateTime().toString("hh:mm:ss") << endl;
+        infoShow(infodeb);
+        return;
+    }
+
+    if(memoTransState == TRANSBEFORECD)
+    {
+        _transState = TRANSCHANGEDIRECTORY;
+        if(IDebug) _logText << "affecte état CHANGEDIRECTORY " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+
+        _ftp->cd(TransChangeDirectory);
+        _logText << "cd " << TransChangeDirectory << " " <<  QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+        return;
+    }
+
+    if(memoTransState == TRANSSUITE)
+    {
+        _transState = TRANSCONNECT;
+        if(IDebug) _logText << "affecte état CONNECT " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+
+        _logText << "On lance la connexion " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+        _ftp->connectToHost(TransAddress);
+    }
+
+    if(memoTransState == TRANSREADY)
+    {
+        if(_transFileCursor < _transFilesNumber)
+        {
+            if(MustCancel)
+            {
+                _transCancel = true;
+                _transState = TRANSEND;
+                if(IDebug) _logText << "affecte état END " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+
+                QString s = QString("Transfert interrompu : transféré ")+QString::number(_transFileCursor)+" fichier(s) sur "
+                        +QString::number(_transFilesNumber);
+                _logText << s << " " << QDateTime::currentDateTime().toString("hh:mm:ss") << endl;
+            }
+            else
+            {
+                _transFile = _transFilesList[_transFileCursor];
+                QString pathFile = _wavDirectory.path() + '/' + _transFile;
+                _transFileCursor++;
+                if(QFile::exists(pathFile))
+                {
+                    QFile *f = new QFile(pathFile);
+                    QString info = QString("Transfert de ") + _transFile ;
+                    infoShow(info);
+                    _logText << info << " "<< QDateTime::currentDateTime().toString("hh:mm:ss") << endl;
+                    _transState = TRANSPUT;
+                    if(IDebug) _logText << "affecte état PUT " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+
+                    _transSize = f->size();
+                    _transSent = 0;
+                    _transSentShown = 0;
+                    updateProgBarValue(0.0f);
+                    _ftp->put(f,_transFile);
+                }
+                else _logText << "Fichier non trouvé : " << pathFile << " " << QDateTime::currentDateTime().toString("hh:mm:ss") << endl;
+            }
+        }
+        else
+        {
+            _logText << "Fin du transfert ! " << QDateTime::currentDateTime().toString("hh:mm:ss") << endl;
+            QString s = QString("Transfere ")+QString::number(_transFilesNumber)+" fichiers";
+            QMessageBox::warning(this, "Transfert terminé !",s,QMessageBox::Ok);
+            _transState = TRANSEND;
+            if(IDebug) _logText << "affecte état END (2) " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+
+        }
+
+        return;
+    }
+}
+
+bool TadaridaMainWindow::initTransfer(bool resume)
+{
+    _transBegin =  QDateTime::currentDateTime().toMSecsSinceEpoch();
+    if(IDebug) _logText << "initTransfer() " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+    if(resume)
+    {
+        QDir lastDir(_transDirPath);
+        if(lastDir.exists())
+        {
+            int cltf=_transLastTransferedNumber;
+            // todo : simplifier le cas de la reprise dans la même session :
+            // pas besoin de relire le fichier
+            if(!readTransferedFiles()) return(false);
+            if(_transLastTransferedNumber != cltf)
+            {
+                QString info = QString("Incohérence détectée dans les informations enregistrées : transLastTransferedNumber avant recalcul = ")
+                        +QString::number(cltf) + " # ... après recalcul dans readTransferedFiles : "
+                                         + QString::number(_transLastTransferedNumber);
+                _logText << info << endl;
+                QMessageBox::warning(this, "Opération abandonnée !",info,QMessageBox::Ok);
+                return(false);
+            }
+            _transFilesList = _transLastTransferedFiles;
+            _transFileCursor = _transLastTransferedNumber;
+            _wavDirectory = lastDir;
+            QStringList completeList = lastDir.entryList(QStringList(TransSuffix), QDir::Files);
+            for(int i=0;i<completeList.size();i++)
+            {
+                QString f = completeList[i];
+                if(!_transLastTransferedFiles.contains(f)) _transFilesList << f;
+            }
+        }
+        else
+        {
+            // todo : message...
+            QString info = QString("Répertoire ") + _transDirPath + " non trouvé !";
+            return(false);
+        }
+    }
+    else
+    {
+        _transFilesList = _wavDirectory.entryList(QStringList(TransSuffix), QDir::Files);
+        //_transFilesList = _wavDirectory.entryList(QStringList("*.wav"), QDir::Files);
+        _transFileCursor = 0;
+    }
+    _transFilesNumber = _transFilesList.size();
+    if(!(_transFilesNumber  > _transFileCursor))
+    {
+        QString info = QString("Aucun fichier à transférer !");
+        _logText << info << endl;
+        QMessageBox::warning(this, "Opération abandonnée !",info,QMessageBox::Ok);
+        return(false);
+    }
+    //
+    _logText << (_transFilesNumber- _transFileCursor) << " fichiers à transferer" << endl;
+    _ftp = new QFtp( this );
+    connect(_ftp, SIGNAL(commandStarted(int)), SLOT(commandBegin(int)));
+    connect(_ftp, SIGNAL(commandFinished(int,bool)), SLOT(commandEnd(int,bool)));
+    connect(_ftp, SIGNAL(dataTransferProgress(qint64,qint64)), SLOT(infoSend(qint64,qint64)));
+    _logText << "Début de session ftp" << endl;
+    _transState = TRANSSUITE;
+    if(IDebug) _logText << "affecte état TRANSSUITE" << endl;
+    _transCancel = false;
+    MustCancel = false;
+    blockUnblock(false);
+    return(true);
+}
+
+void TadaridaMainWindow::closeTransfer()
+{
+    _transClock->stop();
+    delete _ftp;
+    _transState = TRANSNOTRANS;
+    if(IDebug) _logText << "affecte état NOTRANS (2) " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+
+    //
+    _logText << "Fin de session FTP " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+    updateProgBarValue(0.0f);
+    _transLastFilesNumber = _transFilesNumber;
+    _transLastTransferedNumber = _transFileCursor;
+    _transDirPath = _wavDirectory.path();
+    // if(_transFileCursor < _transFilesNumber)
+    if(IDebug) _logText << "closetransfer avant enregTransferedfiles: _transFileCursor = " << _transFileCursor << "_translastTransferedNumber = "
+             << _transLastTransferedNumber << endl;
+    if(_transFileCursor > 0 && _transFileCursor < _transFilesNumber)
+    {
+        // enregistrement d'un transfert non terminé à reprendre
+        _transLastTransfer = false;
+        enregTransferedFiles();
+        if(IDebug) _logText << "closetransfer après enregTransferedfiles: _transFileCursor = " << _transFileCursor << "_translastTransferedNumber = "
+                 << _transLastTransferedNumber << endl;
+        // remise en route timer pour éventuelle reprise automatique
+        // TODO ZZZZZ remettre la condition sur non cancel - retiré pour test plus facile
+        if(!_transCancel)
+        {
+            if(_transNbReprisesAutoConsecutives < TRANSMAXREPRISES)
+            {
+                _transState = TRANSATTENTEREPRISE;
+                if(IDebug) _logText << "affecte état ATTENTEREPRISE" << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+                _transCountMinutes = 0;
+                _transCountSecondes = 0;
+                int nc = _transNbReprisesAutoConsecutives;
+                _transMinutesSeuil = TRANSNBMINUTESREPRISE * (1 + (nc>1) + 2 * (nc>2)  + 4 * (nc>3));
+                _transClock->start(1000);
+            }
+            else
+            {
+                //_logText << "affecte état ATTENTEREPRISE" << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+                QString titre = QString("Transfert abandonné !");
+
+                QString info = QString("Nombre maximum de reprises automatiques tenté (!") +QString::number(TRANSMAXREPRISES)+
+                        + ")  -  " + QDateTime::currentDateTime().toString("hh:mm:ss");
+                _logText << titre << " : " << info  << endl;
+                 QMessageBox::warning(this,titre,info,QMessageBox::Ok);
+            }
+        }
+    }
+    else _transLastTransfer = true;
+    blockUnblock(true);
+    _btnResume->setEnabled(!_transLastTransfer);
+    return;
+}
+
+void TadaridaMainWindow::closeBeforeTransfer()
+{
+    if(IDebug) _logText << "passe dans closeBeforeTransfer" << endl;
+    _transClock->stop();
+    _transState = TRANSNOTRANS;
+if(IDebug) _logText << "affecte état NOTRANS (3) " << QDateTime::currentDateTime().toString("hh:mm:ss") << endl;
+
+}
+
+void TadaridaMainWindow::enregTransferedFiles()
+{
+    _transLastTransferedFiles.clear();
+    if(_transFileCursor<1)
+    {
+        _transLastTransfer = true;
+        return;
+    }
+    for(int i = 0;i <_transFileCursor;i++) _transLastTransferedFiles << _transFilesList[i];
+    _transLastTransferedNumber = _transLastTransferedFiles.size();
+    //
+    QString fileTransferedlogFilePath("transfert.log");
+    QFile transfertFile;
+    transfertFile.setFileName(fileTransferedlogFilePath);
+    if(transfertFile.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        QTextStream transfertStream;
+        transfertStream.setDevice(&transfertFile);
+        for(int i=0;i<_transLastTransferedNumber;i++) transfertStream << _transLastTransferedFiles[i] << endl;
+        transfertFile.close();
+    }
+    else
+    {
+        // close();
+    }
+    //
+}
+
+//$$$%%% début
+bool TadaridaMainWindow::readTransferedFiles()
+{
+    _transLastTransferedFiles.clear();
+    //
+    QString fileTransferedlogFilePath("transfert.log");
+    QFile transfertFile;
+    transfertFile.setFileName(fileTransferedlogFilePath);
+    int nread=0;
+    if(transfertFile.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        QTextStream transfertStream;
+        transfertStream.setDevice(&transfertFile);
+        QString nomfi;
+        bool trread = true;
+		QString lnf;
+        while(trread)
+        {
+            if(transfertStream.atEnd()) trread=false;
+            else
+            {
+                lnf = (transfertStream.readLine());
+                if(lnf.isNull()) trread = false;
+                else
+                {
+                    if(lnf.isEmpty()) trread = false;
+                    else
+                    {
+                        nread++;
+                        _transLastTransferedFiles << lnf;
+                    }
+                }
+            }
+        }
+        _transLastTransferedNumber = _transLastTransferedFiles.size();
+        transfertFile.close();
+    }
+    else
+    {
+        // close();
+        _logText << "Echec lecture transfett.log " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+        return(false);
+    }
+    return(true);
+    //
+}
+//$$$%%% fin
+
 void TadaridaMainWindow::treatCancel()
 {
     MustCancel = true;
-    _detec->MustCancel = true;
+    if(!_directoriesRetreatMode)
+    for(int i=0;i<_nbThreadsLaunched;i++) if(_threadRunning[i]) _pDetec[i]->MustCancel = true;
 }
 
 void TadaridaMainWindow::blockUnblock(bool acdesac)
@@ -570,7 +1351,18 @@ void TadaridaMainWindow::blockUnblock(bool acdesac)
     _btnBrowse->setEnabled(acdesac);
     _btnOk->setEnabled(acdesac);
     _ledTreatedDirectory->setEnabled(acdesac);
+    _ledTreatedDirectory->setVisible(acdesac);
+    _lblTreatedDirectory->setVisible(!acdesac);
+    _leftGroup->setEnabled(acdesac);
+    _rightGroup->setEnabled(acdesac);
+    _sliderThreads->setEnabled(acdesac);
+
     _btnCancel->setEnabled(!acdesac);
+    if(_transferAuthorized)
+    {
+        _btnTransfer->setEnabled(acdesac);
+        _btnResume->setEnabled(acdesac && !_transLastTransfer);
+    }
     if(_tadaridaMode==ETIQUETAGE)
     {
         bool condi = acdesac & _canTag;
@@ -590,10 +1382,16 @@ void TadaridaMainWindow::infoShow(QString mess)
     _lblPhase1Message->setText(mess);
 }
 
-void TadaridaMainWindow::infoShow2(QString mess)
+void TadaridaMainWindow::infoShow2(QString mess,bool withLog)
 {
     _lblPhase1Message2->setText(mess);
-    _logText << mess << endl;
+    if(withLog)  _logText << mess << endl;
+}
+
+void TadaridaMainWindow::infoShow3(QString mess,bool withLog)
+{
+    _lblPhase1Message3->setText(mess);
+    if(withLog)  _logText << mess << endl;
 }
 
 void TadaridaMainWindow::matchingInfoTreat(int nbeav,int nbeap,int nbere)
@@ -603,37 +1401,105 @@ void TadaridaMainWindow::matchingInfoTreat(int nbeav,int nbeap,int nbere)
     _tagsNumberFinal  += nbere;
 }
 
-void TadaridaMainWindow::detecInfoTreat(int nbt,int nbe)
+void TadaridaMainWindow::detecInfoTreat(int iThread,int nbt,int nbe)
 {
     QString mess,singpur,mess2;
-    _nbTreated =  _stockNbTreated + nbt;
-    _nbError = _stockNbError + nbe;
-    if(_nbTreated>0)
+    _nbTreated[iThread] = nbt;
+    _nbError[iThread] = nbe;
+    _nbTreatedTotal=0;
+    _nbErrorTotal=0;
+
+    for(int i=0;i<_nbThreadsLaunched;i++)
     {
-        if(_nbTreated>1) singpur ="s"; else singpur = "";
-        mess = QString::number(_nbTreated) + " fichier"+singpur+" traité"+singpur;
+        _nbTreatedTotal +=  _nbTreated[i];
+        _nbErrorTotal     +=  _nbError[i];
+        for(int k=0;k<NTERRORS;k++) _tabError[i][k] =_pDetec[i]->_detecTreatment->TabErrors[k];
     }
-    if(_nbError>0)
+    //_logText << "__WWW__ info recue de thread "     << iThread << "nbt= " << nbt   << "    nbTreatedTotal = " << _nbTreatedTotal << endl;
+    if(_nbTreatedTotal>0)
     {
-        if(_nbError>1) singpur =QString("s"); else singpur = QString("");
-        mess2 = QString::number(_nbError) + " fichier"+singpur+" non traité"+singpur;
-        if(_nbTreated==0) mess = mess2; else mess += " - " + mess2;
+        if(_nbTreatedTotal>1) singpur ="s"; else singpur = "";
+        mess = QString::number(_nbTreatedTotal) + " fichier"+singpur+" traité"+singpur;
     }
-    _lblPhase1Message2->setText(mess);
+    if(_nbErrorTotal>0)
+    {
+        mess2 = createMessageErrors(_nbErrorTotal,_tabError);
+        /*
+        if(_nbErrorTotal>1) singpur =QString("s"); else singpur = QString("");
+        mess2 = QString::number(_nbErrorTotal) + " fichier"+singpur+" non traité"+singpur+" (";
+        bool ffe = false;
+        for(int i=0;i<NTERRORS;i++)
+        {
+            int nee=0;
+            for(int j=0;j<_nbThreadsLaunched;j++) nee += _pDetec[j]->_detecTreatment->TabErrors[i];
+            if(nee>0)
+            {
+                if(ffe==false)   ffe=true; else mess2+=" - ";
+                if(i==0) mess2+=" fichier son non reconnu";
+                if(i==1) mess2+=" multi-channel non traité";
+                if(i==2) mess2+=" durée trop petite";
+                if(i==3) mess2+=" durée trop grande";
+                if(nee<_nbErrorTotal) mess2+=" : "+QString::number(nee);
+            }
+        }
+        mess2+=")";
+        */
+        if(_nbTreatedTotal==0) mess = mess2; else mess += " - " + mess2;
+    }
+    // YYYYYY
+    //_logText << "__WWW__ mess = " << mess << endl;
+    if(_filesNumber>0)
+    {
+        //_logText << "__WWWW__ progbar : " << _nbTreatedTotal+_nbErrorTotal << " sur " << _filesNumber << endl;
+        updateProgBarValue((float)(_nbTreatedTotal+_nbErrorTotal)/(float)_filesNumber);
+
+    }
+    infoShow2(mess,((_nbTreatedTotal+_nbErrorTotal)==_filesNumber));
     _treatDirMess = mess;
 }
 
-void TadaridaMainWindow::detecFinished()
+QString TadaridaMainWindow::createMessageErrors(int netot,int tabe[][NTERRORS])
 {
-     _stockNbTreated += _nbTreated;
-     _stockNbError += _nbError;
-     _nbTreated = 0;
-     _nbError = 0;
-    _btnPause->setEnabled(false);
-    _prgProgression->setFormat("");
-    _prgProgression->setValue(10000);
-    infoShow("");
-    blockUnblock(true);
+    QString m = "";
+    if(netot>0)
+    {
+        QString singpur;
+        if(netot>1) singpur =QString("s"); else singpur = QString("");
+        m = QString::number(netot) + " fichier"+singpur+" non traité"+singpur+" (";
+        bool ffe = false;
+        for(int i=0;i<NTERRORS;i++)
+        {
+            int nee=0;
+            for(int j=0;j<_nbThreadsLaunched;j++) nee += tabe[j][i];
+            if(nee>0)
+            {
+                if(ffe==false)   ffe=true; else m+=" - ";
+                if(i==FNREC) m+=" fichier son non reconnu";
+                if(i==MCNT) m+=" multi-channel non traité";
+                if(i==DTP) m+=" durée trop petite";
+                if(i==DTG) m+=" durée trop grande";
+                if(i==TNT) m+=" fact. temp. non defini";
+                if(nee<netot) m+=" : "+QString::number(nee);
+            }
+        }
+        m+=")";
+    }
+    return(m);
+}
+
+
+void TadaridaMainWindow::detecFinished(int ithread)
+{
+    _stockNbTreated[ithread]+=_nbTreated[ithread];
+    _stockNbTreatedTotal+=_nbTreated[ithread];
+    _stockNbError[ithread]+=_nbError[ithread];
+    _stockNbErrorTotal+=_nbError[ithread];
+    for(int k=0;k<NTERRORS;k++)
+    {
+        //_tabError[ithread][k]+=_pDetec[ithread]->_detecTreatment->TabErrors[k];
+        _stockTabError[ithread][k]+=_pDetec[ithread]->_detecTreatment->TabErrors[k];
+    }
+    fusionErrors(ithread);
 }
 
 void TadaridaMainWindow::updateProgBarValue(float av)
@@ -641,22 +1507,26 @@ void TadaridaMainWindow::updateProgBarValue(float av)
     _prgProgression->setValue(av*10000);
 }
 
+/*
 void TadaridaMainWindow::on_btnPause_toggled(bool checked)
 {
+    transStopAutomaticWait();
     if(checked)
     {
         _logText << "appui sur pause  -  "<< QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
-        _detec->Pause();
+        //_detec->Pause();
     }
     else
     {
         _logText << "appui sur resume  -  "<< QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
-        _detec->Resume();
+        //_detec->Resume();
     }
 }
+*/
 
 void TadaridaMainWindow::on_btnOpenBase_clicked()
 {
+    transStopAutomaticWait();
     QString basePath  = selectBase();
 
     if(!basePath.isEmpty() && basePath != _baseDir.path())
@@ -693,13 +1563,15 @@ QString TadaridaMainWindow::selectBase()
 
 void TadaridaMainWindow::on_btnOpenWav_clicked()
 {
-    QString wavFile  = QFileDialog::getOpenFileName( this, tr("Choisir un fichier wav"),
+    transStopAutomaticWait();
+     QString wavFile  = QFileDialog::getOpenFileName( this, tr("Choisir un fichier wav"),
                                                    _wavDirectory.path(), tr("(*.wav)"));
     if(!wavFile.isEmpty()) openWavTag(wavFile);
 }
 
 void TadaridaMainWindow::on_btnOpenPreviousWav_clicked()
 {
+    transStopAutomaticWait();
     QString wavFile  = _previousWav;
     if(!wavFile.isEmpty()) openWavTag(wavFile);
     else QMessageBox::warning(this, "Attention", "Premier fichier atteint", QMessageBox::Ok);
@@ -707,6 +1579,7 @@ void TadaridaMainWindow::on_btnOpenPreviousWav_clicked()
 
 void TadaridaMainWindow::on_btnOpenNextWav_clicked()
 {
+    transStopAutomaticWait();
     QString wavFile  = _nextWav;
     if(!wavFile.isEmpty()) openWavTag(wavFile);
     else QMessageBox::warning(this, "Attention", "Pas de fichier suivant", QMessageBox::Ok);
@@ -766,6 +1639,7 @@ bool TadaridaMainWindow::openWavTag(QString wavFile)
 
 void TadaridaMainWindow::on_btnFind_clicked()
 {
+    transStopAutomaticWait();
     if(_isRechercheOpen==true) {delete _precherche; _isRechercheOpen=false;}
     _precherche  = new Recherche(this);
     _precherche->afficher_ecran();
@@ -775,6 +1649,7 @@ void TadaridaMainWindow::on_btnFind_clicked()
 
 void TadaridaMainWindow::on_btnUpdateTags_clicked()
 {
+    transStopAutomaticWait();
     QString wavFile  = QFileDialog::getOpenFileName( this, tr("Choisir un fichier wav de la base"),
                                                    DayPath, tr("(*.wav)"));
     if(!wavFile.isEmpty()) updateTags(wavFile);
@@ -860,7 +1735,8 @@ void TadaridaMainWindow::showPicture(QString wavDir,QString fileName,bool typeA)
 
 void TadaridaMainWindow::initializeGlobalParameters()
 {
-    _timeExpansion=10;
+    //_timeExpansionLeft=10;
+    // _timeExpansionRight=10;
     // bonnes valeurs des seuils = 26 et 20
     // autres pour test retraitement : 25 et 17
     _detectionThreshold = 26;
@@ -871,11 +1747,17 @@ void TadaridaMainWindow::initializeGlobalParameters()
     Divrl = 3000;
     //
     _useValflag = true;
-    _jumpThreshold = 30;
+    _jumpThreshold = 20;
     _widthBigControl = 60;
     _widthLittleControl = 5;
-    _highThreshold = 10;
-    _lowThreshold = -4;
+    _highThresholdJB = 9;
+    //_lowThreshold = -4;
+    // modifié valeur de _lowThreshold le 31/7 pour débugguage sur fichiers avec zones de silence non détectées
+    _lowThresholdJB = 7;
+    //
+    _highThresholdC = 10;
+    _lowThresholdC = -1;
+    //
     _qR = 5;
     _qN = 10;
     //_withNewParams = false;
@@ -938,7 +1820,7 @@ bool TadaridaMainWindow::generalReprocessing()
             _isGeneralReprocessing=true;
             _oneDirProblem = false;
             beforeRetreating();
-            _clock->start(50);
+            _clock->start(100);
         }
         else return(false);
         return(true);
@@ -952,6 +1834,7 @@ void TadaridaMainWindow::beforeRetreating()
     RetreatFile.setFileName(retreatFilePath);
     RetreatFile.open(QIODevice::WriteOnly | QIODevice::Text);
     RetreatText.setDevice(&RetreatFile);
+    _tagsNumberBefore=0; _tagsNumberAfter=0; _tagsNumberFinal=0;
 }
 
 void TadaridaMainWindow::afterRetreating()
@@ -1025,12 +1908,19 @@ bool TadaridaMainWindow::directoryTreat(QDir repToTreat,bool subDirTreat)
         _directoriesRetreatMode = false;
         _isGeneralReprocessing=false;
         _oneDirProblem = false;
-        _nbTreated = 0;
-        _nbError = 0;
-        _stockNbTreated = 0;
-        _stockNbError = 0;
-
-        _clock->start(50);
+        _nbTreatedTotal = 0;
+        _nbErrorTotal = 0;
+        _stockNbTreatedTotal = 0;
+        _stockNbErrorTotal = 0;
+        for(int j=0;j<_maxThreads;j++)
+        {
+            _stockNbTreated[j] = 0;
+            _stockNbError[j] = 0;
+            _nbTreated[j] = 0;
+            _nbError[j] = 0;
+            for(int k=0;k<NTERRORS;k++) _stockTabError[j][k]=0;
+        }
+        _clock->start(100);
     }
     else
     {
@@ -1043,6 +1933,17 @@ bool TadaridaMainWindow::directoryTreat(QDir repToTreat,bool subDirTreat)
     return(true);
 }
 
+void TadaridaMainWindow::clearThings()
+{
+    blockUnblock(true);
+    //_ledTreatedDirectory->setVisible(true);
+    //_lblTreatedDirectory->setVisible(false);
+    _prgProgression->setValue(0);
+    _lblPhase1Message->setText("");
+    _lblPhase1Message2->setText("");
+    _lblPhase1Message3->setText("");
+}
+
 void TadaridaMainWindow::manageDetecCall()
 {
     bool launch = false;
@@ -1053,13 +1954,17 @@ void TadaridaMainWindow::manageDetecCall()
     }
     else
     {
-        if(!_detec->IsRunning)
+        //if(!_detec->isRunning())
+        if(countThreadsRunning()==0)
         {
+            //_logText << "YYY passe sur countThreadsRunning()==0" << endl;
             _directoryIndex++;
+            if(_errorFileOpen) {_errorFile.close(); _errorFileOpen=false;}
             if(_directoryIndex>=_directoriesList.count() || _oneDirProblem)
             {
                 _clock->stop();
-                blockUnblock(true);
+                clearThings();
+                //blockUnblock(true);
                 _ledTreatedDirectory->setVisible(true);
                 _lblTreatedDirectory->setVisible(false);
                 _logText << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
@@ -1067,33 +1972,31 @@ void TadaridaMainWindow::manageDetecCall()
                 {
                     if(_oneDirProblem)
                     {
-                        QMessageBox::warning(this, tr("Attention !"),
-                                             "Fichier inaccessible : retraitement interrompu !",
+                        QMessageBox::warning(this, tr("Attention !"),"Fichier inaccessible : retraitement interrompu !",
                                              QMessageBox::Ok);
                     }
                     else
                     {
                         _dayBaseUpToDate = true;
-                        RetreatText << _tagsNumberAfter << " etiquettes recuperees sur "
-                                    << _tagsNumberBefore << " dans le retraitement principal." <<  endl;
+                        QString title;
+                        QString mess = QString::number(_tagsNumberAfter)+" etiquettes recuperees sur "+
+                                                     QString::number(_tagsNumberBefore)+"  dans le retraitement principal.";
+                        if(_tagsNumberFinal > 0)
+                            mess += "\nApres recuperation dans les versions precedantes, nombre total d'etiquettes : "
+                                           +QString::number(_tagsNumberAfter+ _tagsNumberFinal)+".";
                         if(_isGeneralReprocessing)
                         {
-                            _logText << _tagsNumberAfter << " etiquettes recuperees sur "
-                                     << _tagsNumberBefore << " dans le retraitement principal." << endl;
-                            if(_tagsNumberFinal > 0)
-                                RetreatText << "Apres recuperation dans les versions precedantes, nombre total d'etiquettes : "
-                                  << _tagsNumberAfter + _tagsNumberFinal <<  endl;
+                            title = "Fin du retraitement general";
                             writeBaseVersion();
-                            _baseUpToDate=true;
-                            QMessageBox::warning(this, tr("Remarque"), "Fin du retraitement de la base", QMessageBox::Ok);
-                            _logText << endl << "Fin du retraitement de la base" << endl;
                         }
                         else
                         {
+                            title = "Fin du retraitement du dossier du jour";
                             writeDirectoryVersion(_baseDay.path());
-                            QMessageBox::warning(this, tr("Remarque"), "Fin du retraitement du dossier du jour", QMessageBox::Ok);
-                            _logText << endl << "Fin du retraitement du dossier du jour" << endl;
                         }
+                        QMessageBox::warning(this,title,title+" : "+mess, QMessageBox::Ok);
+                        RetreatText << title << endl << mess << endl;
+                        _logText << mess << endl << title << endl;
                         afterRetreating();
                     }
                 }
@@ -1109,11 +2012,23 @@ void TadaridaMainWindow::manageDetecCall()
                     {
                         if(!MustCancel)
                         {
-                            QString mess = _treatDirMess;
-                            if((_nbError+_stockNbError)>0) mess += " (voir error.log)";
-                            if((_stockNbTreated+_nbTreated)>0 || (_nbError>0+_stockNbError)>0)
-                            QMessageBox::warning(this,"Fin du traitement", mess, QMessageBox::Ok);
-                            _logText << endl << mess << endl;
+                            QString mess = "",singpur;
+                            if((_stockNbTreatedTotal + _stockNbErrorTotal)>0)
+                            {
+                                if(_stockNbTreatedTotal>0)
+                                {
+
+                                    if(_stockNbTreatedTotal>1) singpur ="s"; else singpur = "";
+                                    mess += QString::number(_stockNbTreatedTotal) + " fichier"+singpur+" traité"+singpur;
+                                }
+                                if(_stockNbErrorTotal >0)
+                                {
+                                    mess += "  -  " + createMessageErrors(_stockNbErrorTotal,_stockTabError)+"   (voir error.log)";
+                                    //fusionErrors();
+                                }
+                                QMessageBox::warning(this,"Fin du traitement", mess, QMessageBox::Ok);
+                                _logText << endl << mess << endl;
+                            }
                             //_logText << "...mustcancel = false" << endl;
                         }
                         else
@@ -1123,10 +2038,6 @@ void TadaridaMainWindow::manageDetecCall()
                     }
 
                 }
-                _prgProgression->setValue(0);
-                infoShow("");
-                _lblPhase1Message->setText("");
-                _lblPhase1Message2->setText("");
                 if(MustEnd) close();
             }
             else
@@ -1138,6 +2049,7 @@ void TadaridaMainWindow::manageDetecCall()
                 else
                 {
                     _clock->stop();
+                    clearThings();
                     if(MustEnd && !_directoriesRetreatMode) close();
                     blockUnblock(true);
                 }
@@ -1158,9 +2070,39 @@ void TadaridaMainWindow::manageDetecCall()
         int pos = dirToShow.lastIndexOf("/");
         if(pos>0) dirToShow = dirToShow.right(dirToShow.length()-pos-1);
          _lblTreatedDirectory->setText(dirToShow);
-         _logText << "après mofifs : dts = " << dirToShow << endl;
         _prgProgression->setValue(0);
         dirTreat(dirName);
+    }
+}
+
+
+void  TadaridaMainWindow::fusionErrors(int ithread)
+{
+    if(_errorFileOpen)
+    {
+        if(_nbError[ithread]>0)
+        {
+            if(_pDetec[ithread]->_errorFileOpen)
+            {
+                _pDetec[ithread]->_errorFileOpen = false;
+                _pDetec[ithread]->_errorFile.close();
+                if(_pDetec[ithread]->_errorFile.open(QIODevice::ReadOnly | QIODevice::Text))
+                {
+                    while(true)
+                    {
+                        QString line = _pDetec[ithread]->_errorStream.readLine();
+                        if(line.isNull() || line.isEmpty()) break;
+                        _errorStream << line << endl;
+                    }
+                    _pDetec[ithread]->_errorFile.close();
+                }
+                _pDetec[ithread]->_errorFile.remove();
+            }
+        }
+        else
+        {
+            if(_pDetec[ithread]->_errorFileOpen) _pDetec[ithread]->_errorFile.remove();
+        }
     }
 }
 
@@ -1196,7 +2138,7 @@ bool TadaridaMainWindow::proposeDayReprocessing()
         _directoriesRetreatMode = true;
         _oneDirProblem = false;
         beforeRetreating();
-        _clock->start(50);
+        _clock->start(100);
     }
     else return(false);
     return(true);
@@ -1219,6 +2161,7 @@ bool TadaridaMainWindow::dirTreat(QString dirName)
     {
         _logText << "Retraitement du dossier " << sdir.path() << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
         _lblPhase1Message->setText(QString("Traitement du dossier ")+sdir.path()+" en cours");
+        //if(_directoryIndex>0) sdirReinit();
         detecCall(sdir,_directoriesRetreatMode);
     }
     else
@@ -1229,52 +2172,71 @@ bool TadaridaMainWindow::dirTreat(QString dirName)
     return(true);
 }
 
-bool TadaridaMainWindow::detecCall(QDir dirToReprocess,bool ReprocessingCase)
+bool TadaridaMainWindow::detecCall(QDir dirToTreat,bool ReprocessingCase)
 {
-    _logText << "rep_a_traiter=" << dirToReprocess.path() << endl;
-    if(!dirToReprocess.exists())
+    _logText << endl <<  "rep_a_traiter=" << dirToTreat.path() << endl;
+    if(!dirToTreat.exists())
     {
         QMessageBox::critical(this, tr("Erreur"), tr("Le dossier des fichiers WAV n'existe pas !"), QMessageBox::Ok);
         blockUnblock(true);
         return(false);
     }
-    _logText << "detecCall 1" << endl;
+    _wavPath = dirToTreat.path();
+    //_logText << "detecCall 1" << endl;
     QStringList wavSoundsList;
-    wavSoundsList = dirToReprocess.entryList(QStringList("*.wav"), QDir::Files);
-    _logText << "detecCall 2" << endl;
+    wavSoundsList = dirToTreat.entryList(QStringList("*.wav"), QDir::Files);
+    //_logText << "detecCall 2" << endl;
     if(wavSoundsList.isEmpty())
     {
         if(!ReprocessingCase)
         {
-            QString mess = QString("Il n'y a aucun fichier WAV dans le dossier ")+dirToReprocess.path()+" !";
+            QString mess = QString("Il n'y a aucun fichier WAV dans le dossier ")+dirToTreat.path()+" !";
             QMessageBox::critical(this, tr("Erreur"), mess, QMessageBox::Ok);
             blockUnblock(true);
             return(false);
         }
     }
-    _logText << "detecCall 3" << endl;
+    //_logText << "detecCall 3" << endl;
 	// 5/2/2015 :
-    _detec->_detecTreatment->SetGlobalParameters(_timeExpansion,_detectionThreshold,_stopThreshold,
-                 _minimumFrequency,_overlapsNumber,
-                 _useValflag,_jumpThreshold,_widthBigControl,_widthLittleControl,
-                 _highThreshold,_lowThreshold,_qR,_qN,_paramVersion);
-    _logText << "detecCall 4" << endl;
+    //_logText << "detecCall 4" << endl;
     bool generateImagesDat = false;
     if(_tadaridaMode==ETIQUETAGE)
     {
         if(_chkCreateImage->isChecked() || ReprocessingCase) generateImagesDat=true;
     }
-    _logText << "detecCall 5" << endl;
-    if(ReprocessingCase) previousVersionSave(wavSoundsList,dirToReprocess.path());
+    //_logText << "detecCall 5" << endl;
+    if(ReprocessingCase) previousVersionSave(wavSoundsList,dirToTreat.path());
 	// 5-2-2015 : retiré dernier paramètre (_withTimer)
-    if(_detec->InitializeDetec(wavSoundsList, dirToReprocess.path(),
-      ReprocessingCase,_programVersion,_userVersion,generateImagesDat,_withTimeCsv,_remObject))
+    _logText << "avant lancement des detecs" << endl;
+    //_btnPause->setEnabled(true);
+   //_detec->Treatment();
+    //_detec->start();
+    // ZZZZ Lancement des detec
+    _nbThreadsLaunched = _maxThreads;
+// répartition des fichiers et recalcul du nombre de threads
+    _filesNumber = wavSoundsList.size();
+    if(_filesNumber < _nbThreadsLaunched) _nbThreadsLaunched = _filesNumber;
+    //
+    initThreadsLaunched(_nbThreadsLaunched);
+    //
+    int c=0;
+    for(int j=0;j<_filesNumber;j++)
     {
-        _logText << "avant lancement de detec" << endl;
-        _btnPause->setEnabled(true);
-        _detec->Treatment();
+        _pWavFileList[c].append(wavSoundsList.at(j));
+        c++;
+        if(c>=_nbThreadsLaunched) c=0;
     }
-    _logText << "detecCall 6" << endl;
+    //
+    for(int i=0;i<_nbThreadsLaunched;i++)
+    {
+        if( _pDetec[i]->InitializeDetec(_pWavFileList[i], dirToTreat.path(),
+                                   ReprocessingCase,_programVersion,_userVersion,generateImagesDat,_withTimeCsv,_remObject[i]))
+        {
+            _pDetec[i]->start();
+        }
+    }
+    createErrorFile();
+    _logText << "detecCall fin" << endl;
     return(true);
 }
 
@@ -1307,17 +2269,27 @@ void TadaridaMainWindow::createWindow()
 {
     setStyleSheet("background-image : url(tadarida.jpg);");
     _pmx = 4; _pmy=4;
-    _margx = 8; _margy = 8;
-    if(_tadaridaMode == SIMPLE) _lt = 1100;
-    else _lt  = 860;
+    _margx = 7; _margy = 8;
+    if(_tadaridaMode == SIMPLE)
+    {
+        _lt = 1100;
+        _ltc = _lt/2;
+    }
+    else
+    {
+        _lt  = 860;
+        _ltc = _lt;
+    }
     _ht  = 600;
-    _lcw = _lt-_pmx; _hcw = _ht - _pmy;
-    _lg1= (_lcw-_pmx*4)/2; _hg1 = _hcw-_pmy*3;
-    _lbou = 150; _hbou=30; _lbi = 30; _hbi = 30;
+    _lcw = _lt-_pmx;
+    _hcw = _ht - _pmy;
+    _lg1= (_lcw-_pmx*4)/2;
+    _hg1 = _hcw-_pmy*3;
+    _lbou = 150; _hbou=30; _lbi = 30; _hbi = 30; _lbou2 = 90;
     // £££££
-    _hab1 = (_hg1*2)/17;
-    //_hab1 = _hg1/9;
-    if(_tadaridaMode==SIMPLE) _ltc = _lt/2; else _ltc = _lt;
+    _hab1 = _hg1/(10-((int)(_tadaridaMode == SIMPLE)));
+    int larl5= (_lg1-_margx*4)/5;
+    //_hab1 = _hg1/10;
     resize(_ltc, _ht);
     QFont font1("Times New Roman",11);
     QFont font2("Times New Roman",10);
@@ -1337,28 +2309,70 @@ void TadaridaMainWindow::createWindow()
     _grpPhase1->setFont(font1);
     _grpPhase1->setStyleSheet("background-image : url(none);");
 
+    /*
+    _lblTemps = new MyQLabel(_grpPhase1);
+    _lblTemps->setFont(font1);
+    _lblTemps->setVisible(true);
+    _lblTemps->setGeometry(_margx,_hab1*2,larl5,_hbou);
+    */
+    int larl6= (_lg1-_margx*11)/6;
+    int larlb = (_lg1-_margx*3)/2;
+
+
+    _leftGroup = new QGroupBox(_grpPhase1);
+    _leftGroup->setGeometry(_margx,_hab1*2,larlb,(_hbou*3)/2);
+    _leftGroup->setTitle(QString("Mono ou gauche"));
+
+    _rightGroup = new QGroupBox(_grpPhase1);
+    _rightGroup->setGeometry(larlb+_margx*2,_hab1*2,larlb,(_hbou*3)/2);
+    _rightGroup->setTitle(QString("Droit"));
+
+     _left10 = new QRadioButton(QString("x 10"),_leftGroup);
+    _left1 = new QRadioButton(QString("x 1"),_leftGroup);
+    _left0 = new QRadioButton(QString("ignorer"),_leftGroup);
+
+    _right10 = new QRadioButton(QString("x10"),_rightGroup);
+    _right1 = new QRadioButton(QString("x1"),_rightGroup);
+    _right0 = new QRadioButton(QString("ignorer"),_rightGroup);
+
+    _left10->setGeometry(_margx,_hbou/3,larl6,_hbou);
+    _left1->setGeometry(_margx*2+larl6,_hbou/3,larl6,_hbou);
+    _left0->setGeometry(_margx*3+larl6*2,_hbou/3,larl6,_hbou);
+
+    _right10->setGeometry(_margx,_hbou/3,larl6,_hbou);
+    _right1->setGeometry(_margx*2+larl6,_hbou/3,larl6,_hbou);
+    _right0->setGeometry(_margx*3+larl6*2,_hbou/3,larl6,_hbou);
+
+    if(_timeExpansionLeft==10)  _left10->setChecked(true);
+    if(_timeExpansionLeft==1)     _left1->setChecked(true);
+    if(_timeExpansionLeft==0)    _left0->setChecked(true);
+
+    if(_timeExpansionRight==10)  _right10->setChecked(true);
+    if(_timeExpansionRight==1)    _right1->setChecked(true);
+    if(_timeExpansionRight==0)    _right0->setChecked(true);
+
     _lblWavDirectory = new MyQLabel(_grpPhase1);
-    int larl5= (_lg1-_margx*4)/5;
-    _lblWavDirectory->setGeometry(_margx,_hab1*3,larl5*2,_hbou);
+    _lblWavDirectory->setGeometry(_margx,_hab1*4,larl5*2,_hbou);
     _lblWavDirectory->setFont(font2);
     _lblTreatedDirectory = new MyQLabel(_grpPhase1);
-    _lblTreatedDirectory->setGeometry(_margx*2+larl5*2,_hab1*3,larl5*2,_hbou);
+    _lblTreatedDirectory->setGeometry(_margx*2+larl5*2,_hab1*4,larl5*2,_hbou);
     _lblTreatedDirectory->setFont(font1);
     _ledTreatedDirectory = new QLineEdit(_grpPhase1);
-    _ledTreatedDirectory->setGeometry(_margx*2+larl5*2,_hab1*3,larl5*2,_hbou);
+    _ledTreatedDirectory->setGeometry(_margx*2+larl5*2,_hab1*4,larl5*2,_hbou);
     _ledTreatedDirectory->setFont(font1);
     _btnBrowse = new QPushButton(_grpPhase1);
-    _btnBrowse->setGeometry(_margx*3+larl5*4,_hab1*3,larl5,_hbou);
+    _btnBrowse->setGeometry(_margx*3+larl5*4,_hab1*4,larl5,_hbou);
     _btnBrowse->setFont(font1);
     int lar51 = _lg1-_margx*3-_lbi;
     _prgProgression = new QProgressBar(_grpPhase1);
-    _prgProgression->setGeometry(_margx,_hab1*4,lar51,_hbou);
+    _prgProgression->setGeometry(_margx,_hab1*5,lar51,_hbou);
     _prgProgression->setMaximum(10000);
     _prgProgression->setValue(0);
     _prgProgression->setStyleSheet(QString::fromUtf8(""));
     _prgProgression->setTextVisible(false);
     _prgProgression->setInvertedAppearance(false);
     _prgProgression->setVisible(true);
+    /*
     _btnPause = new QPushButton(_grpPhase1);
     _btnPause->setGeometry(_lg1-_margx-_lbi,_hab1*4,_lbi,_hbi);
     _btnPause->setFont(font1);
@@ -1366,25 +2380,54 @@ void TadaridaMainWindow::createWindow()
     _btnPause->setIcon(QIcon("pause.png"));
     _btnPause->setIconSize(QSize(15, 15));
     _btnPause->setCheckable(true);
+    */
+
     _chkSubDirectories = new QCheckBox(_grpPhase1);
-    _chkSubDirectories->setGeometry(_margx*2+_lg1/2,_hab1*5,_lg1/2,_hbou);
+    _chkSubDirectories->setGeometry(_margx*2+_lg1/2,_hab1*6,_lg1/2,_hbou);
     _chkSubDirectories->setEnabled(true);
     _chkSubDirectories->setChecked(false);
+
     _btnOk = new QPushButton(_grpPhase1);
-    int mar6 = (_lg1 - _lbou*2)/3;
-    _btnOk->setGeometry(mar6,_hab1*6,_lbou,_hbou);
+    int mar6 = (_lg1 - _lbou2*4)/5;
+    _btnOk->setGeometry(mar6,_hab1*7,_lbou2,_hbou);
     _btnOk->setFont(font1);
     _btnOk->setEnabled(false);
+
+    int decal = (int)(_transferAuthorized == false);
     _btnCancel = new QPushButton(_grpPhase1);
-    _btnCancel->setGeometry(mar6*2+_lbou,_hab1*6,_lbou,_hbou);
+    _btnCancel->setGeometry(mar6*(2+decal) + _lbou2*(1+decal),_hab1*7,_lbou2,_hbou);
     _btnCancel->setFont(font1);
     _btnCancel->setEnabled(false);
+
+    if(_transferAuthorized)
+    {
+        _btnTransfer = new QPushButton(_grpPhase1);
+        _btnTransfer->setGeometry(mar6*3+_lbou2*2,_hab1*7,_lbou2,_hbou);
+        _btnTransfer->setFont(font1);
+        _btnTransfer->setEnabled(false);
+        _btnResume = new QPushButton(_grpPhase1);
+        _btnResume->setGeometry(mar6*4+_lbou2*3,_hab1*7,_lbou2,_hbou);
+        _btnResume->setFont(font1);
+        _btnResume->setEnabled(false);
+        // mettre en enabled = true si reprise possible
+    }
+
     _lblPhase1Message = new MyQLabel(_grpPhase1);
-    _lblPhase1Message->setGeometry(_margx,_hab1*7,_lg1-_margx*2,_hbou);
+    _lblPhase1Message->setGeometry(_margx,(_hab1*31)/4,_lg1-_margx*2,_hbou);
     _lblPhase1Message->setFont(font2);
+    _lblPhase1Message->setVisible(false);
+
     _lblPhase1Message2 = new MyQLabel(_grpPhase1);
-    _lblPhase1Message2->setGeometry(_margx,(_hab1*31)/4,_lg1-_margx*2,_hbou);
+    _lblPhase1Message2->setGeometry(_margx,(_hab1*17)/2,_lg1-_margx*2,(_hbou*7)/4);
     _lblPhase1Message2->setFont(font2);
+    _lblPhase1Message2->setWordWrap(true);
+    _lblPhase1Message2->setVisible(false);
+
+    _lblPhase1Message3 = new MyQLabel(_grpPhase1);
+    _lblPhase1Message3->setGeometry(_margx,(_hab1*19)/2,_lg1-_margx*2,_hbou);
+    _lblPhase1Message3->setFont(font2);
+    _lblPhase1Message3->setWordWrap(true);
+    _lblPhase1Message3->setVisible(false);
     //
     //
     _lblPhase1Title = new MyQLabel(_grpPhase1);
@@ -1404,11 +2447,11 @@ void TadaridaMainWindow::createWindow()
         //_lblPhase1Title->setGeometry(_lg1/6,(_hab1*7)/10,_lg1-_margx*2,_hbou);
 
         _chkCreateImage = new QCheckBox(_grpPhase1);
-        _chkCreateImage->setGeometry(_margx,_hab1*5,_lg1/2,_hbou);
+        _chkCreateImage->setGeometry(_margx,_hab1*6,_lg1/2,_hbou);
         _chkCreateImage->setEnabled(true);
         _chkCreateImage->setChecked(true);
         _btnParameters = new QPushButton(_grpPhase1);
-        _btnParameters->setGeometry((_lg1-_lbou)/2,_hab1*2,_lbou,_hbou);
+        _btnParameters->setGeometry(_margx,_hab1*3,larl5*2,_hbou);
         _btnParameters->setFont(font1);
         _grpPhase2 = new QGroupBox(_mainWidget);
         _grpPhase2->setGeometry(_pmx*2+_lg1,_pmy,_lg1,_hg1);
@@ -1445,18 +2488,28 @@ void TadaridaMainWindow::createWindow()
     }
     else
     {
-        _lblTemps = new MyQLabel(_grpPhase1);
-        _lblTemps->setGeometry(_margx,_hab1*2,larl5*2,_hbou);
-        _lblTemps->setFont(font1);
-        _lblTemps->setVisible(true);
+        /*
         _comboTemps = new QComboBox(_grpPhase1);
-        _comboTemps->move(_margx*2+larl5*2,_hab1*2);
+        _comboTemps->move(_margx*2+larl5,_hab1*2);
         _comboTemps->resize(larl5,_hbou);
         _comboTemps->setFont(font1);
         QStringList lte;
         lte << "10" << "1";
         _comboTemps->insertItems(0,lte);
+        */
     }
+     _sliderThreads = new QSlider(_grpPhase1);
+     _sliderThreads->setMinimum(1);
+     _sliderThreads->setMaximum(MAXTHREADS);
+     _sliderThreads->setValue(_maxThreads);
+     _sliderThreads->setOrientation(Qt::Horizontal);
+    _sliderThreads->move((larl5*13)/4+_margx*3,_hab1*3);
+    _sliderThreads->resize((larl5*7)/4,_hbou);
+    _sliderThreads->setValue(_maxThreads);
+    _lblThreads = new MyQLabel(_grpPhase1);
+    _lblThreads->setFont(font2);
+    _lblThreads->setGeometry(_margx*2+(larl5*9)/4,_hab1*3,larl5,_hbou);
+    _lblThreads->setText(QString("Parallelisme : ")+QString::number(_maxThreads));
     updatesTexts();
 }
 
@@ -1466,9 +2519,14 @@ void TadaridaMainWindow::updatesTexts()
     _chkSubDirectories->setText("Inclure les sous-dossiers");
     _lblWavDirectory->setText("Dossier des fichiers WAV");
     _btnBrowse->setText("Parcourir");
-    _btnPause->setText(QString());
+    //_btnPause->setText(QString());
     _btnOk->setText("Traiter");
     _btnCancel->setText("Annuler");
+    if(_transferAuthorized)
+    {
+        _btnTransfer->setText("Transferer");
+        _btnResume->setText("Reprise");
+    }
     if(_tadaridaMode==ETIQUETAGE)
     {
         _btnParameters->setText(" Modifier les variables");
@@ -1479,10 +2537,6 @@ void TadaridaMainWindow::updatesTexts()
         _btnOpenPreviousWav->setText("Precedant");
         _btnOpenNextWav->setText("Suivant");
         _btnFind->setText("Recherche");
-    }
-    else
-    {
-        _lblTemps->setText("Facteur temps");
     }
 }
 
@@ -1578,8 +2632,118 @@ void TadaridaMainWindow::treatDirProblem()
     _logText << "reçu un message dirProblem" << endl;
 }
 
+/*
 void TadaridaMainWindow::selectTemps(const QString& codsel)
 {
     _timeExpansion = codsel.toInt();
     if(_timeExpansion != 1 && _timeExpansion !=10) _timeExpansion = 10;
+}
+*/
+
+void TadaridaMainWindow::initThreads()
+{
+    _nbThreadsLaunched = 0;
+    _nbDetecCreated = 0;
+    for(int i=0;i<MAXTHREADS;i++) TabDetecCreated[i] = false;
+}
+
+
+void TadaridaMainWindow::affectTimeExpansions()
+{
+    if(_left10->isChecked()) _timeExpansionLeft = 10;
+    if(_left1->isChecked()) _timeExpansionLeft = 1;
+    if(_left0->isChecked()) _timeExpansionLeft = 0;
+
+    if(_right10->isChecked()) _timeExpansionRight = 10;
+    if(_right1->isChecked()) _timeExpansionRight = 1;
+    if(_right0->isChecked()) _timeExpansionRight = 0;
+
+}
+
+void TadaridaMainWindow::initThreadsLaunched(int nbLaunched)
+{
+    _nbThreadsLaunched = nbLaunched; // peut-être inutile : à voir ensuite
+    if(nbLaunched>_nbDetecCreated) _nbDetecCreated= nbLaunched;
+    int fh;
+    for(int i=0;i<_nbThreadsLaunched;i++)
+    {
+
+        if(TabDetecCreated[i]==false)
+        {
+            _fftRes[i] 		= ( fftwf_complex* ) fftwf_malloc( sizeof( fftwf_complex ) * FFT_HEIGHT_MAX );
+            _complexInput[i]        = ( fftwf_complex* ) fftwf_malloc( sizeof( fftwf_complex ) * FFT_HEIGHT_MAX );
+            // _logText << "adresse _complexInput[0]="<<  (qint64)_complexInput[i] << endl;
+            for(int k=0;k<6;k++)
+            {
+                fh = pow(2,7+k);
+                Plan[i][k] = fftwf_plan_dft_1d(fh, _complexInput[i], _fftRes[i], FFTW_FORWARD, FFTW_ESTIMATE );
+            }
+            //
+            _pDetec[i] = new Detec(this,i);
+            connectDetectSignals(i);
+        }
+        _pWavFileList[i].clear();
+        _nbTreated[i]=0;
+        _nbError[i]=0;
+        for(int k=0;k<NTERRORS;k++) _tabError[i][k] = 0;
+        _threadRunning[i]=true;
+        affectTimeExpansions();
+        _pDetec[i]->_detecTreatment->SetGlobalParameters(_timeExpansionLeft,_timeExpansionRight,_detectionThreshold,_stopThreshold,
+                     _minimumFrequency,_overlapsNumber,
+                     _useValflag,_jumpThreshold,_widthBigControl,_widthLittleControl,
+                     _highThresholdJB,_lowThresholdJB,_lowThresholdC,_highThresholdC,_qR,_qN,_paramVersion);
+
+    }
+}
+
+void TadaridaMainWindow::createErrorFile()
+{
+    QString errorFilePath(_wavPath + "/txt/error.log");
+    _errorFile.setFileName(errorFilePath);
+    if(_errorFile.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+    _errorStream.setDevice(&_errorFile);
+    _errorFileOpen = true;
+    }
+    else _errorFileOpen = false;
+}
+
+
+int TadaridaMainWindow::countThreadsRunning()
+{
+
+    int nbtr = _nbThreadsLaunched;
+    nbtr = 0;
+    for(int i=0;i<_nbThreadsLaunched;i++)
+    {
+        if(_threadRunning[i])
+        {
+            if(_pDetec[i]->isRunning()) nbtr++;
+            else _threadRunning[i] = false;
+        }
+    }
+    // _logText << nbtr << endl;
+    return(nbtr);
+}
+
+void TadaridaMainWindow::modifyMaxThreads(int nt)
+{
+    if(nt>=1 && nt <= MAXTHREADS) 
+    {
+        _maxThreads = nt;
+        _lblThreads->setText(QString("Parallélisme : ")+QString::number(_maxThreads));
+
+    }
+}
+
+int TadaridaMainWindow::connectDetectSignals(int iThread)
+{
+    connect(_pDetec[iThread], SIGNAL(threadFinished(int)),this, SLOT(detecFinished(int)));
+    //connect(_pDetec[iThread], SIGNAL(moveBar(float)),this, SLOT(updateProgBarValue(int,float)));
+    connect(_pDetec[iThread], SIGNAL(information(QString)),this, SLOT(infoShow(QString)));
+    connect(_pDetec[iThread], SIGNAL(information2(QString,bool)),this, SLOT(infoShow2(QString,bool)));
+    connect(_pDetec[iThread], SIGNAL(information2b(QString,bool)),this, SLOT(infoShow3(QString,bool)));
+    connect(_pDetec[iThread], SIGNAL(information3(int,int,int)),this, SLOT(matchingInfoTreat(int,int,int)));
+    connect(_pDetec[iThread], SIGNAL(information4(int,int,int)),this, SLOT(detecInfoTreat(int,int,int)));
+    connect(_pDetec[iThread], SIGNAL(dirProblem()),this, SLOT(treatDirProblem()));
 }

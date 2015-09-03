@@ -72,6 +72,14 @@ private:
     // ajouté le 27/3/2015
     QLabel                    *_labelSearch2;
     QLineEdit               *_editSearch2;
+// $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+// ajouté le 03/08/2015
+    QComboBox             *_cbFieldB;
+    QLabel                    *_labelSearchB;
+    QLineEdit               *_editSearchB;
+    QLabel                    *_labelSearchB2;
+    QLineEdit               *_editSearchB2;
+// ££££££££££££££££££££££££££££££££££
     QCheckBox           *_cpComp;
     QFile    				    _txtFile;
     QTextStream          _fileStream;

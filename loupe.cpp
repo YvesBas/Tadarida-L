@@ -322,7 +322,6 @@ void Loupe::afficher_une_crete_suppl(int ncri,bool affichersuppl)
     QPen qp2;
     QBrush qb2;
     if(!(ncri<2000)) return;
-    pfm->m_logStream << "acs - début - ncri=" << ncri << endl;
     QPen qp[NCRETES];
     qp[1] = QPen(QColor(192,192,64));
     qp[2] = QPen(QColor(220,220,80));
@@ -331,57 +330,42 @@ void Loupe::afficher_une_crete_suppl(int ncri,bool affichersuppl)
     //
     if(!affichersuppl)
     {
-        pfm->m_logStream << "acs - 2 " << endl;
         if(ilcs[ncri])
         {
-            pfm->m_logStream << "acs - 3 " << endl;
             for(int jcrete=1;jcrete<NCRETES;jcrete++)
             {
                 delete gplt[jcrete][ncri];
             }
-            pfm->m_logStream << "acs - 4 " << endl;
             ilcs[ncri]=false;
         }
     }
     else
     {
-        pfm->m_logStream << "acs - 5 " << endl;
         if(!ilcs[ncri])
         {
-            pfm->m_logStream << "acs - 6 " << endl;
             for(int jcrete=1;jcrete<NCRETES;jcrete++)
             {
-                pfm->m_logStream << "acs - 7 - jcrete=" << jcrete << endl;
 
                 QPolygonF polygone;
                 for(int j=0;j<pfm->m_matrixCalls[jcrete][ncri].size();j++)
                 {
-                    pfm->m_logStream << "acs - 71 - jcrete=" << jcrete
-                                     << "  j=" << j << endl;
                     float x=(float)(pfm->m_matrixCalls[jcrete][ncri][j].x()/(1+pfm->m_xmoitie));
                     float y=(float)(pfm->_imaHeight-pfm->m_matrixCalls[jcrete][ncri][j].y()-1);
-                    pfm->m_logStream << "acs - 72 - jcrete=" << jcrete
-                                     << "  x,y=" << x << "," << y << endl;
                     if(jcrete!=3) x+=0.5f; else x+=0.05f;
                     if(jcrete==1) y+=1.0f;
                     if(jcrete ==0 || jcrete>2) y+=0.5f;
                     polygone << QPointF(x,y);
                 }
-                pfm->m_logStream << "acs - 73 - jcrete=" << jcrete << endl;
                 QPainterPath path = QPainterPath();
                 path.addPolygon(polygone);
-                pfm->m_logStream << "acs - 74 - jcrete=" << jcrete << endl;
                 gplt[jcrete][ncri] = new QGraphicsPathItem(path);
                 gplt[jcrete][ncri]->setPen(qp[jcrete]);
                 lscene->addItem(gplt[jcrete][ncri]);
-                pfm->m_logStream << "acs - 8 - jcrete=" << jcrete << endl;
                 //
             } // next jcrete
             ilcs[ncri]=true;
-            pfm->m_logStream << "acs - 9 " << endl;
         } // fin du ilcs[ncri]==false
     } // fin du else affichersuppl
-    pfm->m_logStream << "acs - fin - ncri=" << ncri << endl;
 }
 
 void Loupe::afficher_un_point_suppl(int ncri,bool affichersuppl)
@@ -390,14 +374,12 @@ void Loupe::afficher_un_point_suppl(int ncri,bool affichersuppl)
     QPen qp2;
     QBrush qb2;
     if(!(ncri<2000)) return;
-    pfm->m_logStream << "aps - début - ncri=" << ncri << endl;
     QPen qp[NCRETES];
     qp[1] = QPen(QColor(192,192,64));
     qp[2] = QPen(QColor(220,220,80));
     qp[3] = QPen(QColor(60,90,255));
     qp[4] = QPen(QColor(150,90,30));
     //
-    pfm->m_logStream << "aps 2" << endl;
     //
     if(ilps[ncri])
     {
@@ -407,21 +389,16 @@ void Loupe::afficher_un_point_suppl(int ncri,bool affichersuppl)
             ilps[ncri]=false;
         }
     }
-pfm->m_logStream << "aps 3" << endl;
     if(affichersuppl)
     {
         if(!ilps[ncri])
         {
-pfm->m_logStream << "aps 4" << endl;
 
             for(int jcrete=0;jcrete<NCRETES;jcrete++)
             {
-                pfm->m_logStream << "aps 5 jcrete=" << jcrete << endl;
                 for(int kos=NSUPPL-1;kos>=0;kos--)
                 {
-                    pfm->m_logStream << "aps 6 kos=" << kos << endl;
                     int k=kos+(kos==0)-(kos==1);
-                    pfm->m_logStream << "apm7 - jcrete,k=" << jcrete << "," << k << endl;
                     float x2=(float)(pfm->m_pointsSuppl[jcrete][k][ncri].x()/(float)(1+pfm->m_xmoitie));
                     float y2=(float)pfm->_imaHeight - (float)pfm->m_pointsSuppl[jcrete][k][ncri].y()-1.0f;
                     float w2=(6.0f+l_iaj+(float)kos)/l_rl;
@@ -433,8 +410,6 @@ pfm->m_logStream << "aps 4" << endl;
                     if(jcrete==1) y2+=1.0f;
                     if(jcrete==0 || jcrete>2) y2+=0.5f;
                     x2+=(float)((float)kos-1.0f)/15.0f;
-                    pfm->m_logStream << "apm52 - x2,y2 = " << x2 << " , " << y2 << endl;
-                    pfm->m_logStream << "apm52,5 - w2,h2 = " << w2 << " , " << h2 << endl;
                     if(jcrete<3) qc2 = QColor(64+20*(jcrete+kos*3),64+20*(jcrete+kos*3),32*kos);
                     else qc2 = QColor(32*(kos+2),32*(kos+2),64+20*(1+kos*3));
                     if(jcrete<3) qc1 = QColor(32+10*(jcrete+kos*3),32+10*(jcrete+kos*3),16*kos);
@@ -447,13 +422,11 @@ pfm->m_logStream << "aps 4" << endl;
             ilps[ncri]=true;
         } // fin du ilcs[ncri]==false
     } // fin du else affichersuppl
-    pfm->m_logStream << "aps - fin - ncri=" << ncri << endl;
 }
 
 
 void Loupe::afficher_un_point_maitre(int ncri,bool crisel,bool afficherpm)
 {
-    pfm->m_logStream << "apm1 - ncri= " << ncri << endl;
     if(!(ncri<2000)) return;
     float x = 0.5f+(pfm->m_pointsMaitres[ncri].x()/(1+pfm->m_xmoitie));
     float y = 0.5f+(pfm->_imaHeight - pfm->m_pointsMaitres[ncri].y()-1.0f);
@@ -482,17 +455,13 @@ void Loupe::afficher_un_point_maitre(int ncri,bool crisel,bool afficherpm)
     //
     if(ncri<2000)
     {
-        pfm->m_logStream << "apm2" << endl;
         if(ipmc[ncri]==true)
         {
-            pfm->m_logStream << "apm21" << endl;
             delete gepm[ncri];
-            pfm->m_logStream << "apm22" << endl;
             ipmc[ncri]=false;
         }
         if(afficherpm)
         {
-            pfm->m_logStream << "apm3" << endl;
             if(ipmc[ncri]==false)
             {
                 float w=(10.0f+l_iaj)/l_rl;

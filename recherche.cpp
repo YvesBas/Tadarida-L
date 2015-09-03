@@ -31,67 +31,82 @@ Recherche::~Recherche()
 void Recherche::afficher_ecran()
 {
     showMaximized();
-	/*
-    p_lf = width();
-    p_hf = height();
-    // p_lf=800;
-    // p_hf=600;
-    p_mh=p_hf/20;
-    p_mb=p_mh;
-    p_demil= p_lf/2;
-    p_xl=p_demil/20;
-    p_ll=(p_demil*6)/20;
-    p_xe=p_xl*2+p_ll;
-    p_le=(p_demil*8)/20;
-    setWindowTitle("Tadarida - Recherche");
-	*/
+
     _labelSearch = new QLabel(this);
-    _labelSearch->setGeometry(30,50,120,20);
+    _labelSearch->setGeometry(30,30,120,20);
     _labelSearch->setText("Texte recherché");
     _labelSearch->setVisible(true);
     _editSearch = new QLineEdit(this);
-    _editSearch->setGeometry(150,50,200,20);
+    _editSearch->setGeometry(150,30,200,20);
     _editSearch->setVisible(true);
 
-	// ajouté le 27/03/2015
     _labelSearch2 = new QLabel(this);
-    _labelSearch2->setGeometry(400,50,50,20);
+    _labelSearch2->setGeometry(400,30,50,20);
     _labelSearch2->setText("ou");
     _labelSearch2->setVisible(true);
     _editSearch2 = new QLineEdit(this);
-    _editSearch2->setGeometry(500,50,200,20);
+    _editSearch2->setGeometry(500,30,200,20);
     _editSearch2->setVisible(true);
 
+    _cbField = new QComboBox(this);
+    _cbField->setGeometry(150,55,200,20);
+    _cbField->insertItems(0,tgui->FieldsList);
+    _cbField->setVisible(true);
+	
+// $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+// ajouté le 3/8/2015
+
+    _labelSearchB = new QLabel(this);
+    _labelSearchB->setGeometry(30,85,120,20);
+    _labelSearchB->setText("Texte recherché");
+    _labelSearchB->setVisible(true);
+
+    _editSearchB = new QLineEdit(this);
+    _editSearchB->setGeometry(150,85,200,20);
+    _editSearchB->setVisible(true);
+
+    _labelSearchB2 = new QLabel(this);
+    _labelSearchB2->setGeometry(400,85,50,20);
+    _labelSearchB2->setText("ou");
+    _labelSearchB2->setVisible(true);
+
+    _editSearchB2 = new QLineEdit(this);
+    _editSearchB2->setGeometry(500,85,200,20);
+    _editSearchB2->setVisible(true);
+
+    _cbFieldB = new QComboBox(this);
+    _cbFieldB->setGeometry(150,110,200,20);
+    _cbFieldB->insertItems(0,tgui->FieldsList);
+    _cbFieldB->setVisible(true);
+	
+// ££££££££££££££££££££££££££££££
+	
     _labelDir = new QLabel(this);
-    _labelDir->setGeometry(30,90,100,20);
+    _labelDir->setGeometry(30,140,100,20);
     _labelDir->setText("Répertoire début");
     _labelDir->setVisible(true);
     _editDir1 = new QLineEdit(this);
-    _editDir1->setGeometry(150,90,200,20);
-    _editDir1->setText(tgui->DayPath);
+    _editDir1->setGeometry(150,140,200,20);
+
+    _editDir1->setText(tgui->SearchDir1);
     _editDir1->setVisible(true);
     _btnBrowse = new QPushButton(this);
-    _btnBrowse->setGeometry(380,90,100,20);
+    _btnBrowse->setGeometry(380,140,100,20);
     _btnBrowse->setText("Parcourir");
     _btnBrowse->setVisible(true);
 
     _labelDir2 = new QLabel(this);
-    _labelDir2->setGeometry(530,90,100,20);
+    _labelDir2->setGeometry(530,140,100,20);
     _labelDir2->setText("Répertoire fin");
     _labelDir2->setVisible(true);
     _editDir2 = new QLineEdit(this);
-    _editDir2->setGeometry(650,90,200,20);
-    _editDir2->setText(tgui->DayPath);
+    _editDir2->setGeometry(650,140,200,20);
+    _editDir2->setText(tgui->SearchDir2);
     _editDir2->setVisible(true);
     _btnBrowse2 = new QPushButton(this);
-    _btnBrowse2->setGeometry(880,90,100,20);
+    _btnBrowse2->setGeometry(880,140,100,20);
     _btnBrowse2->setText("Parcourir");
     _btnBrowse2->setVisible(true);
-
-    _cbField = new QComboBox(this);
-    _cbField->setGeometry(150,130,200,20);
-    _cbField->insertItems(0,tgui->FieldsList);
-    _cbField->setVisible(true);
 
     _btnSearch = new QPushButton(this);
     _btnSearch->setGeometry(30,190,100,20);
@@ -141,8 +156,11 @@ void Recherche::afficher_ecran()
     connect(_btnBrowse,SIGNAL(clicked()),this,SLOT(on_btnBrowse_clicked()));
     connect(_btnReplace,SIGNAL(clicked()),this,SLOT(on_btnReplace_clicked()));
     connect(_btnBrowse2,SIGNAL(clicked()),this,SLOT(on_btnBrowse2_clicked()));
+
+
     connect(_btnOpen,SIGNAL(clicked()),this,SLOT(on_btnOpen_clicked()));
 
+    tgui->_logText   << "editdir1 a bien  " << _editDir1->text() << endl;
 
     activateWindow();
     raise();
@@ -216,6 +234,23 @@ bool Recherche:: findTreat(bool findMode)
     }
     int nc = nfield +1;
     bool isControlled = _withControl[nfield];
+
+// $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+// ajouté le 3/8/2015
+    int nfieldB = _cbFieldB->currentIndex();
+	int ncB = 0;
+	bool isControlledB = false;
+	
+    if(nfieldB >= 0 && nfieldB < _nbFields) 
+	{
+		ncB = nfieldB +1;
+		isControlledB = _withControl[nfieldB];
+	}
+
+// ££££££££££££££££££££££££££££££
+    tgui->_logText   << "avant affectation editdir1 a  " << _editDir1->text() << endl;
+
+
     QString dirPath1(_editDir1->text());
     if(dirPath1.isEmpty())
     {
@@ -270,6 +305,7 @@ bool Recherche:: findTreat(bool findMode)
         }
     }
     //
+    //
     _selFileList.clear();
 	
 	// ajouté le 27/03/2015
@@ -287,6 +323,28 @@ bool Recherche:: findTreat(bool findMode)
 		}
 	}
 	// fin ajout le 27/03/2015
+// $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+// 03/08/2015
+	bool sB = false;
+	bool sB2 = false;
+	bool sSF = false;
+	QString searchedTextB,searchedTextB2;
+	if(ncB>0)
+	{
+		searchedTextB = _editSearchB->text();
+		searchedTextB2 = _editSearchB2->text();
+		if(!searchedTextB.isEmpty()) 
+		{
+			sB = true;
+		}
+		if(!searchedTextB2.isEmpty()) 
+		{
+			sB2 = true;
+		}
+        if(ncB == nc && sB==true) sSF = true;
+	}
+
+// £££££££££££££££££££££££££££££££££££££££££££
 	
     int nl=0;
     int nt=0;
@@ -308,20 +366,21 @@ bool Recherche:: findTreat(bool findMode)
             if(!parDir.exists())continue;
         }
         QStringList tagList = searchDir.entryList(QStringList("*.eti"), QDir::Files);
-        bool fileToSelect,find1,find2;
+        bool fileToSelect,find1,find2,fileTSA,fileTSB;
         foreach(QString tagfile, tagList)
         {
             QString tagFileName = tagDirName + "/" + tagfile;
             QFile tagFile(tagFileName);
             QTextStream tagStream;
             fileToSelect = false;
+			fileTSA=false; fileTSB=false;
             if(tagFile.open(QIODevice::ReadOnly | QIODevice::Text))
             {
                 nt++;
                 tagStream.setDevice(&tagFile);
                 tagStream.readLine();
                 QString tagLine;
-                QString readText;
+                QString readText,readTextB;
                 QString parLine;
                 fpl = false;
                 if(_csvTreat)
@@ -337,28 +396,77 @@ bool Recherche:: findTreat(bool findMode)
                     if(tagLine.isNull() or tagLine.isEmpty()) break;
                     if(_csvTreat && fpl) parLine = parStream.readLine();
                     readText=tagLine.section('\t',nc,nc);
+					if(sB) readTextB = tagLine.section('\t',ncB,ncB);
                     // ajouté le 27/3/2015
                     find1=false; find2=false;
                     if(!readText.isEmpty())
                     {
+						bool condA = false;
                         if(isControlled)
                         {
-                            // modifié le 27/3/2015
-                            if(readText==searchedText) {fileToSelect = true; find1=true;}
+                            if(readText==searchedText) {condA = true; find1=true;}
                             else
                             {
-                                if(s2nn && readText==searchedText2) {fileToSelect = true; find2=true;}
+                                if(s2nn && readText==searchedText2) {condA = true; find2=true;}
                             }
                         }
                         else
                         {
-                            // modifié le 27/3/2015
-                            if(readText.contains(searchedText)) {fileToSelect = true; find1=true;}
+                            if(readText.contains(searchedText)) {condA = true; find1=true;}
                             else
                             {
-                                if(s2nn && readText.contains(searchedText2)) {fileToSelect = true; find2=true;}
+                                if(s2nn && readText.contains(searchedText2)) {condA = true; find2=true;}
                             }
+							
                         }
+						if(!sSF)
+                        {
+							if(condA) fileToSelect = true;
+						}
+						else
+						{
+							if(condA) 
+							{
+								fileTSA = true;
+								if(fileTSA && fileTSB) fileToSelect = true;
+							}
+						}
+						
+						// $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+						if(sB && ((!sSF && fileToSelect) || (sSF && !fileTSB)))
+						{
+							bool condB = false;
+							if(isControlledB)
+							{
+								if(readTextB==searchedTextB) condB = true; 
+								else
+								{
+                                    if(sB2) if(readTextB == searchedTextB2) condB = true;
+								}
+							}
+							else
+							{
+                                if(readTextB.contains(searchedTextB)) condB = true;
+								else
+								{
+                                    if(sB2) if(readTextB.contains(searchedTextB2)) condB = true;
+								}
+							}
+							if(!sSF)
+                            {
+								if(condB==false) fileToSelect = false;
+							}
+							else
+							{
+								if(condB==true) 
+								{
+									fileTSB = true;
+									if(fileTSA && fileTSB) fileToSelect = true;
+								}
+							}
+						}
+						// ££££££££££££££££££££££££££££££££££££££££££
+						
                         if(fileToSelect)
                         {
                             if(_csvTreat)
@@ -411,6 +519,8 @@ bool Recherche:: findTreat(bool findMode)
     _findSaveText = searchedText;
     _dirSaveText1 = dirPath1;
     _dirSaveText2 = dirPath2;
+    tgui->SearchDir1 = dirPath1;
+    tgui->SearchDir2 = dirPath2;
     _fieldSaveNumber = nc;
 	
     if(_csvTreat)

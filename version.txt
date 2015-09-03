@@ -1,3 +1,3 @@
-17/6/2015 - 10h
-sources de la version correspondant à la première version livrable
-de TadaridaL envoyée à Yves le 17/6 : instdl101.exe
+03/09/2015 
+sources de la version correspondant à la version livrable
+de TadaridaL envoyée sur github le 03/09/2015

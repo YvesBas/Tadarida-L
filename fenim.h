@@ -81,7 +81,9 @@ protected:
 class MyQComboBox : public QComboBox
 {
 public:
-    MyQComboBox(QWidget *parent,Fenim *fen,QString code="");
+    MyQComboBox(QWidget *parent,
+
+                Fenim *fen,QString code="");
     QWidget *qmaitre;
     QStringList *ql;
     QString codecombo;
@@ -161,6 +163,7 @@ class MyQLabel : public QLabel
 {
 public:
     MyQLabel(QWidget *parent);
+    void setText(QString);
     QWidget *qmaitre;
 };
 
@@ -319,6 +322,13 @@ public:
     QVector< QVector< QPoint > > m_matrixCalls[NCRETES];
     MyQLineEdit        *editCri;
     bool casA;
+    bool                         _withSilence;
+    char                      *_flagGoodColInitial;
+    char                      *_flagGoodCol;
+    int                           _sonogramWidth;
+    char                       * _energyMoyCol;
+
+
 
     MyQPushButton      *bFlecheDroite;
     MyQPushButton      *bFlecheGauche;

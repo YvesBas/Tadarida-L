@@ -2,6 +2,7 @@
 #include "etiquette.h"
 #include "loupe.h"
 #include "fenim.h"
+#include "detectreatment.h"
 
 const QString _baseIniFile = "/version.ini";
 
@@ -198,14 +199,19 @@ Fenim::Fenim(QMainWindow *parent,QString repwav,QString nomfi,QDir basejour,bool
     ndercrisel = 0;
     nlt=0;
     specTagNumber = 0;
+    _flagGoodCol = new char[SONOGRAM_WIDTH_MAX];
+    _flagGoodColInitial = new char[SONOGRAM_WIDTH_MAX];
+    _energyMoyCol = new char[SONOGRAM_WIDTH_MAX];
     //m_logStream << "Fenim fin constructeur " << endl;
 }
 
 
-
-
 Fenim::~Fenim()
 {
+    delete[] _flagGoodCol;
+    delete[] _flagGoodColInitial;
+    delete[] _energyMoyCol;
+
     videfenim();
     if(crefen) delete wfenim;
 }
@@ -876,6 +882,7 @@ bool Fenim::afficher_image(bool modesaisie)
     {
         view->setFixedSize(1060,fenima->height()+72);
     }
+    m_logStream << "_imaHeight = " << _imaHeight << "  view.height = " << view->height() << endl;
     view->move(m_mx,m_my);
     fenouv = true;
     pix=(scene->addPixmap(QPixmap::fromImage(*fenima))); // ajout du pixmap dans la scene
@@ -907,7 +914,10 @@ bool Fenim::afficher_image(bool modesaisie)
     //int dy = m_iSizeFFTHalf - 121;
     int yc = _imaHeight + _imaHeight - 121;
     // yc : point central pour forcer le scrolling
-    view->centerOn(0,yc); // yes : cela marche
+    view->centerOn(0,yc);
+
+    m_logStream << "fenima->height=" << fenima->height() << endl;
+    m_logStream << "yc=" << yc << endl;
 
     //m_logStream << "m_iSizeFFTHalf = " << m_iSizeFFTHalf << endl;
     //m_logStream << "m_rh = " << m_rh << endl;
@@ -1270,7 +1280,8 @@ bool Fenim::loadMatriceCris2(QString da2File)
         m_cris2Stream >> m_factorX;
         m_cris2Stream >> m_factorY;
     }
-
+    m_logStream << "m_factory=" << m_factorY << endl;
+    m_logStream << "_imaHeight=" << _imaHeight << endl;
     // £££ 27/05/2015
     _numVer = numver;
     _tE = 10;
@@ -1360,6 +1371,32 @@ bool Fenim::loadMatriceCris2(QString da2File)
             }
 
     }
+    //
+    if(numver>20)
+    {
+        m_cris2Stream >> _sonogramWidth;
+        int f0;
+        m_cris2Stream >> f0;
+        _withSilence = (bool)f0;
+        if(_withSilence)
+        {
+            m_logStream << "withSilence=true" << endl;
+
+            for(int j=0;j<_sonogramWidth;j++)
+            {
+                qint8 f1,f2,f3;
+                m_cris2Stream >> f1 >> f2 >> f3;
+                _flagGoodCol[j] = f1;
+                _flagGoodColInitial[j] = f2;
+                _energyMoyCol[j] = f3;
+            }
+        }
+        else m_logStream << "withSilence=false" << endl;
+
+    }
+    else _withSilence = false;
+
+    //
     m_cris2File.close();
     return(true);
 }
@@ -1788,7 +1825,7 @@ void Fenim::selectionneCri(int x,int y,bool isCTRL)
 QString Fenim::calculebulle(int x,int y)
 {
     QString retour("");
-    float distmax = 2000;
+    float distmax = 100;
     int ntrouve = -1;
     int xr=x,yr=_imaHeight-y-1;
     if(m_xmoitie) xr*=2;
@@ -1799,7 +1836,7 @@ QString Fenim::calculebulle(int x,int y)
         {
             ntrouve = i;
             distmax = dist;
-            break;
+            //break;
         }
     }
     if(ntrouve>=0)
@@ -1811,6 +1848,16 @@ QString Fenim::calculebulle(int x,int y)
             retour=QString("Cri ")+QString::number(ntrouve+1)+" : "+esp+" - "+typ+ "    ("+ind+")";
         else
             retour=QString("Cri ")+QString::number(ntrouve+1)+" : cri sans Etiquette";
+        retour += " - ";
+    }
+    //
+    // TODO : mettre une condition (case à cocher) :
+    if(_withSilence && y<6)
+    {
+        int xr = x * (1+m_xmoitie);
+        if(xr>=0 && xr <_sonogramWidth)
+        retour += QString(" ( ") + QString::number((int)(_energyMoyCol[xr])) + " )";
+
     }
     return(retour);
 }
@@ -2075,12 +2122,18 @@ void MyQGraphicsScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * mouseEvent )
     QString bulle = pfenim->calculebulle(x,y);
     int xr=x,yr=pfenim->_imaHeight-y-1;
     if(pfenim->m_xmoitie) xr*=2;
-    if(iloupe) ploupe->affbulle(bulle);
-    else pfenim->affbulle(bulle);
     if(y > pfenim->getImage()->height()-1) y=pfenim->getImage()->height()-1;
     QString ms,khz;
     ms.setNum(pfenim->getms(x),'f',0);
     khz.setNum(pfenim->getkhz(y),'f',2);
+
+    //bulle += QString("y=")+QString::number(y);
+
+    if(bulle.length()>0)
+    {
+        if(iloupe) ploupe->affbulle(bulle);
+        else pfenim->affbulle(bulle);
+    }
 
     pfenim->labelx->setText(ms+" ms");
     pfenim->labely->setText(khz+" khz");
@@ -2398,6 +2451,20 @@ MyQLabel::MyQLabel(QWidget *parent):QLabel(parent)
     setStyleSheet("background-color: #F8F8FE");
 }
 
+void MyQLabel::setText(QString mess)
+{
+    if(mess.isEmpty())
+    {
+        if(isVisible()) setVisible(false);
+    }
+    else
+    {
+        if(!isVisible()) setVisible(true);
+    }
+    QLabel::setText(mess);
+}
+
+
 MyQComboBox::MyQComboBox(QWidget *parent,Fenim *fen,QString esp):QComboBox(parent)
 {
     qmaitre = parent;
@@ -2433,8 +2500,11 @@ void EC_ComboBoxEdit::keyPressEvent(QKeyEvent* e)
 
 void MyQComboBox::keyPressEvent(QKeyEvent* e)
 {
-    Qt::KeyboardModifiers keyMod = QApplication::keyboardModifiers ();
-    if(keyMod.testFlag(Qt::ControlModifier) && e->key() == 'A') pfenim->selectAllCalls();
+    if(pfenim!=0)
+    {
+        Qt::KeyboardModifiers keyMod = QApplication::keyboardModifiers ();
+        if(keyMod.testFlag(Qt::ControlModifier) && e->key() == 'A') pfenim->selectAllCalls();
+    }
     QComboBox::keyPressEvent(e);
 }
 

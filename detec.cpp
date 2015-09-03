@@ -5,18 +5,18 @@ using namespace std;
 
 const QString _baseIniFile = "/version.ini";
 
-Detec::Detec(QMainWindow* parent):QObject(parent)
+Detec::Detec(QMainWindow* parent,int iThread): QThread((QObject *)parent)
 {
     _parent=parent;
     _waiting = false;
-    IsRunning = false;
-    TadaridaMainWindow *ptmw = (TadaridaMainWindow *)parent;
-    ResultSuffix = ptmw->ResultSuffix;
+    //IsRunning = false;
+    PDL= (TadaridaMainWindow *)parent;
+    IThread = iThread;
+    IDebug = PDL->IDebug;
+    ResultSuffix = PDL->ResultSuffix;
     ResultCompressedSuffix = QString("tac");
     MustCancel = false;
-    MustCompress = true;
-    _fileProblem = false;
-    // 4-3-2015 :
+    MustCompress = false; // modifié le 3/9/2015
     _collectPreviousVersionsTags = true;
     _detecTreatment = new DetecTreatment(this);
 }
@@ -30,6 +30,7 @@ bool Detec::InitializeDetec(const QStringList& wavList, QString soundsPath,bool 
     _logVersion = vl;
     _userVersion = vu;
     _withTimeCsv = withTimeCsv;
+    _fileProblem = false;
     ReprocessingMode = reprocessingCase;
     if(ReprocessingMode) MustCompress = false;
     _imageData = imadat;
@@ -49,15 +50,16 @@ bool Detec::InitializeDetec(const QStringList& wavList, QString soundsPath,bool 
         QDir repima(_imagePath);
         if(!repima.exists()) repima.mkdir(_imagePath);
     }
-    QString errorFilePath(_txtPath+"/error.log");
-    _errorFile.setFileName(errorFilePath);
+    _errorFilePath =_txtPath + "/error" + QString::number(IThread+1) + ".log";
+    _errorFile.setFileName(_errorFilePath);
     if(_errorFile.open(QIODevice::WriteOnly | QIODevice::Text))
     {
     _errorStream.setDevice(&_errorFile);
     _errorFileOpen = true;
     }
     else _errorFileOpen = false;
-    QString logFilePath(_txtPath+"/detec.log");
+    QString logFilePath(_txtPath + "/detec" + QString::number(IThread+1) + ".log");
+
     _logFile.setFileName(logFilePath);
     _logFile.open(QIODevice::WriteOnly | QIODevice::Text);
     _logText.setDevice(&_logFile);
@@ -65,7 +67,7 @@ bool Detec::InitializeDetec(const QStringList& wavList, QString soundsPath,bool 
     _timeFileOpen = false;
     if(_withTimeCsv)
     {
-        QString timePath = _txtPath+"/time.csv";
+        QString timePath = _txtPath+ "/time" + QString::number(IThread+1) + ".csv";
         _timeFile.setFileName(timePath);
         if(_timeFile.open(QIODevice::WriteOnly | QIODevice::Text)==true)
         {
@@ -80,29 +82,29 @@ bool Detec::InitializeDetec(const QStringList& wavList, QString soundsPath,bool 
     //
     _detecTreatment->SetDirParameters(_wavPath,_txtPath,_imageData,_imagePath,_datPath);
     _detecTreatment->InitializeDetecTreatment();
-    IsRunning = true;
+    //IsRunning = true;
     return(true);
 }
 
 void Detec::endDetec()
 {
+    _logText << "endDetec  IThread = " << IThread << endl;
     if(ReprocessingMode) emit information3(_numberStartTags,_numberEndTags,_numberRecupTags);
     if(_fileProblem) emit dirProblem();
     else writeDirectoryVersion();
     _errorFile.close();
     if(_timeFileOpen) _timeFile.close();
-    if(!ReprocessingMode) emit threadFinished();
+    // if(!ReprocessingMode) emit threadFinished(IThread);
+    if(!ReprocessingMode) emit threadFinished(IThread);
     _detecTreatment->EndDetecTreatment();
-    IsRunning = false;
     MustCancel = false;
     if(ReprocessingMode)
     {
-
-
         int vdl = _versionDirList.size();
         if(vdl>0) for(int k=0;k<vdl;k++) delete[] _versionIndicators[k];
         delete[] _versionIndicators;
     }
+    _logText << "fin endDetec  IThread = " << IThread << endl;
     _logFile.close();
 }
 
@@ -116,21 +118,29 @@ void Detec::Resume()
     _waiting = false;
 }
 
-void Detec::Treatment()
+void Detec::run()
 {
     readDirectoryVersion();
     _nbTreatedFiles = 0;
     _nbErrorFiles = 0;
+    for(int i=0;i<NTERRORS;i++) _detecTreatment->TabErrors[i]=0;
     _filesNumber = _wavFileList.size();
     _fileIndex=0;
     _numberStartTags=0;
     _numberEndTags=0;
     _numberRecupTags=0;
     if(ReprocessingMode && _collectPreviousVersionsTags) createVersionsList();
-    _treating = false;
-    _clock = new QTimer(this);
-    connect(_clock,SIGNAL(timeout()),this,SLOT(treatOneFile()));
-    _clock->start(50);
+    //_treating = false;
+    for(int i=0;i<_filesNumber;i++)
+    {
+        if(!treatOneFile())
+        {
+            _logText << "treatOneFile = false" << endl;
+            break;
+        }
+    }
+    if(ReprocessingMode && _collectPreviousVersionsTags) cleanVerSubdir();
+    endDetec();
 }
 
 void Detec::createVersionsList()
@@ -245,16 +255,9 @@ void Detec::cleanSubdir(QDir cdir,QString ndirPath,bool cleanAll,QString filter)
 
 bool Detec::treatOneFile()
 {
-    //_logText << "entre dans tof" << endl;
-    if(_treating || _waiting) return(true);
-    if(_fileIndex >= _filesNumber || (MustCancel  && !ReprocessingMode) || _fileProblem)
-    {
-        _clock->stop();
-        if(ReprocessingMode && _collectPreviousVersionsTags && _fileIndex >= _filesNumber) cleanVerSubdir();
-        endDetec();
-        return(true);
-    }
-    _treating = true;
+    _logText << "ZZ entre dans tof" << endl;
+    // if(_fileIndex >= _filesNumber || (MustCancel  && !ReprocessingMode) || _fileProblem)
+    if((MustCancel  && !ReprocessingMode) || _fileProblem) return(false);
     QString wavFile = _wavFileList.at(_fileIndex);
     _wavFile = wavFile;
     _fileIndex++;
@@ -272,17 +275,13 @@ bool Detec::treatOneFile()
     }
     //
     emit information(nomfic);
-    //***_logText << "Avant initialiseVariablesParFichier "<< QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
-    //initWavVariables();
-	// ZZZ : vérifier que le contenu de initWavVariables est bien dans une méthode de DetecTreatment
-
-    //***_logText << "Avant suite initialisations diverses "<< QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
     QString pathFile = _wavPath + '/' + wavFile;
     if(checkAssociatedFiles(_wavPath,_wavFile)== false)
     {
         if(_errorFileOpen) _errorStream << _wavFile << ": problème sur fichier associé" << endl;
         _fileProblem = true;
-        _treating = false; return(false);
+        //_treating = false;
+        return(false);
     }
     if(_detecTreatment->CallTreatmentsForOneFile(wavFile,pathFile))
 	{
@@ -296,7 +295,11 @@ bool Detec::treatOneFile()
         }
         _nbTreatedFiles++;
 	}
-    else _nbErrorFiles++;
+    else
+    {
+        _nbErrorFiles++;
+        if(_detecTreatment->NError >=0 && _detecTreatment->NError<NTERRORS) _detecTreatment->TabErrors[_detecTreatment->NError]++;
+    }
     // -------------------------------------------------------
     if(ReprocessingMode)
     {
@@ -308,18 +311,25 @@ bool Detec::treatOneFile()
             _numberEndTags+=nbTags;
             QString info0=wavFile+QString(" : ")
                     + QString::number(_remObject->nbc2)+QString(" cris sur ")
-                    +QString::number(_remObject->nbc1)+".";
+                    + QString::number(_remObject->nbc1)+".";
             QString info1=wavFile+QString(" : ")
                     + QString::number(nbTags)+QString(" étiquettes rematchées sur ")
-                    +QString::number(_remObject->nbe1)+".";
+                    + QString::number(_remObject->nbe1)+".";
             QString info2=_wavPath+QString(" : ")
                     + QString::number(_numberEndTags)+QString(" étiquettes rematchées sur ")
-                    +QString::number(_numberStartTags)+".";
-            emit information2(info2);
+                    + QString::number(_numberStartTags)+".";
+
             //_logText << "après rematchage fenim2 a " << nbTags << "etiquettes"<< endl;
             //_logText << info0 << endl;
             //_logText << info1 << endl;
-            if(_fileIndex == _filesNumber-1) _logText << "Rematchage du répertoire "<< info2 << endl;
+            _logText << info2 << endl;
+            if(_fileIndex == _filesNumber)
+            {
+                emit information2b(info2,true);
+                _logText << "Rematchage du répertoire "<< info2 << endl;
+
+            }
+            emit information2b(info2,false);
             // boucle de récupération sur versions antérieures
             int nbrecup = 0;
             if(_collectPreviousVersionsTags)
@@ -337,25 +347,24 @@ bool Detec::treatOneFile()
                         nbTags += _remObject->nbe2;
                         info1=wavFile+QString(" - après récupération sur version ")
                           +verPath+" : "+QString::number(nbTags)+QString(" étiquettes rematchées.");
-                        //_logText << info1 << endl;
+                        _logText << info1 << endl;
                         info2=_wavPath + QString(" : ") + QString::number(_numberEndTags+_numberRecupTags)
                                 + QString(" étiquettes rematchées.");
-                        emit information2(info2);
+                        emit information2b(info2,true);
+                        _logText << info2 << endl;
                     }
                 }
-                //
             }
-            //
             _remObject->EndMatch();
         }
     }
-    else emit information4(_nbTreatedFiles,_nbErrorFiles);
+    emit information4(IThread,_nbTreatedFiles,_nbErrorFiles);
+    _sleep(10);
     _logText << "fin de traitement du fichier" << endl;
-    emit moveBar((float)_fileIndex/(float)_filesNumber);
-    _treating = false;
+    //emit moveBar((float)_fileIndex/(float)_filesNumber);
+    //_treating = false;
     return(true);
 }
-
 
 bool Detec::readDirectoryVersion()
 {
@@ -421,7 +430,9 @@ void Detec::createImage(QString wavFile)
 {
     if(_detecTreatment->_sonogramWidth > 32767) {_xmoitie = true; _imaWidth=(_detecTreatment->_sonogramWidth+1)/2;}
     else  {_xmoitie = false; _imaWidth=_detecTreatment->_sonogramWidth;}
-    QImage ima = QImage(_imaWidth, _detecTreatment->_fftHeightHalf,QImage::Format_RGB32);
+    int lyi = qMin(_detecTreatment->_fftHeightHalf,_detecTreatment->_limY);
+    //QImage ima = QImage(_imaWidth, _detecTreatment->_fftHeightHalf,QImage::Format_RGB32);
+    QImage ima = QImage(_imaWidth, lyi,QImage::Format_RGB32);
     initBvrvb(_detecTreatment->_energyMin,_detecTreatment->_energyMax);
     int imax=((int)(_detecTreatment->_energyMax-_detecTreatment->_energyMin)*5)+1;
     uint crgb;
@@ -431,25 +442,51 @@ void Detec::createImage(QString wavFile)
     }
     qint16 *ydl;
     int exceptions = 0;
-    int lyi = qMin(_detecTreatment->_fftHeightHalf,_detecTreatment->_limY);
+    //int blanc = 255 + (255<<8) +(255<<16);
+    int blanc = qRgb(250,250,250);
+    int noir = qRgb(5,5,5);
+    int grisclair = qRgb(230,230,230);
+    int grisfonce = qRgb(25,25,25);
+    _logText << "lyi=" << lyi << endl;
     for(int y = 0; y < lyi ; y++)
     {
-        ydl=_detecTreatment->_sonogramArray[y];
-        int digitPos = 0;
-        char *pBoolChar = _detecTreatment->_pointFlagsArray[y];;
-        char boolChar = *pBoolChar;
-        for (int x = 0 ; x < _imaWidth ; x++)
+        if(y<6 && _detecTreatment->_withSilence)
         {
-            int valeur=(int)(((float)(*ydl)/20.0f)  -  _detecTreatment->_energyMin*5.0f);
-            if(valeur>=0 && valeur<imax)crgb=_tvaleur[valeur];
-            else {crgb=0; exceptions++;}
-            if((boolChar & (1 << digitPos))!=0) crgb |= 224 << 16;
-            ima.setPixel(x, _detecTreatment->_fftHeightHalf-y-1,crgb);
-            for(int k=0;k<1+_xmoitie;k++)
+            int xr = 0;
+            for (int x = 0 ; x < _imaWidth ; x++)
             {
-                ydl++;
-                digitPos++;
-                if(digitPos==8) {pBoolChar++; boolChar = *pBoolChar; digitPos=0;}
+                crgb=0;
+                if(y<3)
+                {
+                    if(_detecTreatment->_flagGoodColInitial[xr]==true) crgb = grisclair; else crgb = grisfonce;
+                 }
+                else
+                {
+                    if(_detecTreatment->_flagGoodCol[xr]==true) crgb = blanc; else crgb = noir;
+                }
+                ima.setPixel(x, lyi-y-1,crgb);
+                xr+=1+_xmoitie;
+            }
+        }
+        else
+        {
+            ydl=_detecTreatment->_sonogramArray[y];
+            int digitPos = 0;
+            char *pBoolChar = _detecTreatment->_pointFlagsArray[y];;
+            char boolChar = *pBoolChar;
+            for (int x = 0 ; x < _imaWidth ; x++)
+            {
+                int valeur=(int)(((float)(*ydl)/20.0f)  -  _detecTreatment->_energyMin*5.0f);
+                if(valeur>=0 && valeur<imax)crgb=_tvaleur[valeur];
+                else {crgb=0; exceptions++;}
+                if((boolChar & (1 << digitPos))!=0) crgb |= 224 << 16;
+                ima.setPixel(x, lyi-y-1,crgb);
+                for(int k=0;k<1+_xmoitie;k++)
+                {
+                    ydl++;
+                    digitPos++;
+                    if(digitPos==8) {pBoolChar++; boolChar = *pBoolChar; digitPos=0;}
+                }
             }
         }
     }
