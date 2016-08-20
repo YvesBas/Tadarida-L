@@ -1,3 +1,4 @@
-03/09/2015 
-sources de la version correspondant à la version livrable
-de TadaridaL envoyée sur github le 03/09/2015
+20/08/2016
+Tadarida-L
+Version 2.1.0
+For Windows and QT5.4

@@ -10,7 +10,6 @@
 #include <QtCore/qmath.h>
 #include <QTextStream>
 #include <QProcess>
-
 #include <QVector>
 #include "sndfile.h"
 #include "fftw3.h"
@@ -20,18 +19,12 @@
 #define	FFT_HEIGHT_MAX 4096
 #define	FFT_HEIGHT_HALF_MAX 2048
 #define FREQ_MAX 250 // KHz
-//£ #define MAXLARCRI 10000
 #define MAXLARCRI 10000
 #define MAXHEIGHT 500
 #define PI	3.14159265358979
-
-//£ #define SONOGRAM_WIDTH_MAX 65535
 #define SONOGRAM_WIDTH_MAX 60008
 #define  LD8 (SONOGRAM_WIDTH_MAX+15)/8
-
 #define SONOGRAM_WIDTH_MIN 64
-
-//£ #define MAXCRI 2000
 #define MAXCRI 1500
 #define NCRETES 5
 #define EMIN -100
@@ -79,12 +72,12 @@ public:
     ParamToSave();
     ~ParamToSave();
 
-    int NumTableau;
-    int NumPar;
-    QString ColumnTitle;
-    QString InfoLabel;
-    int NeedVer;
-    int LimVer;
+    int                                                                  ArrayNumber;
+    QString                                                              ColumnTitle;
+    int                                                                  FromVersion;
+    QString                                                              InfoLabel;
+    int                                                                  ParameterNumber;
+    int                                                                  ToVersion;
 };
 
 
@@ -92,190 +85,159 @@ class DetecTreatment
 {
 public:
     DetecTreatment(Detec *);
-    DetecTreatment(Recherche *);
+    DetecTreatment();
     ~DetecTreatment();
-    bool CallTreatmentsForOneFile(QString& wavFile,QString &pathFile);
-    void EndDetecTreatment();
-    void InitializeDetecTreatment();
-    void saveDatFile(QString wavFile);
-    void SetDirParameters(QString,QString,bool,QString,QString);
-    void SetGlobalParameters(int,int,int,int,int,int,bool,int,int,int,int,int,int,int,int,int,int);
-    void sortFloatIndArray(float *,int,int *);
+    bool                                                                 CallTreatmentsForOneFile(QString&,QString &);
+    void                                                                 EndDetecTreatment();
+    void                                                                 InitializeDetecTreatment();
+    void                                                                 SetDirParameters(QString,QString,bool,QString,QString);
+    void                                                                 SetGlobalParameters(int,int,int,int,int,int,int,bool,int,int,int,int,int,int,int,int,int,int,bool);
+    void                                                                 SortFloatIndArray(float *,int,int *);
 
-    QVector< ParamToSave >       _vectPar;
-    int			                 _sonogramWidth;
-    int			                 _fftHeightHalf;
-    double			             _energyMax;
-    double		                 _energyMin;
-    int                           _limY;
-    qint16 **                 _sonogramArray;
-    float                        _energyShapeThreshold;
-    float                        _energyStopThreshold;
-    char**                       _pointFlagsArray;
-    int NError;
-    int TabErrors[NTERRORS];
-    bool                         *_flagGoodColInitial;
-    bool                         *_flagGoodCol;
-    bool _withSilence;
-
+    QVector< QVector<QPoint> >                                           CallsArray;
+    QVector< QVector<QPoint> >                                           CallMasterRidgeArray;
+    QVector< QVector<QPoint> >                                           CallNorthRidgeArray;
+    QVector< QVector<QPoint> >                                           CallSecondWestRidgeArray;
+    QVector< QVector<QPoint> >                                           CallSouthArray;
+    QVector< QVector<QPoint> >                                           CallWestRidgeArray;
+    float                                                                *EnergyColumAverage;
+    double                                                               EnergyMin;
+    double                                                               EnergyMax;
+    float                                                                EnergyShapeThreshold;
+    float                                                                EnergyStopThreshold;
+    bool                                                                 *FlagGoodCol;
+    bool                                                                 *FlagGoodColInitial;
+    int                                                                  FftHeightHalf;
+    int                                                                  *Inflexion1;
+    int                                                                  *Inflexion3;
+    float                                                                KhzPerY;
+    int                                                                  LimY;
+    int                                                                  *LowSlope;
+    QVector< QPoint >                                                    MasterPoints;
+    float                                                                MsPerX;
+    int                                                                  NError;
+    char**                                                               PointFlagsArray;
+    qint16**                                                             SonogramArray;
+    int                                                                  SonogramWidth;
+    int                                                                  TabErrors[NTERRORS];
+    int                                                                  TimeExpansion;
+    QVector< ParamToSave >                                               VectPar;
+    bool                                                                 WithSilence;
 
 private:
-    // methods
-    //void calculateMedianNoise();
-    void clearVars();
-    bool computeFFT(QString &);
-    void correctNoise();
-    void detectsParameter2();
-    void initVectorParams();
-    bool openWavFile(QString &);
-    void saveParameters(const QString&);
-    void saveCompressedParameters(const QString&);
-    //void expandParameters(const QString&);
-    void shapesDetects();
-    void sortWaves();
-    void sortFloatArray(float *,int);
-    void sortIntArrays(int *,int,int *);
-    void aff(QString,qint64,int);
-    bool determineLeftOrRight(QString &);
+    void                                                                 aff(QString,qint64,int);
+    void                                                                 clearVars();
+    bool                                                                 computeFFT(QString &);
+    void                                                                 correctNoise();
+    void                                                                 detectsParameter2();
+    bool                                                                 determineLeftOrRight(QString &);
+    void                                                                 initVectorParams();
+    bool                                                                 openWavFile(QString &);
+    void                                                                 saveParameters(const QString&);
+    void                                                                 saveCompressedParameters(const QString&);
+    void                                                                 shapesDetects();
+    void                                                                 sortWaves();
+    void                                                                 sortFloatArray(float *,int);
+    void                                                                 sortIntArrays(int *,int,int *);
 
-    // attributes
-    Detec                        *_detec;
-    float                        *_averagePerX;
-    QDir                         _baseDayDir;
-    float                        _callEnergyMax ;
-    int                          _callEnergyMaxIndex;
-    QVector< QVector<QPoint> >   _callsArray;
-    QVector<QPoint>              _callMasterRidge;
-    QVector< QVector<QPoint> >   _callMasterRidgeArray;
-    QFile                        _callMatrixFile;
-    QString                      _callMatrixName;
-    QDataStream                  _callMatrixStream;
-    QVector<QPoint>              _callNorthRidge;
-    QVector< QVector<QPoint> >   _callNorthRidgeArray;
-    QVector<QPoint>              _callSecondWestRidge;
-    QVector< QVector<QPoint> >   _callSecondWestRidgeArray;
-    QVector<QPoint>              _callSouthRidge;
-    QVector< QVector<QPoint> >   _callSouthArray;
-    QVector<QPoint>              _callWestRidge;
-    QVector< QVector<QPoint> >   _callWestRidgeArray;
-    int                          _callsNumber;
-    char *                       _charParamsArray;
-    char *                       _charTabX;
-    char *                       _charTabYX;
-    char *                       _charYEmaxPerX;
-    float                        *_coeff;
-    //fftwf_complex*	             _complexInput;
-    QFile                        _compressedParametersFile;
-    QDataStream                  _compressedParametersStream;
-    int                          _paramVersion;
-    int                          _compressedVersion;
-    float*			             _data;
-    QString                      _datPath;
-    int                          _detectionThreshold;
-    float                        **_dpm;
-    int                          **_dypm;
-    float                        *_eMaxPerX;
-    float                        *_energyMoyCol;
-    QFile                        _expandParametersFile;
-    QDataStream                  _expandParametersStream;
-    int			                 _fftHeight;
-    //fftwf_complex*	             _fftRes;
-    float                        _freqCallMin;
-    int                          _freqMin;
-    int                          **_harmonic;
-    bool                         _imageData;
-    QString                      _imagePath;
-    int                          *_inflexion1;
-    int                          *_inflexion3;
-    int				             _iOverlapMoving;
-    float                        _khzPerY;
-    bool                         _littleParams;
-    int                          *_lowSlope;
-    QVector< QPoint >            _masterPoints;
-    int                          _maxCallWidth;
-    int                          _maxCallHeight;
-    int                          _maxY;
-    //int			                 _medianNoise;
-    int                          _minY;
-    float                        _msPerX;
-    int	                         _nbo;
-    int                          _numberCallParameters;
-    int                          *_numberPixelsPerX;
-    int                          *_numberPixelsPerY;
-    float***                     _paramsArray;
-    float**                      _simpleParamsArray;
-    float**                      _valuesToCompressArray;
-
-    int                          _patience;
-    //fftwf_plan		         _plan;
-    fftwf_plan		             *_pPlan;
-    int                          _iH;
-    fftwf_complex*	             _complexInput;
-    fftwf_complex*	             _fftRes;
-    QString                      ResultSuffix;
-    QString                      ResultCompressedSuffix;
-    bool                         _saveTitleLine;
-    float                        *_slope;
-    //£ float **                 _sonogramArray;
-    SNDFILE*		             _soundFile;
-    SF_INFO			             _soundFileInfo;
-    int                          _stopThreshold;
-    float                        **_tabX;
-    float                        *_tabY;
-    float                        **_tabYX;
-    int	                         _timeExpansion;
-    int	                         _timeExpansionLeft;
-    int	                         _timeExpansionRight;
-    bool                         _treating;
-    QFile                        _txtFile;
-    QString                      _txtPath;
-    QFile                        txtFile;
-    QString                      _txtFilePath2;
-    uint                         _tvaleur[2000];
-    QVector< QPoint >            _vectorCallPoints;
-    QVector < int >              _vectorXMin;
-    QVector < int >              _vectorXMax;
-    QString                     _wavFile;
-    QStringList                  _wavFileList;
-    QString                      _wavPath;
-    int                          _xMax;
-    int                          *_xMaxPerY;
-    int                          _xMin;
-    //£ int                    *_xMinPerY;
-    quint16                   *_xMinPerY;
-    //£ int                          *_xSecondWestRidgePerY;
-    quint16                  *_xSecondWestRidgePerY;
-    //£ int                      **_yEmaxPerX;
-    quint16                   **_yEmaxPerX;
-    float                       *_yEbarPerX;
-    float                       *_totYEPerX;
-    int                          _yMax;
-    //£ int                          *_yMaxPerX;
-    quint16                          *_yMaxPerX;
-    int                          _yMin;
-    //£ int                     *_yMinPerX;
-    quint16                   *_yMinPerX;
-    int                          **_ypm;
-    char                     *_charSonogramArray;
-    char                     *_charPointFlagsArray;
-    // ajouté pour nouveaux paramètres
-    bool _useValflag;
-    int _jumpThreshold;
-    int _widthBigControl;
-    int _widthLittleControl;
-    int _highThresholdJB;
-    int _lowThresholdJB;
-    int _lowThresholdC;
-    int _highThresholdC;
-    int _qR;
-    int _qN;
-    bool _fileProblem;
-    //bool _withNewParams;
-    int *sortMp;
-    int *invMp;
-    int *xMp;
-    bool _firstFile;
-    //
+    float *                                                              _averagePerX;
+    QDir                                                                 _baseDayDir;
+    float                                                                _callEnergyMax ;
+    int                                                                  _callEnergyMaxIndex;
+    QVector<QPoint>                                                      _callMasterRidge;
+    QVector<QPoint>                                                      _callNorthRidge;
+    QVector<QPoint>                                                      _callSecondWestRidge;
+    QVector<QPoint>                                                      _callSouthRidge;
+    QVector<QPoint>                                                      _callWestRidge;
+    int                                                                  _callsNumber;
+    char *                                                               _charParamsArray;
+    char*                                                                _charPointFlagsArray;
+    char*                                                                _charSonogramArray;
+    char *                                                               _charTabX;
+    char *                                                               _charTabYX;
+    char *                                                               _charYEmaxPerX;
+    float  *                                                             _coeff;
+    fftwf_complex*                                                       _complexInput;
+    bool                                                                 _desactiveCorrectNoise;
+    int                                                                  _compressedVersion;
+    float *                                                              _data;
+    QString                                                              _datPath;
+    Detec                                                                *_detec;
+    int                                                                  _detectionThreshold;
+    float **                                                             _dpm;
+    int **                                                               _dypm;
+    float *                                                              _eMaxPerX;
+    int                                                                  _fftHeight;
+    fftwf_complex*                                                       _fftRes;
+    float                                                                _freqCallMax;
+    float                                                                _freqCallMin;
+    int                                                                  _freqMin;
+    int                                                                  **_harmonic;
+    int                                                                  _highThresholdJB;
+    int                                                                  _highThresholdC;
+    int                                                                  _iH;
+    bool                                                                 _imageData;
+    QString                                                              _imagePath;
+    int*                                                                 _invMp;
+    int                                                                  _iOverlapMoving;
+    int                                                                  _jumpThreshold;
+    bool                                                                 _littleParams;
+    int                                                                  _lowThresholdJB;
+    int                                                                  _lowThresholdC;
+    int                                                                  _maxCallWidth;
+    int                                                                  _maxCallHeight;
+    int                                                                  _maxY;
+    int                                                                  _modeFreq;
+    int                                                                  _minY;
+    int                                                                  _nbo;
+    int                                                                  _numberCallParameters;
+    int                                                                  *_numberPixelsPerX;
+    int                                                                  *_numberPixelsPerY;
+    float***                                                             _paramsArray;
+    int                                                                  _paramVersion;
+    fftwf_plan                                                           *_pPlan;
+    int                                                                  _qN;
+    int                                                                  _qR;
+    QString                                                              _resultCompressedSuffix;
+    QString                                                              _resultSuffix;
+    bool                                                                 _saveTitleLine;
+    float*                                                               _slope;
+    float**                                                              _simpleParamsArray;
+    int*                                                                 _sortMp;
+    SNDFILE*                                                             _soundFile;
+    SF_INFO                                                              _soundFileInfo;
+    int                                                                  _stopThreshold;
+    float**                                                              _tabX;
+    float*                                                               _tabY;
+    float**                                                              _tabYX;
+    int                                                                  _timeExpansionLeft;
+    int                                                                  _timeExpansionRight;
+    QString                                                              _txtPath;
+    uint                                                                 _tvalue[2000];
+    bool                                                                 _useValflag;
+    float**                                                              _valuesToCompressArray;
+    QVector< QPoint >                                                    _vectorCallPoints;
+    QVector < int >                                                      _vectorXMin;
+    QVector < int >                                                      _vectorXMax;
+    QString                                                              _wavFile;
+    QStringList                                                          _wavFileList;
+    QString                                                              _wavPath;
+    int                                                                  _widthBigControl;
+    int                                                                  _widthLittleControl;
+    int                                                                  _xMax;
+    int*                                                                 _xMaxPerY;
+    int                                                                  _xMin;
+    quint16*                                                             _xMinPerY;
+    int *                                                                _xMp;
+    quint16*                                                             _xSecondWestRidgePerY;
+    float*                                                               _totYEPerX;
+    float*                                                               _yEbarPerX;
+    quint16**                                                            _yEmaxPerX;
+    int                                                                  _yMax;
+    quint16*                                                             _yMaxPerX;
+    int                                                                  _yMin;
+    quint16*                                                             _yMinPerX;
+    int**                                                                _ypm;
 };
 
 #endif // DETECTREATMENT_H

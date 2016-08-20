@@ -4,10 +4,10 @@
 #
 #-------------------------------------------------
 
-QT       += core gui widgets network
+QT       += core gui widgets
 
 
-TARGET = TadaridaQt
+TARGET = TadaridaL
 TEMPLATE = app
 
 win32 {
@@ -26,8 +26,7 @@ SOURCES += main.cpp\
     detec.cpp \
     TadaridaMainWindow.cpp \
     recherche.cpp \
-    detectreatment.cpp \
-    transparameters.cpp
+    detectreatment.cpp
 
 HEADERS  += \
     fenim.h \
@@ -37,10 +36,9 @@ HEADERS  += \
     detec.h \
     TadaridaMainWindow.h \
     recherche.h \
-    detectreatment.h \
-    transparameters.h
+    detectreatment.h 
 
-INCLUDEPATH += "C:/Program Files (x86)/Mega-Nerd/libsndfile/include" "Headers" 
+INCLUDEPATH += "Headers" 
 
 win32: LIBS += -L$$PWD/Libs/ -llibfftw3f-3 -llibsndfile-1
 

@@ -25,19 +25,21 @@ class Parametre
 public:
     explicit Parametre(Param *fpa,int indice,void *pvar,int type,int imin,int imax,double dmin,double dmax);
     ~Parametre();
-    bool controle();
-    int par_ile;
-    int par_icb;
-    int par_ico;
+    bool                   InputControl();
+
+    int                    CheckBoxNumber;
+    int                    ComboNumber;
+    int                    EditNumber;
+
 private :
-    Param *par_fpa;
-    int par_indice;
-    void *par_pvar;
-    int par_type;
-    int par_imin;
-    int par_imax;
-    double par_dmin;
-    double par_dmax;
+    double                 _doubleMin;
+    double                 _doubleMax;
+    int                    _intMin;
+    int                    _intMax;
+    Param                  *_pParam;
+    int                    _paramIndex;
+    int                    _parameterType;
+    void                   *_variablePointer;
 };
 
 class Param : public QMainWindow
@@ -46,36 +48,34 @@ class Param : public QMainWindow
 public:
     Param(QMainWindow *parent,int nbparam);
     ~Param();
-    void afficher_ecran();
-    TadaridaMainWindow *sg;
-    void creeParametre(QString titre,void *pvar,int type,int imin=0,int imax=0,double dmin=0.0f,double dmax=0.0f,QStringList *qsl=new QStringList());
-    QLabel *p_label[20];
-    QLineEdit *p_edit[20];
-    QCheckBox *p_checkbox[20];
-    QComboBox *p_combo[20];
-    int p_nbparam;
-    int n_param;
+    void                    CreateParameter(QString title,void *pvar,int type,int imin=0,int imax=0,double dmin=0.0f,double dmax=0.0f,QStringList *qsl=new QStringList());
+    void                    ShowScreen();
 
-signals:
+    QCheckBox               *CheckBoxArray[20];
+    QComboBox               *ComboArray[20];
+    QLineEdit               *EditArray[20];
+    int                     HalfWidth;
+    QLabel                  *LabelArray[20];
+    int                     ParamsNumber;
+    int                     ParamOrderNumber;
+    TadaridaMainWindow      *PMainWindow;
 
 public slots:
     void enregParams();
 
 private:
-    int p_mh;
-    int p_mb;
-    int p_lf;
-    int p_hf;
-    int p_demil;
-    int p_xl;
-    int p_ll;
-    int p_xe;
-    int p_le;
-    int nle;
-    int ncb;
-    int nco;
-    Parametre *pparametre[20];
-    QPushButton *benreg;
+    int                     _checkBoxOrderNumber;
+    int                     _comboOrderNumber;
+    int                     _editOrderNumber;
+    int                     _editWidth;
+    int                     _editX;
+    int                     _heightInterval;
+    int                     _labelWidth;
+    int                     _labelX;
+    int                     _mb;
+    Parametre               *_parametreArray[20];
+    QPushButton             *_saveButton;
+    int                     _windowHeight;
 };
 
 

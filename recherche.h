@@ -41,52 +41,47 @@ private:
     void endCsvTable(QString,QString);
 
     TadaridaMainWindow    *tgui;
-    int                   _nbFields;
-    QComboBox             *_cbField;
-    QLabel                *_labelSearch;
-    QLineEdit             *_editSearch;
-    QLabel                *_labelDir;
-    QLineEdit             *_editDir1;
-    QPushButton           *_btnBrowse;
-    QLabel                *_labelDir2;
-    QLineEdit             *_editDir2;
-    QPushButton           *_btnBrowse2;
-    QComboBox             *_fieldSearch;
-    QPushButton           *_btnSearch;
-	QStringList           _filesList;
-    QTableWidget           *_filesTable;
-    QStringList           _columnTitles;
-    QLabel                *_lblSelectedNumber;
-    QLabel                *_labelReplace;
-    QLineEdit             *_editReplace;
+    QPushButton           *_btnOpen;
     QPushButton           *_btnReplace;
-    QStringList           _selFileList;
-    QString               _findSaveText;
+    QComboBox             *_cbField;
+    QComboBox             *_cbFieldB;
+    QCheckBox             *_cpComp;
+    QLineEdit             *_editDir1;
+    QStringList           _columnTitles;
+    QStringList           _controlTableList;
+    bool                  _csvTableOpen;
+    bool                  _csvTreat;
+    DetecTreatment        *_detecTreatment;
     QString               _dirSaveText1;
     QString               _dirSaveText2;
+    QLineEdit             *_editDir2;
+    QLineEdit             *_editReplace;
+    QLineEdit             *_editSearch;
+    QLineEdit             *_editSearch2;
+    QLineEdit             *_editSearchB;
+    QLineEdit             *_editSearchB2;
+    QPushButton           *_btnBrowse;
+    QPushButton           *_btnBrowse2;
     int                   _fieldSaveNumber;
-    QStringList           _controlTableList;
+    QComboBox             *_fieldSearch;
+    QTextStream           _fileStream;
+    QPushButton           *_btnSearch;
+    QStringList           _filesList;
+    QString               _findSaveText;
+    QTableWidget          *_filesTable;
+    QLabel                *_labelDir;
+    QLabel                *_labelDir2;
+    QLabel                *_labelSearch;
+    QLabel                *_labelReplace;
+    QLabel                *_labelSearch2;
+    QLabel                *_labelSearchB;
+    QLabel                *_lblSelectedNumber;
+    QLabel                *_labelSearchB2;
+    int                   _nbFields;
+    int                   _nCompLines;
+    QStringList           _selFileList;
+    QFile                 _txtFile;
     bool                  *_withControl;
-    QPushButton           *_btnOpen;
-
-    // ajouté le 27/3/2015
-    QLabel                    *_labelSearch2;
-    QLineEdit               *_editSearch2;
-// $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-// ajouté le 03/08/2015
-    QComboBox             *_cbFieldB;
-    QLabel                    *_labelSearchB;
-    QLineEdit               *_editSearchB;
-    QLabel                    *_labelSearchB2;
-    QLineEdit               *_editSearchB2;
-// ££££££££££££££££££££££££££££££££££
-    QCheckBox           *_cpComp;
-    QFile    				    _txtFile;
-    QTextStream          _fileStream;
-    bool                        _csvTableOpen;
-    bool                         _csvTreat;
-    int                            _nCompLines;
-    DetecTreatment    *_detecTreatment;
 
 private slots:
     void                  filesFind();

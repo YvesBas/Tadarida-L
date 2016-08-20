@@ -8,14 +8,16 @@ enum FIELDCODE {ESPECE,TYPE,INDICE,ZONE,SITE,COMMENTAIRE,MATERIEL,CONFIDENTIEL,D
 class Etiquette
 {
 public:
-    //explicit Etiquette(int,QString,QString,int,QString,QString,QString,QString,QString,QString,QString,QString);
-    explicit Etiquette(int num_cri);
+    explicit Etiquette(int);
     Etiquette();
-    void vide();
-    int e_numCri;
-    QString DataFields[NBFIELDS];
-	int SpecNumber;
-    void recopie(Etiquette *etisource);
+
+    void                       EtiquetteClear();
+    void                       EtiquetteClone();
+    void                       EtiquetteClone(Etiquette *);
+
+    int                        CallNumber;
+    QString                    DataFields[NBFIELDS];
+    int                        SpecNumber;
 
 private:
 };

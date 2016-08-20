@@ -28,132 +28,108 @@ class Detec : public QThread
 public:    
     explicit Detec(QMainWindow* parent = 0,int iThread=0);
     ~Detec();
-    void run();
-    bool InitializeDetec(const QStringList&, QString,bool,int,int,bool,bool,RematchClass *);
-    void Pause();
-    void Resume();
-    void SetGlobalParameters(int,int,int,int,int,
-                             bool,int,int,int,int,int,int,int);
+    void                         run();
+    bool                         InitializeDetec(const QStringList&, QString,bool,int,int,bool,bool,RematchClass *,int);
+    void                         SetGlobalParameters(int,int,int,int,int,bool,int,int,int,int,int,int,int);
 
-    TadaridaMainWindow *PDL;
-    DetecTreatment    *_detecTreatment;
-    bool                         _imageData;
-    QTextStream          _timeStream;
-    bool                         _timeFileOpen;
-    bool                 _withTimeCsv;
-    //bool                         IsRunning;
-    QTextStream          _logText;
-    int                             _logVersion;
+    QFile                        ErrorFile;
+    bool                         ErrorFileOpen;
+    QTextStream                  ErrorStream;
+    bool                         IDebug;
+    bool                         ImageData;
+    int                          IThread;
+    QTextStream                  LogStream;
     bool                         MustCancel;
     bool                         MustCompress;
+    float                        NumtE;
+    int                          NumVer;
+    DetecTreatment               *PDetecTreatment;
+    TadaridaMainWindow           *PMainWindow;
     bool                         ReprocessingMode;
-    QString                   ResultSuffix;
-    QString                   ResultCompressedSuffix;
-    int                            _userVersion;
-    RematchClass       *_remObject;
-
-    float _numtE;
-    int _tE;
-    int _numVer;
-    bool _xmoitie;
-    int IThread;
-    bool IDebug;
-    QString                     _errorFilePath;
-    QFile                        _errorFile;
-    bool                         _errorFileOpen;
-    QTextStream          _errorStream;
+    int                          TE;
+    bool                         TimeFileOpen;
+    QTextStream                  TimeStream;
 
 signals:
-    void errorDetec(int);
-    void information(QString);
-    void information2(QString,bool);
-    void information2b(QString,bool);
-    void information3(int,int,int);
-    void information4(int,int,int);
-    void moveBar(float);
-    void threadFinished(int);
-    void infoTrace(QString,QString,QString,QString,QString,QString,QString,QString,QString,QString);
-    void dirProblem();
+    void                         dirProblem();
+    void                         errorDetec(int);
+    void                         information(QString);
+    void                         information2(QString,bool);
+    void                         information2b(QString,bool);
+    void                         information3(int,int,int);
+    void                         information4(int,int,int);
+    void                         moveBar(float);
+    void                         threadFinished(int);
 
 private slots:
-    bool treatOneFile();
+    bool                         treatOneFile();
 
 private:
-    void createImage(QString);
-    void initBvrvb(double,double);
-    int _imaWidth;
-    double                       _bRGB[5][4];
+    uint                          calculateRGB(double);
+    bool                         checkAssociatedFiles(QString,QString);
+    void                         cleanVerSubdir();
+    void                         cleanSubdir(QDir,QString,bool,QString);
+    void                         createImage(QString);
+    void                         createVersionsList();
+    void                         endDetec();
+    void                         initBvrvb(double,double,double);
+    void                         initBvrvb(double,double);
+    bool                         readDirectoryVersion();
+    void                         saveCallsMatrix(QString);
+    void                         saveDatFile(QString);
+    void                         saveParameters(const QString&);
+    void                         writeDirectoryVersion();
 
-    // methods
-    uint calculateRGB(double);
-    void cleanVerSubdir();
-    void cleanSubdir(QDir,QString,bool,QString);
-
-    // 4-3-2015 :
-    void createVersionsList();
-    void endDetec();
-    void initBvrvb(double,double,double);
-    bool readDirectoryVersion();
-    void saveCallsMatrix(QString);
-    void saveDatFile(QString);
-    void saveParameters(const QString&);
-    void writeDirectoryVersion();
-    bool checkAssociatedFiles(QString,QString);
-
-    // attributes
     QDir                         _baseDayDir;
+    double                       _bRGB[5][4];
     float                        _callEnergyMax ;
     int                          _callEnergyMaxIndex;
-    QVector< QVector<QPoint> >   _callsArray;
-    QVector<QPoint>              _callMasterRidge;
-    QVector< QVector<QPoint> >   _callMasterRidgeArray;
     QFile                        _callMatrixFile;
     QString                      _callMatrixName;
     QDataStream                  _callMatrixStream;
-    QVector<QPoint>              _callNorthRidge;
-    QVector< QVector<QPoint> >   _callNorthRidgeArray;
-    QVector<QPoint>              _callSecondWestRidge;
-    QVector< QVector<QPoint> >   _callSecondWestRidgeArray;
-    QVector<QPoint>              _callSouthRidge;
-    QVector< QVector<QPoint> >   _callSouthArray;
-    QVector<QPoint>              _callWestRidge;
-    QVector< QVector<QPoint> >   _callWestRidgeArray;
-    int                          _callsNumber;
     QTimer                       *_clock;
     bool                         _collectPreviousVersionsTags;
     QString                      _datPath;
     int                          _dirLogVersion;
     int                          _dirUserVersion;
-    QFile                        _timeFile;
-    Fenim                        *_fenim;
-    Fenim                        *_fenim2;
+    int                          _dirModeFreq;
+    QString                      _errorFilePath;
+    int                          _imaWidth;
     int                          _fileIndex;
     bool                         _fileProblem;
     int                          _filesNumber;
     QString                      _imagePath;
     QFile                        _logFile;
-    int                         _nbErrorFiles;
-    int                         _nbTreatedFiles;
+    int                          _logVersion;
+    int                          _modeFreq;
+    int                          _nbErrorFiles;
+    int                          _nbTreatedFiles;
     int                          _numberEndTags;
     int                          _numberRecupTags;
     int                          _numberStartTags;
     QMainWindow                  *_parent;
-    float                         _numTe;
+    float                        _numTe;
+    RematchClass                 *_remObject;
+    QString                      _resultCompressedSuffix;
+    QString                      _resultSuffix;
+    QFile                        _timeFile;
     bool                         _treating;
     QFile                        _txtFile;
     QString                      _txtPath;
     QFile                        _txtFile2;
     QString                      _txtFilePath2;
     uint                         _tvaleur[2000];
+    int                          _userVersion;
     QVector< QPoint >            _vectorCallPoints;
-    QVector < int >         _vectorXMin;
-    QVector < int >        _vectorXMax;
-    QStringList               _versionDirList;
-    int                              **_versionIndicators;
-    bool                           _waiting;
-    QString                     _wavFile;
-    QStringList               _wavFileList;
-    QString                     _wavPath;
+    QVector < int >              _vectorXMin;
+    QVector < int >              _vectorXMax;
+    QStringList                  _versionDirList;
+    int                          **_versionIndicators;
+    QString                      _wavFile;
+    QStringList                  _wavFileList;
+    QString                      _wavPath;
+    bool                         _withTimeCsv;
+    bool                         _xHalf;
 };
 
 #endif

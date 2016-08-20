@@ -14,80 +14,75 @@ class Loupe : public QMainWindow
 public:
     explicit Loupe(Fenim *pf,QMainWindow *parent = 0,int x=0,int y=0);
     ~Loupe();
-    void afficherLoupe();
-    void affbulle(QString sbulle);
-    // void rafraichit_image();
-    void afficher_cris();
-    void afficher_points_maitres();
-    void afficher_cretes_suppl();
-    void afficher_points_suppl();
+    void                               ShowBubble(QString sbulle);
+    void                               ShowCalls();
+    void                               ShowGrid(bool);
+    void                               ShowLoupe();
+    void                               ShowMasterPoints();
+    void                               ShowOneCall(int ncri,bool crisel,bool affichercri);
+    void                               ShowOneMasterPoint(int ncri,bool crisel,bool afficherpm);
+    void                               ShowOneOtherCrestl(int ncri,bool affichercri);
+    void                               ShowOneOtherPoint(int ncri,bool affichercri);
+    void                               ShowOtherCrests();
+    void                               ShowOtherPoints();
+    void                               Zoom(int x,int y);
+    void                               ZoomeF(float,float);
 
-    void zoomef(float,float);
-    QImage *fenima;
-    Fenim *pfm;
-    QLabel *labelx;
-    QLabel *labely;
-    QLabel *labelr;
-    QLabel *label_ener;
-    MyQGraphicsScene   *lscene;
-    QGraphicsView      *lview;
-    void zoome(int x,int y);
-    void afficher_grille(bool);
-    float l_rl,l_rh;
-    float l_iaj;
-    int dercx,dercy;
-    QCheckBox          *bcPMaitres;
-    QCheckBox          *bcCris;
-    QCheckBox          *bcSuppl;
-    void afficher_un_cri(int ncri,bool crisel,bool affichercri);
-    void afficher_un_point_maitre(int ncri,bool crisel,bool afficherpm);
-    void afficher_une_crete_suppl(int ncri,bool affichercri);
-    void afficher_un_point_suppl(int ncri,bool affichercri);
-
+    QCheckBox                          *BcCalls;
+    QCheckBox                          *BcMasterPoints;
+    QCheckBox                          *BcSuppl;
+    QImage                             *Fenima;
+    QLabel                             *LabelX;
+    QLabel                             *LabelY;
+    QLabel                             *LabelR;
+    QLabel                             *LabelEnergy;
+    int                                LastCenterX,LastCenterY;
+    MyQGraphicsScene                   *LoupeScene;
+    QGraphicsView                      *LoupeView;
+    Fenim                              *PFenim;
 
 signals:
     
 public slots:
-    void zoome();
-    void dezoome();
-    void zoomeh();
-    void dezoomeh();
-    void actdesactGrille(int);
-    void actdesactPMaitres();
-    void actdesactCris();
-    void actdesactSuppl();
-
-
+    void                               ActivateCalls();
+    void                               ActivateGrid(int);
+    void                               ActivateMasterPoints();
+    void                               ActivateOtherCrests();
+    void                               UnZoom();
+    void                               UnZoomH();
+    void                               Zoom();
+    void                               ZoomH();
 
 protected:
-    void resizeEvent(QResizeEvent *);
+    void                               resizeEvent(QResizeEvent *);
 
 private:
-    int l_zx,l_zy,l_lf,l_hf;
-    int h_bo,l_bo;
-    bool vaf;
-    QGraphicsPixmapItem *pix;
-    QGroupBox          *gbox_boutons;
-    MyQPushButton      *bZoome;
-    MyQPushButton      *bDezoome;
-    MyQPushButton      *bZoomeH;
-    MyQPushButton      *bDezoomeH;
-    QGraphicsLineItem  *gliv[500];
-    QGraphicsLineItem  *glih[500];
-    int nliv,nlih;
-    QCheckBox            *bcGrille;
-    QGraphicsEllipseItem *gepm[MAXCRI];
-    QGraphicsPathItem    **gplt[NCRETES];
-    QGraphicsEllipseItem *gepsu[NCRETES][NSUPPL][MAXCRI];
-    bool ipmc[MAXCRI];
-    bool ilc[MAXCRI];
-    int coucri[MAXCRI];
-    //
-    bool ilcs[MAXCRI];
-    bool ilps[MAXCRI];
-    float getratio();
-    void afficheratio();
-    void afficher_boutons();
+    float                              getRatio();
+    void                               showButtons();
+    void                               showRatio();
+
+    QCheckBox                          *_bcGrid;
+    MyQPushButton                      *_bZoom;
+    MyQPushButton                      *_bZoomH;
+    MyQPushButton                      *_bUnZoom;
+    MyQPushButton                      *_bUnZoomH;
+    int                                _coucri[MAXCRI];
+    QGroupBox                          *_gboxButtons;
+    QGraphicsEllipseItem               *_gepm[MAXCRI];
+    QGraphicsPathItem                  **_gplt[NCRETES];
+    QGraphicsEllipseItem               *_gepsu[NCRETES][NSUPPL][MAXCRI];
+    QGraphicsLineItem                  *_gliv[500];
+    QGraphicsLineItem                  *_glih[500];
+    bool                               _ilc[MAXCRI];
+    bool                               _ilcs[MAXCRI];
+    bool                               _ilps[MAXCRI];
+    bool                               _ipmc[MAXCRI];
+    float                              _lWl,_lWh;
+    float                              _liaj;
+    int                                _lzx,_lzy,_llf,_lhf,_hbo,_lbo;
+    int                                _nliv,_nlih;
+    QGraphicsPixmapItem                *_pix;
+    bool                               _vaf;
 };
 
 #endif // LOUPE_H

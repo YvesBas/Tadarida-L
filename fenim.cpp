@@ -1,4 +1,3 @@
-// 17-11-2014 : 2930 lignes avant grosses modifs
 #include "etiquette.h"
 #include "loupe.h"
 #include "fenim.h"
@@ -6,433 +5,478 @@
 
 const QString _baseIniFile = "/version.ini";
 
-FenetreFenim::FenetreFenim(Fenim *pf,QMainWindow *parent) : QMainWindow(parent)
+FenimWindow::FenimWindow(Fenim *pf,QMainWindow *parent) : QMainWindow(parent)
 {
-    pfenim = pf;
+    PFenim = pf;
+    _alreadyScaled = false;
+    _countResize = 0;
+    GBoxInput = new QGroupBox(this);
 }
 
-void FenetreFenim::etablit_connexions()
+
+void FenimWindow::ValidateLabel() { PFenim->ValidateLabel(); }
+void FenimWindow::SaveLabels() { PFenim->SaveLabels(); }
+void FenimWindow::CloseFenim() { PFenim->CloseFenim(); }
+void FenimWindow::NextCall() { PFenim->NextCall(); }
+void FenimWindow::PreviousCall() { PFenim->PreviousCall(); }
+void FenimWindow::EndCall() { PFenim->EndCall(); }
+void FenimWindow::StartCall() { PFenim->StartCall(); }
+void FenimWindow::SelectIndex(int a) { PFenim->SelectIndex(a); }
+void FenimWindow::UpdateIndex(const QString& s) { PFenim->UpdateIndex(s); }
+void FenimWindow::ClickConfi() { PFenim->ClickConfi(); }
+void FenimWindow::Zoom() { PFenim->Zoom(); }
+void FenimWindow::UnZoom() { PFenim->UnZoom(); }
+void FenimWindow::ActivateGrid(int a) { PFenim->ActivateGrid(a); }
+void FenimWindow::ActivateMasterPoints() { PFenim->ActivateMasterPoints(); }
+void FenimWindow::ActivateCrests() { PFenim->ActivateCrests(); }
+void FenimWindow::SelectEditedCalls() { PFenim->SelectEditedCalls(); }
+void FenimWindow::SelectSpecTags(const QString& codsel) { PFenim->SelectSpecTags(codsel); }
+void FenimWindow::SpecTagNext() { PFenim->SpecTagNext(); }
+void FenimWindow::SpecTagPrevious() { PFenim->SpecTagPrevious(); }
+void FenimWindow::SpecTagLast() { PFenim->SpecTagLast(); }
+void FenimWindow::SpecTagFirst() { PFenim->SpecTagFirst(); }
+
+void FenimWindow::CreateConnections()
 {
-    connect(pfenim->bFlecheDroite,SIGNAL(clicked()),this,SLOT(crisuiv()));
-    connect(pfenim->bFlecheGauche,SIGNAL(clicked()),this,SLOT(criprec()));
-    connect(pfenim->bFlecheFin,SIGNAL(clicked()),this,SLOT(crifin()));
-    connect(pfenim->bFlecheDebut,SIGNAL(clicked()),this,SLOT(crideb()));
-    connect(pfenim->bsaveUneEtiq,SIGNAL(clicked()),this,SLOT(enreg_etiq()));
-    connect(pfenim->bEnregEtiq,SIGNAL(clicked()),this,SLOT(EnregEtiquettes()));
-    connect(pfenim->bClose,SIGNAL(clicked()),this,SLOT(fermeFenim()));
-    connect(pfenim->pfc[INDICE]->_sli, SIGNAL(valueChanged(int)), this, SLOT(selectionne_indice(int)));
-    connect(pfenim->pfc[INDICE]->_le,SIGNAL(textEdited(const QString&)),this,SLOT(modif_indice(const QString&)));
-    connect(pfenim->pfc[CONFIDENTIEL]->_chb, SIGNAL(stateChanged(int)), this, SLOT(clique_confi(int)));
-    connect(pfenim->bZoome,SIGNAL(clicked()),this,SLOT(zoome()));
-    connect(pfenim->bDezoome,SIGNAL(clicked()),this,SLOT(dezoome()));
-    connect(pfenim->bcGrille,SIGNAL(stateChanged(int)),this,SLOT(actdesactGrille(int)));
-    connect(pfenim->bcPMaitres,SIGNAL(stateChanged(int)),this,SLOT(actdesactPMaitres()));
-    connect(pfenim->bcCris,SIGNAL(stateChanged(int)),this,SLOT(actdesactCris()));
-    connect(pfenim->editCri,SIGNAL(editingFinished()),this,SLOT(choisit_cri()));
-    //
-    connect(pfenim->chbTagSpec,SIGNAL(activated(const QString&)), this, SLOT(selectSpecTags(const QString&)));
-    connect(pfenim->bFlecheDroiteSpec,SIGNAL(clicked()),this,SLOT(specTagNext()));
-    connect(pfenim->bFlecheGaucheSpec,SIGNAL(clicked()),this,SLOT(specTagPrevious()));
-    connect(pfenim->bFlecheFinSpec,SIGNAL(clicked()),this,SLOT(specTagLast()));
-    connect(pfenim->bFlecheDebutSpec,SIGNAL(clicked()),this,SLOT(specTagFirst()));
+    //connect(BClose,SIGNAL(clicked()),this,SLOT(PFenim->CloseFenim()));
+    connect(BClose,SIGNAL(clicked()),this,SLOT(close()));
+    connect(BRightArrow,SIGNAL(clicked()),this,SLOT(NextCall()));
+    connect(BLeftArrow,SIGNAL(clicked()),this,SLOT(PreviousCall()));
+    connect(BEndArrow,SIGNAL(clicked()),this,SLOT(EndCall()));
+    connect(BStartArrow,SIGNAL(clicked()),this,SLOT(StartCall()));
+    connect(BSaveOneLabel,SIGNAL(clicked()),this,SLOT(ValidateLabel()));
+    connect(BSaveLabels,  SIGNAL(clicked()),this,SLOT(SaveLabels()));
+    connect(PFenim->PFC[INDICE]->SLid, SIGNAL(valueChanged(int)), this, SLOT(SelectIndex(int)));
+    connect(PFenim->PFC[INDICE]->LE,SIGNAL(textEdited(const QString&)),this,SLOT(UpdateIndex(const QString&)));
+    connect(PFenim->PFC[CONFIDENTIEL]->ChB, SIGNAL(stateChanged(int)), this, SLOT(ClickConfi()));
+    connect(BZoom,SIGNAL(clicked()),this,SLOT(Zoom()));
+    connect(BUnZoom,SIGNAL(clicked()),this,SLOT(UnZoom()));
+    connect(BCGrid,SIGNAL(stateChanged(int)),this,SLOT(ActivateGrid(int)));
+    connect(BCMasterPoints,SIGNAL(stateChanged(int)),this,SLOT(ActivateMasterPoints()));
+    connect(BCCalls,SIGNAL(stateChanged(int)),this,SLOT(ActivateCrests()));
+    connect(EditCall,SIGNAL(editingFinished()),this,SLOT(SelectEditedCalls()));
+    connect(ChbTagSpec,SIGNAL(activated(const QString&)), this, SLOT(SelectSpecTags(const QString&)));
+    connect(BRightArrowSpec,SIGNAL(clicked()),this,SLOT(SpecTagNext()));
+    connect(BLeftArrowSpec,SIGNAL(clicked()),this,SLOT(SpecTagPrevious()));
+    connect(BEndArrowSpec,SIGNAL(clicked()),this,SLOT(SpecTagLast()));
+    connect(BStartArrowSpec,SIGNAL(clicked()),this,SLOT(SpecTagFirst()));
 }
 
-// privisoire : ces méthodes doivent (au moins certaines) être complètement traitées dans classe FenetreFenim
-void FenetreFenim::enreg_etiq() { pfenim->enreg_etiq(); }
-void FenetreFenim::EnregEtiquettes() { pfenim->EnregEtiquettes(); }
-void FenetreFenim::fermeFenim() { pfenim->fermeFenim(); }
-void FenetreFenim::selectionne_indice(int a) { pfenim->selectionne_indice(a); }
-void FenetreFenim::clique_confi(int s) { pfenim->clique_confi(s); }
-void FenetreFenim::modif_indice(const QString&s) { pfenim->modif_indice(s); }
-void FenetreFenim::zoomef(float f) { pfenim->zoomef(f); }
-void FenetreFenim::zoome() { pfenim->zoome(); }
-void FenetreFenim::dezoome() { pfenim->dezoome(); }
-void FenetreFenim::actdesactGrille(int a) { pfenim->actdesactGrille(a); }
-void FenetreFenim::actdesactPMaitres() { pfenim->actdesactPMaitres(); }
-void FenetreFenim::actdesactCris() { pfenim->actdesactCris(); }
-void FenetreFenim::choisit_cri() { pfenim->choisit_cri(); }
-void FenetreFenim::crisuiv() { pfenim->crisuiv(); }
-void FenetreFenim::criprec() { pfenim->criprec(); }
-void FenetreFenim::crifin() { pfenim->crifin(); }
-void FenetreFenim::crideb() { pfenim->crideb(); }
-
-void FenetreFenim::selectSpecTags(const QString& codsel) { pfenim->selectSpecTags(codsel); }
-void FenetreFenim::specTagNext() { pfenim->specTagNext(); }
-void FenetreFenim::specTagPrevious() { pfenim->specTagPrevious(); }
-void FenetreFenim::specTagLast() { pfenim->specTagLast(); }
-void FenetreFenim::specTagFirst() { pfenim->specTagFirst(); }
-
-
-
-FieldClass::FieldClass(QWidget *parent,Fenim *pf,QString title,int fieldType,bool obl,bool unic,QString fieldCode,bool autaj,int smin,int smax)
+FieldClass::FieldClass(QWidget *parent,Fenim *pf,QString title,int fieldType,bool obl,bool unic,QString fieldCode,bool autaj,int smin,int smax,QString englishLabel)
 {
-  pfenim = pf;
-  _fieldType = fieldType;
+  PFenim = pf;
+  FieldType = fieldType;
   Obl = obl;
   Unic = unic;
-  _title = title;
-  _fieldCode = fieldCode;
-  _titleLabel = new MyQLabel(parent);
-  _titleLabel->setText(title);
-  if(_fieldType==EC)
+  Title = title;
+  FieldCode = fieldCode;
+  EnglishLabel = englishLabel;
+  TitleLabel = new MyQLabel(parent);
+  TitleLabel->SetText(title);
+  EnglishLabel = englishLabel;
+  if(FieldType==EC)
   {
-      _ec = new EditCombo(parent,pf,fieldCode,autaj);
+      ECo = new EditCombo(parent,pf,FieldCode,EnglishLabel,autaj);
   }
-  if(_fieldType==SLI)
+  if(FieldType==SLI)
   {
-      _Smin = smin;
-      _Smax = smax;
+      SMin = smin;
+      SMax = smax;
   }
-// TODO : bien voir l'utilsation de fieldcode... dans les traitements d'événement : par exemple : rique de double utilisation...
-  if(_fieldType==SLE || _fieldType==SLI || _fieldType==EC)
+  if(FieldType==SLE || FieldType==SLI || FieldType==EC)
   {
-     if(_fieldType==SLE || _fieldType==SLI)
+     if(FieldType==SLE || FieldType==SLI)
        {
-       _sle = new Simple_LineEdit(parent,pf,fieldCode);
-       _le = _sle;
+       SLEd = new Simple_LineEdit(parent,pf,fieldCode);
+       LE = SLEd;
        }
-     if(_fieldType==EC)
+     if(FieldType==EC)
        {
-       _le = _ec->ec_le;
+       LE = ECo->EcLe;
        }
-     _le->setEnabled(true);
+     LE->setEnabled(true);
 
   }
   //enum FIELDTYPE {SLE,EC,SLI,CHB};
-  if(_fieldType==SLI) 
+  if(FieldType==SLI)
   {
-	_sli = new QSlider(parent);
-	_sli->setMinimum(smin);
-	_sli->setMaximum(smax);
-	_sli->setValue(smax);
-    _sli->setOrientation(Qt::Horizontal);
+    SLid = new QSlider(parent);
+    SLid->setMinimum(smin);
+    SLid->setMaximum(smax);
+    SLid->setValue(smax);
+    SLid->setOrientation(Qt::Horizontal);
   }
-  if(_fieldType==CHB) 
+  if(FieldType==CHB)
   {
-	_chb = new QCheckBox(QString(""),parent);
+    ChB = new QCheckBox(QString(""),parent);
   }
   
 }
-// $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-void FieldClass::affect(QString text)
+
+void FieldClass::Affect(QString text)
 {
-    //pfenim->m_logStream << "ZF aff 1" << endl;
-    if(_fieldType==CHB)
+    if(FieldType==CHB)
     {
-        //pfenim->m_logStream << "ZF aff 2" << endl;
-        if(text=="true") _chb->setChecked(true);
-        else _chb->setChecked(false);
-        //pfenim->m_logStream << "ZF aff 3" << endl;
+        if(text=="true") ChB->setChecked(true);
+        else ChB->setChecked(false);
     }
     else
     {
-        //pfenim->m_logStream << "ZF aff 4" << endl;
-        _le->setText(text);
-        //pfenim->m_logStream << "ZF aff 5" << endl;
-        if(_fieldType==EC) _ec->realim_liste("");
-        //pfenim->m_logStream << "ZF aff 6" << endl;
-        if(_fieldType == SLI) pfenim->modif_indice(text);
-        //pfenim->m_logStream << "ZF aff 7" << endl;
+        LE->setText(text);
+        if(FieldType==EC) ECo->realim_liste("");
+        if(FieldType == SLI) PFenim->UpdateIndex(text);
     }
-    //pfenim->m_logStream << "ZF aff 8" << endl;
 }
 
-QString FieldClass::getText()
+QString FieldClass::GetText()
 {
     QString resu = "";
-    if(_fieldType==CHB)
+    if(FieldType==CHB)
     {
-        if(_chb->isChecked()) resu = "true"; else resu = "";
+        if(ChB->isChecked()) resu = "true"; else resu = "";
     }
-    else resu = _le->text();
+    else resu = LE->text();
     return(resu);
 }
 
-void FieldClass::colour(QString colorText)
+void FieldClass::Colour(QString colorText)
 {
-    if(_fieldType==CHB) _titleLabel->setStyleSheet(colorText);
-    else _le->setStyleSheet(colorText);
+    if(FieldType==CHB) TitleLabel->setStyleSheet(colorText);
+    else LE->setStyleSheet(colorText);
 }
 
-Fenim::Fenim(QMainWindow *parent,QString repwav,QString nomfi,QDir basejour,bool casa,bool casretr,int typeretraitement,QString suffixe,int vl,int vu)
+Fenim::Fenim(QMainWindow *parent,QString repwav,QString nomfi,QDir basejour,bool casa,bool casretr,int typeretraitement,QString suffixe,int vl,int vu,int mf)
 {
-    crefen = false;
-    fparent = parent;
-    tgui=(TadaridaMainWindow *)fparent;
-    casA = casa;
-    m_casRetraitement = casretr;
-    m_typeretraitement = typeretraitement;
-    m_verLog = vl;
-    m_verUser = vu;
+    _windowCreated = false;
+    ParentWindow = parent;
+    PMainWindow=(TadaridaMainWindow *)ParentWindow;
+    ACase = casa;
+    _reprocessingCase = casretr;
+    _reprocessingType = typeretraitement;
+    LogVersion = vl;
+    UserVersion = vu;
+    FrequencyType = mf;
     //
     QString logFilePath(QString("fenim")+suffixe+".log");
-    m_logFile.setFileName(logFilePath);
-    m_logFile.open(QIODevice::WriteOnly | QIODevice::Text);
-    m_logStream.setDevice(&m_logFile);
+    _logFile.setFileName(logFilePath);
+    _logFile.open(QIODevice::WriteOnly | QIODevice::Text);
+    LogStream.setDevice(&_logFile);
+    _wavFolder = repwav;
 
-    //m_logStream << "$$$ Fenim début : " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+    ReadFolderVersion();
 
-    repWav = repwav;
-
-    readVersionRep();
-
-    nomFic = nomfi;
-    baseJour = basejour;
-    baseJourDat = QDir(basejour.path()+"/dat");
-    baseJourIma = QDir(basejour.path()+"/ima");
-    baseJourEti = QDir(basejour.path()+"/eti");
-    baseJourTxt = QDir(basejour.path()+"/txt");
-    nomImage = nomFic + ".jpg";
-    imaNom = repwav + "/ima/" + nomImage;
-    datFile = repwav + "/dat/" + nomFic + ".dat";
-    da2File = repwav + "/dat/" + nomFic + ".da2";
-    saisie_a_sauver = false;
-    bouge_fichiers = false;
-    m_ecraserFichier = false;
-    autorise_ajout_type = false;
-    type_ajoute = false;
-    affloupe = false;
-    m_factorX = -1;
-    nliv=0;nlih=0;nte=0;
-    neplus=false;
-    npremcrisel = 0;
-    ndercrisel = 0;
-    nlt=0;
-    specTagNumber = 0;
-    _flagGoodCol = new char[SONOGRAM_WIDTH_MAX];
-    _flagGoodColInitial = new char[SONOGRAM_WIDTH_MAX];
-    _energyMoyCol = new char[SONOGRAM_WIDTH_MAX];
-    //m_logStream << "Fenim fin constructeur " << endl;
+    _mainFileName = nomfi;
+    _dayBaseFolder = basejour;
+    _dayDatFolder = QDir(basejour.path()+"/dat");
+    _dayImaFolder = QDir(basejour.path()+"/ima");
+    _dayEtiFolder = QDir(basejour.path()+"/eti");
+    _dayTxtFolder = QDir(basejour.path()+"/txt");
+    ImageName = _mainFileName + ".jpg";
+    ImageFullName = repwav + "/ima/" + ImageName;
+    _datFile = repwav + "/dat/" + _mainFileName + ".dat";
+    _da2FileName = repwav + "/dat/" + _mainFileName + ".da2";
+    InputToSave = false;
+    _filesUpdated = false;
+    _overwriteFile = false;
+    ShowLoupe = false;
+    FactorX = -1;
+    _nliv=0;_nlih=0;_nte=0;
+    NoMore=false;
+    _firstCallSelected = 0;
+    _lastCallSelected = 0;
+    SpecTagNumber = 0;
+    FlagGoodCol = new char[SONOGRAM_WIDTH_MAX];
+    FlagGoodColInitial = new char[SONOGRAM_WIDTH_MAX];
+    EnergyAverageCol = new char[SONOGRAM_WIDTH_MAX];
 }
 
 
 Fenim::~Fenim()
 {
-    delete[] _flagGoodCol;
-    delete[] _flagGoodColInitial;
-    delete[] _energyMoyCol;
+    delete[] FlagGoodCol;
+    delete[] FlagGoodColInitial;
+    delete[] EnergyAverageCol;
 
-    videfenim();
-    if(crefen) delete wfenim;
+    ClearFenim();
+    if(_windowCreated) delete PFenimWindow;
 }
 
-
-void Fenim::cree_fenetre(bool modesaisie)
+void FenimWindow::CreateFenimWindow(bool modeSaisie)
 {
-    //m_logStream << "Fenim cree_fenetre" << endl;
-    wfenim = new FenetreFenim(this,fparent);
-    wfenim->setWindowTitle("Tadarida - Image et Etiquettes");
-    m_poltexte=QFont("Arial",10,QFont::Normal);
-    m_poltitre=QFont("Arial",10,QFont::Bold);
-    labelImage = new MyQLabel(wfenim);
-    gbox_saisie = new QGroupBox(wfenim);
-    gbox_gen = new QGroupBox(wfenim);
-    gbox_boutons = new QGroupBox(wfenim);
-    labelTitreG2 = new QLabel(gbox_gen);
-    //m_logStream << "ZFenim avant création des pfc" << endl;
-    pfc[ESPECE]       = new FieldClass((QWidget *)gbox_saisie,this,"Espece",EC,true,false,"especes",true,0,0);
-    pfc[TYPE]         = new FieldClass((QWidget *)gbox_saisie,this,"Type",EC,true,false,"types",false,0,0);
-    pfc[INDICE]       = new FieldClass((QWidget *)gbox_saisie,this,"Indice",SLI,true,false,"indice",false,1,5);
-    pfc[ZONE]         = new FieldClass((QWidget *)gbox_saisie,this,"Zone",EC,false,true,"zone",true,0,0);
-    pfc[SITE]         = new FieldClass((QWidget *)gbox_saisie,this,"Site",SLE,false,true,"site",false,0,0);
-    pfc[COMMENTAIRE]  = new FieldClass((QWidget *)gbox_saisie,this,"Commentaire",false,SLE,false,"commentaire",false,0,0);
-    pfc[MATERIEL]     = new FieldClass((QWidget *)gbox_saisie,this,"Materiel",EC,false,true,"materiel",true,0,0);
-    pfc[CONFIDENTIEL] = new FieldClass((QWidget *)gbox_saisie,this,"Confidentiel",CHB,false,true,"confidentiel",false,0,0);
-    pfc[DATENREG]     = new FieldClass((QWidget *)gbox_saisie,this,"Date",SLE,false,true,"datenreg",false,0,0);
-    pfc[AUTEUR]       = new FieldClass((QWidget *)gbox_saisie,this,"Auteur",EC,false,true,"auteur",true,0,0);
-    pfc[ETIQUETEUR]   = new FieldClass((QWidget *)gbox_saisie,this,"Etiqueteur",EC,false,false,"etiqueteur",true,0,0);
-    //m_logStream << "ZFenim après création des pfc" << endl;
-    //
-    labelMess = new MyQLabel(gbox_saisie);
-    labelRep = new MyQLabel(gbox_gen);
-    labelNbcri = new MyQLabel(gbox_gen);
-    labelNbeti = new MyQLabel(gbox_gen);
-    labelTagSpec = new MyQLabel(gbox_gen);
-    chbTagSpec = new QComboBox(gbox_gen);
-    labelCris = new MyQLabel(gbox_gen);
-    editCri   = new MyQLineEdit((QWidget *)gbox_gen,this,"cri");
-    bFlecheDroite = new MyQPushButton(gbox_saisie);
-    bFlecheGauche = new MyQPushButton(gbox_saisie);
-    bFlecheDebut = new MyQPushButton(gbox_saisie);
-    bFlecheFin = new MyQPushButton(gbox_saisie);
-    bsaveUneEtiq = new MyQPushButton(gbox_saisie);
-    bEnregEtiq = new MyQPushButton(gbox_saisie);
-    bClose = new MyQPushButton(gbox_saisie);
-    bZoome = new MyQPushButton(gbox_boutons);
-    bDezoome = new MyQPushButton(gbox_boutons);
-    bcGrille = new QCheckBox(QString("Grille"),gbox_boutons);
-    bcPMaitres = new QCheckBox(QString("Pts maitres"),gbox_boutons);
-    bcCris = new QCheckBox(QString("Cris"),gbox_boutons);
-    labelx = new QLabel(gbox_boutons);
-    labely = new QLabel(gbox_boutons);
-    labelr = new QLabel(gbox_boutons);
-    crefen = true;
-    if(!modesaisie)
+    PFenim->LogStream  << "debut CreateFenimWindow" << endl;
+    setWindowTitle("Tadarida  -  Labelling");
+    PolText=QFont("Arial",10,QFont::Normal);
+    PolTitle=QFont("Arial",10,QFont::Bold);
+    _labelImage = new MyQLabel(this);
+    gBoxGen = new QGroupBox(this);
+    _gGBoxButtons = new QGroupBox(this);
+    _labelTitleG2 = new QLabel(gBoxGen);
+
+
+    _labelMess = new MyQLabel(GBoxInput);
+    _labelFolder = new MyQLabel(gBoxGen);
+    _labelNbCalls = new MyQLabel(gBoxGen);
+    LabelNbLabs = new MyQLabel(gBoxGen);
+    LabelTagSpec = new MyQLabel(gBoxGen);
+    ChbTagSpec = new QComboBox(gBoxGen);
+    _labelCalls = new MyQLabel(gBoxGen);
+    EditCall   = new MyQLineEdit((QWidget *)gBoxGen,PFenim,"cry");
+    BRightArrow = new MyQPushButton(GBoxInput);
+    BLeftArrow = new MyQPushButton(GBoxInput);
+    BStartArrow = new MyQPushButton(GBoxInput);
+    BEndArrow = new MyQPushButton(GBoxInput);
+    BSaveLabels = new MyQPushButton(GBoxInput);
+    BClose = new MyQPushButton(GBoxInput);
+    BZoom = new MyQPushButton(_gGBoxButtons);
+    BUnZoom = new MyQPushButton(_gGBoxButtons);
+    //fr bcGrille = new QCheckBox(QString("Grille"),gbox_boutons);
+    BCGrid = new QCheckBox(QString("Grid"),_gGBoxButtons);
+    //fr bcPMaitres = new QCheckBox(QString("Pts maitres"),gbox_boutons);
+    BCMasterPoints = new QCheckBox(QString("Master pts"),_gGBoxButtons);
+    BCCalls = new QCheckBox(QString("Cries"),_gGBoxButtons);
+    LabelX = new QLabel(_gGBoxButtons);
+    LabelY = new QLabel(_gGBoxButtons);
+    LabelR = new QLabel(_gGBoxButtons);
+
+
+    BSaveOneLabel = new MyQPushButton(GBoxInput);
+    BSaveOneLabel->setText("Validate the label");
+    PrgSessionEnd = new QProgressBar(gBoxGen);
+    BRightArrowSpec = new MyQPushButton(gBoxGen);
+    BLeftArrowSpec = new MyQPushButton(gBoxGen);
+    BStartArrowSpec = new MyQPushButton(gBoxGen);
+    BEndArrowSpec = new MyQPushButton(gBoxGen);
+
+    if(!modeSaisie)
     {
-        bsaveUneEtiq->setEnabled(false);
-        bEnregEtiq->setEnabled(false);
+        BSaveOneLabel->setEnabled(false);
+        BSaveLabels->setEnabled(false);
     }
-    //m_logStream << "Fenim cree_fenetre fin" << endl;
-    couleur[0]=QString("QLineEdit {color: blue;}");
-    couleur[1]=QString("QLineEdit {color: red;}");
-    couleur[2]=QString("QLineEdit {color: green;}");
-    couleur[3]=QString("QLineEdit {color: orange;}");
-    couleur[4]=QString("QLineEdit {color: black;}");
-    _prgSessionEnd = new QProgressBar(gbox_gen);
-    //m_logStream << "ZFenim  fin crefen" << endl;
-    bFlecheDroiteSpec = new MyQPushButton(gbox_gen);
-    bFlecheGaucheSpec = new MyQPushButton(gbox_gen);
-    bFlecheDebutSpec = new MyQPushButton(gbox_gen);
-    bFlecheFinSpec = new MyQPushButton(gbox_gen);
+    _labelImage->setText(PFenim->ImageName);
+    QSizePolicy sizePolicy1(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    sizePolicy1.setHeightForWidth(GBoxInput->sizePolicy().hasHeightForWidth());
+    GBoxInput->setSizePolicy(sizePolicy1);
+    GBoxInput->setStyleSheet(QString::fromUtf8(""));
+    int typ;
+    for(int iField=0;iField<NBFIELDS;iField++)
+    {
+        typ=PFenim->PFC[iField]->FieldType;
+        if(typ==EC || typ==SLI || typ==SLE)
+        {
+            PFenim->PFC[iField]->LE->setText("");
+        }
+        if(PFenim->PFC[iField]->FieldType==EC)
+        {
+            PFenim->PFC[iField]->ECo->EcCo->setFrame(true);
+        }
+    }
+    _labelMess->SetText("");
+    BRightArrow->setIcon(QIcon("fleche_droite.jpg"));
+    BLeftArrow->setIcon(QIcon("fleche_gauche.jpg"));
+    BEndArrow->setIcon(QIcon("fleche_fin.jpg"));
+    BStartArrow->setIcon(QIcon("fleche_debut.jpg"));
+    BSaveLabels->setText("Save the labels file");
+    BSaveLabels->setFont(QFont("Arial",10,QFont::Bold));
+    BClose->setText("Close");
+    //
+    gBoxGen->setSizePolicy(sizePolicy1);
+    gBoxGen->setStyleSheet(QString::fromUtf8(""));
+    _labelTitleG2->setText(QString("File : ")+PFenim->LabelsFileName);
+    _labelFolder->SetText(QString("Folder : ")+PFenim->LabelsFolderName);
+    PrgSessionEnd->setMaximum(10000);
+    PrgSessionEnd->setValue(0);
+    PrgSessionEnd->setTextVisible(false);
+    _labelNbCalls->SetText(QString::number(PFenim->CallsNumber)+" cries");
+    if(PFenim->LabelsNumber>1) LabelNbLabs->SetText(QString::number(PFenim->LabelsNumber)+" labels");
+    else LabelNbLabs->SetText(QString::number(PFenim->LabelsNumber)+" label");
+    //
+    BStartArrowSpec->setIcon(QIcon("fleche_debut.jpg"));
+    BEndArrowSpec->setIcon(QIcon("fleche_fin.jpg"));
+    BRightArrowSpec->setIcon(QIcon("fleche_droite.jpg"));
+    BLeftArrowSpec->setIcon(QIcon("fleche_gauche.jpg"));
+    _labelCalls->setText("Cry(ies)");
+    EditCall->setText("");
+    BZoom->setText("Zoom +");
+    BUnZoom->setText("Zoom -");
+    BCGrid->setChecked(true);
+    BCMasterPoints->setChecked(true);
+    BCCalls->setChecked(false);
+    PFenim->ShowRatio();
+    GBoxInput->setFont(PolText);
+    gBoxGen->setFont(PolText);
+    _labelCalls->setFont(PolTitle);
+    _labelTitleG2->setFont(PolTitle);
+    EditCall->setFont(PolTitle);
+    //
+    Fenima = new QImage;
+    Fenima->load(PFenim->ImageFullName);
+    Scene = new MyQGraphicsScene(PFenim,this,false); // création de la scene
+    View = new MyQGraphicsView(this); // création de la view
+    View->setScene(Scene);  // ajout de la scene dans la view
+    PixMap=(Scene->addPixmap(QPixmap::fromImage(*Fenima))); // ajout du pixmap dans la scene
+    View->setMouseTracking(true);
+    PFenim->LogStream  << "fin CreateFenimWindow" << endl;
+}
+
+void Fenim::CreatFenimWindow(bool modeSaisie)
+{
+    LogStream << "CreatFenimWindow : création de PFenimWindow" << endl;
+
+    PFenimWindow = new FenimWindow(this,ParentWindow);
+
+
+    PFC[ESPECE]       = new FieldClass((QWidget *)PFenimWindow->GBoxInput,this,"Species",EC,true,false,"especes",true,0,0,"species");
+    PFC[TYPE]         = new FieldClass((QWidget *)PFenimWindow->GBoxInput,this,"Type",EC,true,false,"types",false,0,0,"type");
+    PFC[INDICE]       = new FieldClass((QWidget *)PFenimWindow->GBoxInput,this,"Confidence",SLI,true,false,"indice",false,1,5,"index");
+    PFC[ZONE]         = new FieldClass((QWidget *)PFenimWindow->GBoxInput,this,"Area",EC,false,true,"zone",true,0,0,"area");
+    PFC[SITE]         = new FieldClass((QWidget *)PFenimWindow->GBoxInput,this,"Site",SLE,false,true,"site",false,0,0,"site");
+    PFC[COMMENTAIRE]  = new FieldClass((QWidget *)PFenimWindow->GBoxInput,this,"Comment",false,SLE,false,"comment",false,0,0,"comment");
+    PFC[MATERIEL]     = new FieldClass((QWidget *)PFenimWindow->GBoxInput,this,"Equipment",EC,false,true,"materiel",true,0,0,"equipment");
+    PFC[CONFIDENTIEL] = new FieldClass((QWidget *)PFenimWindow->GBoxInput,this,"Confidential",CHB,false,true,"confidential",false,0,0,"confidential");
+    PFC[DATENREG]     = new FieldClass((QWidget *)PFenimWindow->GBoxInput,this,"Date",SLE,false,true,"datenreg",false,0,0,"date");
+    PFC[AUTEUR]       = new FieldClass((QWidget *)PFenimWindow->GBoxInput,this,"Author",EC,false,true,"auteur",true,0,0,"author");
+    PFC[ETIQUETEUR]   = new FieldClass((QWidget *)PFenimWindow->GBoxInput,this,"Labeller",EC,false,false,"etiqueteur",true,0,0,"labeller");
+    PFenimWindow->CreateFenimWindow(modeSaisie);
+    InputColors[0]=QString("QLineEdit {color: blue;}");
+    InputColors[1]=QString("QLineEdit {color: red;}");
+    InputColors[2]=QString("QLineEdit {color: green;}");
+    InputColors[3]=QString("QLineEdit {color: orange;}");
+    InputColors[4]=QString("QLineEdit {color: black;}");
+    _windowCreated = true;
 }
 
 
-void Fenim::afficher_ecran()
+// **************************************************************
+void FenimWindow::ResizeFenimWindow(bool firstCall)
 {
-    //m_logStream << "afficher_ecran 1" << endl;
-    int hb = (m_h - m_my*4 - m_hbou)/3;
-    int lb = (m_l - m_mx*3)/2;
-
-    int lbn = m_l - m_mx*2;
-    int hbg = (hb-m_my)/3;
-    int hbs = hb-m_my-hbg;
-
-    int espgb = m_mx*2;
+    _countResize ++;
+    if(_countResize < 2) return;
+    _fWmx = 10 ; _fWmy=12; // marges entre grandes parties de l'écran
+    _fWbh = 18;
+    _fWl = width();
+    _fWh= height();
+    WinRect = geometry();
+    int hv = ((_fWh - _fWmy*4 - _fWbh)*2)/3;
+    int lv = _fWl - _fWmx*2;
+    View->move(_fWmx,_fWmy);
+    View->setFixedSize(lv,hv);
+    //if(firstCall)
+    WidthRatio =   (float)_fWh * (1+PFenim->XHalf) / (float)(PFenim->PMainWindow->Divrl);
+    HeightRatio = ((float)hv * PFenim->ImageHeight) / ((float)Fenima->height() * 160);
+    if(!_alreadyScaled)
+    {
+        _alreadyScaled = true;
+        //PixMap=(Scene->addPixmap(QPixmap::fromImage(*Fenima))); // ajout du pixmap dans la scene
+        PFenim->LogStream << "_fWl = " << _fWl << " et __fWh=" << _fWh << endl;
+        PFenim->LogStream << "_ WidthRatio = " <<  WidthRatio << " et HeightRatio=" <<  HeightRatio << endl;
+        PFenim->LogStream << "PFenim->ImageHeight = " << PFenim->ImageHeight << " et Fenima->height()=" << Fenima->height() << endl;
+        View->SCALE(WidthRatio,HeightRatio);
+        PFenim->ShowGrid(true);
+        PFenim->ShowCalls();
+        PFenim->ShowMasterPoints();
+        PFenim->SelectCall(0,false);
+    }
+    int yc = PFenim->ImageHeight + PFenim->ImageHeight - 121;
+    // yc : point central pour forcer le scrolling
+    View->centerOn(0,yc);
+    //
+    int hb = (_fWh - _fWmy*4 - _fWbh)/3;
+    int lb = (_fWl - _fWmx*3)/2;
+    int lbn = _fWl - _fWmx*2;
+    int hbg = (hb-_fWmy)/3;
+    int hbs = hb-_fWmy-hbg;
+    int espgb = _fWmx*2;
     int larbl = ((lbn-espgb*5)*2)/9;
 
-
-    labelImage->setText(nomImage);
-    labelImage->move(m_my,m_my/2-7);
-    labelImage->resize(500,15);
-
-    QSizePolicy sizePolicy1(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    sizePolicy1.setHeightForWidth(gbox_saisie->sizePolicy().hasHeightForWidth());
-    gbox_saisie->setSizePolicy(sizePolicy1);
-    gbox_saisie->setStyleSheet(QString::fromUtf8(""));
-
-    gbox_saisie->resize(lbn,hbs);
-    gbox_saisie->move(m_mx,m_h-hb+hbg);
-
-    gbox_boutons->resize(m_l - m_mx*2,m_hbou+m_my);
-    gbox_boutons->move(m_mx,m_h-hb-m_my*2-m_my/2-m_hbou);
+    _labelImage->move(_fWmy,_fWmy/2-7);
+    _labelImage->resize(500,15);
+    GBoxInput->resize(lbn,hbs);
+    GBoxInput->move(_fWmx,_fWh-hb+hbg);
+    _gGBoxButtons->resize(_fWl - _fWmx*2,_fWbh+_fWmy);
+    _gGBoxButtons->move(_fWmx,_fWh-hb-_fWmy*2-_fWmy/2-_fWbh);
 
     int hpz = 17;
     int hgz = 21;
     int margx = 15;
     int margx2 =10;
-
     int larlabel = (lb-margx*4)/4;
     int laredit = ((lb-margx*4)*3)/8;
     int larcombo = laredit;
     int espy = (hbs- hpz*7)/10;
     int col,lig,typ;
-    //m_logStream << "ZFenim afficher_ecran avant placement des champs" << endl;
+
     for(int iField=0;iField<NBFIELDS;iField++)
     {
         if(iField<(NBFIELDS+1)/2) {col=0;lig=iField;}
         else {col=1; lig=iField-(NBFIELDS+1)/2;}
-        typ=pfc[iField]->_fieldType;
-        pfc[iField]->_titleLabel->move(margx+col*(lbn/2),hpz*lig+espy*(1+lig));
-        pfc[iField]->_titleLabel->resize(larlabel,hpz);
+        typ=PFenim->PFC[iField]->FieldType;
+        PFenim->PFC[iField]->TitleLabel->move(margx+col*(lbn/2),hpz*lig+espy*(1+lig));
+        PFenim->PFC[iField]->TitleLabel->resize(larlabel,hpz);
         if(typ==EC || typ==SLI || typ==SLE)
         {
-            pfc[iField]->_le->move(margx*2+larlabel+col*(lbn/2),hpz*lig+espy*(1+lig));
-            if(typ==SLI) pfc[iField]->_le->resize(laredit+larcombo+margx,hpz);
-            else pfc[iField]->_le->resize(laredit,hpz);
-            pfc[iField]->_le->setText("");
+            PFenim->PFC[iField]->LE->move(margx*2+larlabel+col*(lbn/2),hpz*lig+espy*(1+lig));
+            PFenim->PFC[iField]->LE->resize(laredit,hpz);
         }
-        if(pfc[iField]->_fieldType==EC)
+        if(PFenim->PFC[iField]->FieldType==EC)
         {
-            pfc[iField]->_ec->ec_co->move(margx*3+larlabel+laredit+col*(lbn/2),hpz*lig+espy*(1+lig));
-            pfc[iField]->_ec->ec_co->resize(larcombo,hpz);
-            pfc[iField]->_ec->ec_co->setFrame(true);
+            PFenim->PFC[iField]->ECo->EcCo->move(margx*3+larlabel+laredit+col*(lbn/2),hpz*lig+espy*(1+lig));
+            PFenim->PFC[iField]->ECo->EcCo->resize(larcombo,hpz);
         }
-        if(pfc[iField]->_fieldType==SLI)
+        if(PFenim->PFC[iField]->FieldType==SLI)
         {
-            pfc[iField]->_sli->move(margx*3+larlabel+laredit+col*(lbn/2),hpz*lig+espy*(1+lig));
-            pfc[iField]->_sli->resize(larcombo,hpz);
+            PFenim->PFC[iField]->SLid->move(margx*3+larlabel+laredit+col*(lbn/2),hpz*lig+espy*(1+lig));
+            PFenim->PFC[iField]->SLid->resize(larcombo,hpz);
         }
-        if(pfc[iField]->_fieldType==CHB)
+        if(PFenim->PFC[iField]->FieldType==CHB)
         {
-            pfc[iField]->_chb->move(margx*3+larlabel+laredit+col*(lbn/2),hpz*lig+espy*(1+lig));
-            pfc[iField]->_chb->resize(larcombo,hpz);
+            PFenim->PFC[iField]->ChB->move(margx*3+larlabel+laredit+col*(lbn/2),hpz*lig+espy*(1+lig));
+            PFenim->PFC[iField]->ChB->resize(larcombo,hpz);
         }
     }
-    labelMess->move(margx+lbn/2,hpz*5+espy*6);
-    labelMess->resize(larlabel+laredit+larcombo+margx*2,hpz);
-    labelMess->setText("");
+    _labelMess->move(margx+lbn/2,hpz*5+espy*6);
+    _labelMess->resize(larlabel+laredit+larcombo+margx*2,hpz);
     //
     int lpb = hgz;
-    bFlecheDroite->move(margx,hpz*6+espy*7);
-    bFlecheDroite->resize(lpb,hgz);
-    bFlecheDroite->setIcon(QIcon("fleche_droite.jpg"));
+    BRightArrow->move(margx,hpz*6+espy*7);
+    BRightArrow->resize(lpb,hgz);
     //
-    bFlecheGauche->move(margx*2+lpb,hpz*6+espy*7);
-    bFlecheGauche->resize(lpb,hgz);
-    bFlecheGauche->setIcon(QIcon("fleche_gauche.jpg"));
+    BLeftArrow->move(margx*2+lpb,hpz*6+espy*7);
+    BLeftArrow->resize(lpb,hgz);
     //
-    bFlecheFin->move(margx*3+lpb*2,hpz*6+espy*7);
-    bFlecheFin->resize(lpb,hgz);
-    bFlecheFin->setIcon(QIcon("fleche_fin.jpg"));
+    BEndArrow->move(margx*3+lpb*2,hpz*6+espy*7);
+    BEndArrow->resize(lpb,hgz);
     //
-    bFlecheDebut->move(margx*4+lpb*3,hpz*6+espy*7);
-    bFlecheDebut->resize(lpb,hgz);
-    bFlecheDebut->setIcon(QIcon("fleche_debut.jpg"));
+    BStartArrow->move(margx*4+lpb*3,hpz*6+espy*7);
+    BStartArrow->resize(lpb,hgz);
     //
-    //bsaveUneEtiq->move(margx*2+larlabel*2,hpz*6+espy*7);
-    bsaveUneEtiq->move(espgb*2+larbl,hpz*6+espy*7);
-    bsaveUneEtiq->resize(larbl,hgz);
-    bsaveUneEtiq->setText("Valider l'Etiquette");
+    BSaveLabels->move(espgb*3+larbl*2,hpz*6+espy*7);
+    BSaveLabels->resize((larbl*3)/2,hgz);
 
-    bEnregEtiq->move(espgb*3+larbl*2,hpz*6+espy*7);
-    bEnregEtiq->resize((larbl*3)/2,hgz);
-    bEnregEtiq->setText("Sauvegarder le fichier d'Etiquettes");
-    bEnregEtiq->setFont(QFont("Arial",10,QFont::Bold));
+    BSaveOneLabel->move(espgb*2+larbl,hpz*6+espy*7);
+    BSaveOneLabel->resize(larbl,hgz);
+
     //
-    bClose->move(espgb*4+(larbl*7)/2,hpz*6+espy*7);
-    bClose->resize(larbl,hgz);
-    bClose->setText("Fermer");
+    BClose->move(espgb*4+(larbl*7)/2,hpz*6+espy*7);
+    BClose->resize(larbl,hgz);
     // ----------------------------------
-    //int espy2 = (hb- hgz*2-hpz*3)/6;
     int espy2 = (hbg- hpz*3)/4;
+    gBoxGen->resize(lbn,hbg);
+    gBoxGen->move(_fWmx,_fWh-hb-_fWmy);
     //
-    gbox_gen->setSizePolicy(sizePolicy1);
-    gbox_gen->setStyleSheet(QString::fromUtf8(""));
-
-    //gbox_saisie->move(m_mx,m_h-hb+hbg);
-    //gbox_gen->resize(lb,hb);
-    gbox_gen->resize(lbn,hbg);
-    // gbox_gen->move(lb+m_mx*2,m_h-hb-m_my);
-    gbox_gen->move(m_mx,m_h-hb-m_my);
+    _labelTitleG2->move(margx,espy2);
+    _labelTitleG2->resize((lbn-margx*3)/2,hpz);
     //
+    _labelFolder->move(margx+lbn/2,espy2);
+    _labelFolder->resize((lbn-margx*3)/2,hpz);
     //
-    labelTitreG2->setText(QString("Fichier : ")+nomEti);
-    labelTitreG2->move(margx,espy2);
-    labelTitreG2->resize((lbn-margx*3)/2,hpz);
+    PrgSessionEnd->move(margx+lbn/2,espy2);
+    PrgSessionEnd->resize(0,0);
     //
-    labelRep->setText(QString("Dossier : ")+repEti);
-    labelRep->move(margx+lbn/2,espy2);
-    labelRep->resize((lbn-margx*3)/2,hpz);
+    _labelNbCalls->move(margx,hpz+espy2*2);
+    _labelNbCalls->resize((lbn-margx*3)/2,hpz);
     //
-    _prgSessionEnd->move(margx+lbn/2,espy2);
-    //_prgSessionEnd->resize((lbn-margx*3)/2,hpz);
-    _prgSessionEnd->resize(0,0);
-    _prgSessionEnd->setMaximum(10000);
-    _prgSessionEnd->setValue(0);
-    _prgSessionEnd->setTextVisible(false);
-    //
-    // reprendre ici :
-    labelNbcri->setText(QString::number(m_nbcris)+" cris");
-    //labelNbcri->move(margx,hgz+hpz+espy2*3);
-    labelNbcri->move(margx,hpz+espy2*2);
-    //labelNbcri->resize(lb-margx*2,hpz);
-    labelNbcri->resize((lbn-margx*3)/2,hpz);
-    //
-    labelNbeti->setText(QString::number(m_nbeti)+" etiquettes");
-    //labelNbeti->move(margx,hgz+hpz*2+espy2*4);
-    labelNbeti->move(margx+lbn/2,hpz+espy2*2);
-    //labelNbeti->resize(lb-margx*2,hpz);
-    labelNbeti->resize((lbn-margx*3)/2,hpz);
+    LabelNbLabs->move(margx+lbn/2,hpz+espy2*2);
+    LabelNbLabs->resize((lbn-margx*3)/2,hpz);
     //
     int mxl = 5;
     int wts = (lbn-margx*3)/2-mxl*3;
@@ -441,140 +485,103 @@ void Fenim::afficher_ecran()
     int db = gw/4;
     int xdep = margx+lbn/2;
     int yl= hpz+espy2*2;
-    chbTagSpec->move(xdep+lw+mxl,yl);
-    chbTagSpec->resize(lw,hpz);
-    labelTagSpec->move(xdep+lw*2+mxl*2,yl);
-    labelTagSpec->resize(lw,hpz);
-    // $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-    bFlecheDebutSpec->move(xdep+lw*3+mxl*3,yl);
-    bFlecheDebutSpec->resize(lpb,hgz);
-    bFlecheDebutSpec->setIcon(QIcon("fleche_debut.jpg"));
+    ChbTagSpec->move(xdep+lw+mxl,yl);
+    ChbTagSpec->resize(lw,hpz);
+    LabelTagSpec->move(xdep+lw*2+mxl*2,yl);
+    LabelTagSpec->resize(lw,hpz);
+    BStartArrowSpec->move(xdep+lw*3+mxl*3,yl);
+    BStartArrowSpec->resize(lpb,hgz);
+    BEndArrowSpec->move(xdep+lw*3+mxl*3+db,yl);
+    BEndArrowSpec->resize(lpb,hpz);
+    BRightArrowSpec->move(xdep+lw*3+mxl*3+db*2,yl);
+    BRightArrowSpec->resize(lpb,hpz);
+    BLeftArrowSpec->move(xdep+lw*3+mxl*3+db*3,yl);
+    BLeftArrowSpec->resize(lpb,hpz);
+    _labelCalls->move(margx,hpz*2+espy2*3);
+    _labelCalls->resize(larlabel/2,hgz);
     //
-    bFlecheFinSpec->move(xdep+lw*3+mxl*3+db,yl);
-    bFlecheFinSpec->resize(lpb,hpz);
-    bFlecheFinSpec->setIcon(QIcon("fleche_fin.jpg"));
-    //
-    bFlecheDroiteSpec->move(xdep+lw*3+mxl*3+db*2,yl);
-    bFlecheDroiteSpec->resize(lpb,hpz);
-    bFlecheDroiteSpec->setIcon(QIcon("fleche_droite.jpg"));
-    //
-    bFlecheGaucheSpec->move(xdep+lw*3+mxl*3+db*3,yl);
-    bFlecheGaucheSpec->resize(lpb,hpz);
-    bFlecheGaucheSpec->setIcon(QIcon("fleche_gauche.jpg"));
-    // $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-    labelCris->setText("Cri(s)");
-    labelCris->move(margx,hpz*2+espy2*3);
-    labelCris->resize(larlabel/2,hgz);
-    //
-    editCri->move(margx*2+larlabel/2,hpz*2+espy2*3);
-    editCri->resize(lbn-margx*3-larlabel/2,hgz);
-    editCri->setText("");
+    EditCall->move(margx*2+larlabel/2,hpz*2+espy2*3);
+    EditCall->resize(lbn-margx*3-larlabel/2,hgz);
 
-    int lzb = gbox_boutons->width();
+    int lzb = _gGBoxButtons->width();
     int larpw = (lzb-margx2*13)/12;
+    BZoom->move(margx2,_fWmy/4);
+    BZoom->resize(larpw,_fWbh);
 
+    BUnZoom->move(margx2*2+larpw,_fWmy/4);
+    BUnZoom->resize(larpw,_fWbh);
 
-    bZoome->move(margx2,m_my/4);
-    bZoome->resize(larpw,m_hbou);
-    bZoome->setText("Zoom +");
+    BCGrid->move(margx2*3+larpw*2,_fWmy/4);
+    BCGrid->resize(larpw,_fWbh);
 
-    bDezoome->move(margx2*2+larpw,m_my/4);
-    bDezoome->resize(larpw,m_hbou);
-    bDezoome->setText("Zoom -");
+    BCMasterPoints->move(margx2*4+larpw*3,_fWmy/4);
+    BCMasterPoints->resize(larpw,_fWbh);
 
-    bcGrille->move(margx2*3+larpw*2,m_my/4);
-    bcGrille->resize(larpw,m_hbou);
-    bcGrille->setChecked(true);
+    BCCalls->move(margx2*5+larpw*4,_fWmy/4);
+    BCCalls->resize(larpw,_fWbh);
 
-    bcPMaitres->move(margx2*4+larpw*3,m_my/4);
-    bcPMaitres->resize(larpw,m_hbou);
-    bcPMaitres->setChecked(true);
+    LabelX->move(lzb - margx2 * 2 - larpw * 2,_fWmy/4);
+    LabelY->move(lzb - margx2 - larpw,_fWmy/4);
+    LabelR->move(lzb - margx2  * 3 - larpw*3,_fWmy/4);
 
-    bcCris->move(margx2*5+larpw*4,m_my/4);
-    bcCris->resize(larpw,m_hbou);
-    bcCris->setChecked(false);
-
-
-    labelx->move(lzb - margx2 * 2 - larpw * 2,m_my/4);
-    labely->move(lzb - margx2 - larpw,m_my/4);
-    labelr->move(lzb - margx2  * 3 - larpw*3,m_my/4);
-
-    labelx->resize(larpw,m_hbou);
-    labely->resize(larpw,m_hbou);
-    labelr->resize(larpw,m_hbou);
-    afficheratio();
-    gbox_saisie->setFont(m_poltexte);
-    gbox_gen->setFont(m_poltexte);
-    labelCris->setFont(m_poltitre);
-    labelTitreG2->setFont(m_poltitre);
-    editCri->setFont(m_poltitre);
-    //m_logStream << "afficher_ecran 2" << endl;
-    //
-    wfenim->etablit_connexions();
-    //m_logStream << "ZFenim afficher_ecran fin" << endl;
+    LabelX->resize(larpw,_fWbh);
+    LabelY->resize(larpw,_fWbh);
+    LabelR->resize(larpw,_fWbh);
 }
 
-void Fenim::initialiseZones()
+// **************************************************************
+void Fenim::initInputs()
 {
-    //m_logStream << "ZFenim initialiseZones 1" << endl;
     // 1)
     for(int i=0;i<NBFIELDS;i++)
     {
-        if(pfc[i]->Unic) FileFields[i]="";
+        if(PFC[i]->Unic) FileFields[i]="";
     }
     //
-    //m_logStream << "ZFenim initialiseZones 2" << endl;
     // 2)
-    //m_logStream << "m_nbcris=" << m_nbcris << endl;
-    for(int i=0;i<m_nbcris;i++)
+    for(int i=0;i<CallsNumber;i++)
     {
-        if(!lesEtiq[i]->DataFields[ESPECE].isEmpty())
+        if(!EtiquetteArray[i]->DataFields[ESPECE].isEmpty())
         {
             // dès qu'on a une étiquette non vide : on prend les valeurs pour ces champs
             for(int j=0;j<NBFIELDS;j++)
             {
-                if(pfc[j]->Unic)
+                if(PFC[j]->Unic)
                 {
-                    FileFields[j] = lesEtiq[i]->DataFields[j];
-                    tgui->LastFields[j] = FileFields[j];
+                    FileFields[j] = EtiquetteArray[i]->DataFields[j];
+                    PMainWindow->LastFields[j] = FileFields[j];
                 }
             }
             break;
         }
     }
-   // m_logStream << "ZFenim initialiseZones 3" << endl;
     // 3)
     for(int i=0;i<NBFIELDS;i++)
     {
-        //m_logStream << "ZF IZ 1 - iField=" << i << endl;
-        pfc[i]->affect(tgui->LastFields[i]);
-        //m_logStream << "ZF IZ 2" << endl;
-        pfc[i]->colour(couleur[0]);
-        //m_logStream << "ZF IZ 3" << endl;
+        PFC[i]->Affect(PMainWindow->LastFields[i]);
+        PFC[i]->Colour(InputColors[0]);
     }
-    //m_logStream << "ZFenim initialiseZones fin" << endl;
 }
 
-QRect Fenim::getFenetre()
+QRect Fenim::GetWindowRect()
 {
-    return(m_rf);
+    return(PFenimWindow->WinRect);
 }
 
-MyQGraphicsView* Fenim::getView()
+MyQGraphicsView* Fenim::GetView()
 {
-    return(view);
+    return(PFenimWindow->View);
 }
 
-QImage * Fenim::getImage()
+QImage * Fenim::GetImage()
 {
-    return(fenima);
+    return(PFenimWindow->Fenima);
 }
 
-void Fenim::choisit_cri()
+void Fenim::SelectEditedCalls()
 {
-    //QMessageBox::warning(wfenim,"ri saisi",editCri->text(), QMessageBox::Ok);
-    if(neplus) return;
-    QString cs=editCri->text();
+    if(NoMore) return;
+    QString cs=PFenimWindow->EditCall->text();
     bool ok=true;
     int n=1;
     if(cs.length()==0) ok=false;
@@ -585,105 +592,105 @@ void Fenim::choisit_cri()
         if(convint==false) ok=false;
         else
         {
-            if(n<1 || n>m_nbcris) ok=false;
+            if(n<1 || n>CallsNumber) ok=false;
         }
     }
     if(ok==false)
     {
-        editCri->setText(m_lesCris);
+        PFenimWindow->EditCall->setText(_callsString);
     }
     else
     {
-        if(cs!=m_lesCris) selectionneCri(n-1,false);
+        if(cs!=_callsString) SelectCall(n-1,false);
     }
 }
-// $$$$$$$$$$$$$$$$$$$$$$$$$
 
 void EditCombo::realim_liste(const QString& codsai)
 {
-    ec_co->clear();
-    if(codsai.isEmpty()) ec_co->insertItems(0,*liste_codes);
+    EcCo->clear();
+    if(codsai.isEmpty()) EcCo->insertItems(0,*ListCodes);
     else
     {
 
         QStringList liste2;
-        for(int i=0;i<liste_codes->size();i++)
+        for(int i=0;i<ListCodes->size();i++)
         {
-            if(liste_codes->at(i).contains(codsai))
-                liste2.append(liste_codes->at(i));
+            if(ListCodes->at(i).contains(codsai))
+                liste2.append(ListCodes->at(i));
         }
-        if(liste2.size()<1) ec_co->insertItems(0,*liste_codes);
-        else ec_co->insertItems(0,liste2);
+        if(liste2.size()<1) EcCo->insertItems(0,*ListCodes);
+        else EcCo->insertItems(0,liste2);
     }
 }
 
 void EditCombo::selectionne_code()
 {
-    if(ec_co->count()>0) selectionne_code(ec_co->itemText(0));
+    if(EcCo->count()>0) selectionne_code(EcCo->itemText(0));
 }
 
 void EditCombo::selectionne_code(const QString& codsel)
 {
-    if(ec_co->count()<1) ec_co->insertItems(0,*liste_codes);
-    ec_le->setText(codsel);
-    ec_le->setFocus(); // en attendant d'avoir le paramètre pour passer au champ suivant ZZZ
+    if(EcCo->count()<1) EcCo->insertItems(0,*ListCodes);
+    EcLe->setText(codsel);
+    EcLe->setFocus(); // en attendant d'avoir le paramètre pour passer au champ suivant ZZZ
 }
 
 
 bool EditCombo::confirme_ajout(QString& s)
 {
-    if(QMessageBox::question((QWidget *)fenpar, (const QString &)QString("Attention"),
-                             (const QString &)QString("Code ")+s+QString(" absent de la table : accepter ce code ?"),
+    if(QMessageBox::question((QWidget *)Fenpar, (const QString &)QString("Question"),
+                             //fr (const QString &)QString("Code ")+s+QString(" absent de la table : accepter ce code ?"),
+                             (const QString &)QString("Code ")+s+QString(" code missing from the table : accept it ?"),
                              QMessageBox::Yes|QMessageBox::No)
             == QMessageBox::No) return(false);
-    liste_codes->insert(0,s);
-    liste_codes->sort();
+    ListCodes->insert(0,s);
+    ListCodes->sort();
     realim_liste(s);
     QFile fichier;
     QTextStream textefi;
-    fichier.setFileName(codefi+".txt");
+    fichier.setFileName(CodeFi+".txt");
     if(fichier.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate))
     {
         textefi.setDevice(&fichier);
-        for(int i=0;i<liste_codes->size();i++) textefi << liste_codes->at(i) << endl;
+        for(int i=0;i<ListCodes->size();i++) textefi << ListCodes->at(i) << endl;
         fichier.close();
     }
     return(true);
 }
 
-void Fenim::selectionne_indice(int n)
+void Fenim::SelectIndex(int n)
 {
-    pfc[INDICE]->_le->setText(QString::number(n));
-    pfc[INDICE]->_le->setStyleSheet(couleur[4]);
+    PFC[INDICE]->LE->setText(QString::number(n));
+    PFC[INDICE]->LE->setStyleSheet(InputColors[4]);
 }
 
-void Fenim::modif_indice(const QString& indsai)
+void Fenim::UpdateIndex(const QString& indsai)
 {
     bool convint;
     int nind = indsai.toInt(&convint);
     if(convint)
     {
         if(nind>0 && nind<6)
-            pfc[INDICE]->_sli->setValue(nind);
+            PFC[INDICE]->SLid->setValue(nind);
     }
 }
 
-void Fenim::clique_confi(int s)
+void Fenim::ClickConfi()
 {
-    pfc[CONFIDENTIEL]->colour(couleur[4]);
+    PFC[CONFIDENTIEL]->Colour(InputColors[4]);
 }
 
 
 bool EditCombo::controle(QString &s,QString &mess_err,bool obl)
 {
     bool bon = true; mess_err="";
-    s=ec_le->text();
+    s=EcLe->text();
     if(s.isNull() || s.isEmpty())
     {
         if(obl==true)
         {
             bon = false;
-            mess_err="Il faut saisir le code " + codefi + " !";
+            mess_err="You must entry code " + EnglishCode + " !";
         }
         else
         {
@@ -692,12 +699,12 @@ bool EditCombo::controle(QString &s,QString &mess_err,bool obl)
     }
     else
     {
-        if(!liste_codes->contains(s))
+        if(!ListCodes->contains(s))
         {
             if(!autorise_ajout)
             {
                 bon = false;
-                mess_err = "Code incorrect !";
+                mess_err = "Unauthorized code !";
             }
             else
             {
@@ -708,52 +715,54 @@ bool EditCombo::controle(QString &s,QString &mess_err,bool obl)
     }
     if(!bon)
     {
-        ec_le->clear();
+        EcLe->clear();
         realim_liste("");
-        ec_le->setFocus();
+        EcLe->setFocus();
     }
     return(bon);
 }
 
-void Fenim::enreg_etiq()
+void Fenim::ValidateLabel()
 {
     QString s,mess_err="";
     for(int i=0;i<NBFIELDS;i++)
     {
-        s=pfc[i]->getText();
-        if(s.isEmpty() && pfc[i]->Obl==true)
+        s=PFC[i]->GetText();
+        if(s.isEmpty() && PFC[i]->Obl==true)
         {
-            QMessageBox::warning(wfenim,"Saisie obligatoire",mess_err, QMessageBox::Ok);
-            pfc[i]->_le->setFocus();
+            //fr QMessageBox::warning(wfenim,"Saisie obligatoire",mess_err, QMessageBox::Ok);
+            QMessageBox::warning(PFenimWindow,"Required entry",mess_err, QMessageBox::Ok);
+            PFC[i]->LE->setFocus();
             return;
         }
-        if(pfc[i]->_fieldType==EC)
+        if(PFC[i]->FieldType==EC)
         {
-            if(!pfc[i]->_ec->controle(s,mess_err,true))
+            if(!PFC[i]->ECo->controle(s,mess_err,true))
             {
-                QMessageBox::warning(wfenim,"Saisie incorrecte",mess_err, QMessageBox::Ok);
-                pfc[i]->_ec->ec_le->setFocus();
+                QMessageBox::warning(PFenimWindow,"Incorrect entry",mess_err, QMessageBox::Ok);
+                PFC[i]->ECo->EcLe->setFocus();
                 return;
             }
         }
-        if(pfc[i]->_fieldType==SLI && !s.isEmpty())
+        if(PFC[i]->FieldType==SLI && !s.isEmpty())
         {
             bool convint;
-            int nind = pfc[i]->getText().toInt(&convint);
+            int nind = PFC[i]->GetText().toInt(&convint);
             if(convint)
             {
-                if(nind<pfc[i]->_Smin || nind>pfc[i]->_Smax) convint=false;
+                if(nind<PFC[i]->SMin || nind>PFC[i]->SMax) convint=false;
             }
 
             if(!convint)
             {
-                QMessageBox::warning(wfenim,"Saisie incorrecte","Saisir un nombre entre 1 et 5 !", QMessageBox::Ok);
-                pfc[i]->_le->setFocus();
+                //fr QMessageBox::warning(wfenim,"Incorrect entry","Saisir un nombre entre 1 et 5 !", QMessageBox::Ok);
+                QMessageBox::warning(PFenimWindow,"Incorrect entry","Enter a number between 1 and 5 !", QMessageBox::Ok);
+                PFC[i]->LE->setFocus();
                 return;
             }
         }
     }
-    QString dae= pfc[DATENREG]->getText();
+    QString dae= PFC[DATENREG]->GetText();
     if(!dae.isEmpty())
     {
         QString sj=dae.section("/",0,0);
@@ -770,413 +779,293 @@ void Fenim::enreg_etiq()
         }
         if(!convdate)
         {
-            QMessageBox::warning(wfenim,"Saisir une date jj/mm/aaaa",mess_err, QMessageBox::Ok);
-            pfc[DATENREG]->_le->setFocus();
+            //j QMessageBox::warning(wfenim,"Saisir une date jj/mm/aaaa",mess_err, QMessageBox::Ok);
+            QMessageBox::warning(PFenimWindow,"Enter a date dd/mm/yyyy",mess_err, QMessageBox::Ok);
+            PFC[DATENREG]->LE->setFocus();
             return;
         }
     }
     // -----
     int premi=-1;
-    for(int i=0;i<m_nbcris;i++)
+    for(int i=0;i<CallsNumber;i++)
     {
-        if(m_crisel[i])
+        if(SelectedCalls[i])
         {
             if(premi<0) premi=i;
-            if(lesEtiq[i]->DataFields[ESPECE].isEmpty()) m_nbeti++;
+            if(EtiquetteArray[i]->DataFields[ESPECE].isEmpty()) LabelsNumber++;
             for(int j=0;j<NBFIELDS;j++)
-                lesEtiq[i]->DataFields[j]= this->pfc[j]->getText();
-            // $$$$$$$$$$$$$$$$$
-            // 05-03-2015
-            // if(!m_casRetraitement) updateTagNSpec(i);
+                EtiquetteArray[i]->DataFields[j]= this->PFC[j]->GetText();
             updateTagNSpec(i);
         }
     }
-    if(!m_casRetraitement)
+    if(!_reprocessingCase)
     {
-        conserveSaisies(lesEtiq[premi]);
-        repeint_en_vert();
-        traite_champs_uniques();
-        TadaridaMainWindow *tg=(TadaridaMainWindow *)fparent;
+        inputsSave(EtiquetteArray[premi]);
+        greenPaint();
+        treatUniqueFields();
+        TadaridaMainWindow *tg=(TadaridaMainWindow *)ParentWindow;
         tg->TextsToSave = true;
-        affiche_nbeti();
+        showNbLabels();
         updateChbTagSpec();
     }
-    saisie_a_sauver = true; // on peut faire mieux
+    InputToSave = true; // on peut faire mieux
 }
 
-void Fenim::conserveSaisies(Etiquette *peti)
+void Fenim::inputsSave(Etiquette *peti)
 {
     for(int i=0;i<NBFIELDS;i++)
-        tgui->LastFields[i] = peti->DataFields[i];
+        PMainWindow->LastFields[i] = peti->DataFields[i];
 }
 
-void Fenim::traite_champs_uniques()
+void Fenim::treatUniqueFields()
 {
     bool a_etendre = false;
 
     for(int jField=0;jField<NBFIELDS;jField++)
     {
-        if(pfc[jField]->Unic)
+        if(PFC[jField]->Unic)
         {
-            if(FileFields[jField] != tgui->LastFields[jField])
+            if(FileFields[jField] != PMainWindow->LastFields[jField])
             {
-                FileFields[jField] = tgui->LastFields[jField];
+                FileFields[jField] = PMainWindow->LastFields[jField];
                 a_etendre = true;
             }
         }
     }
     if(a_etendre)
     {
-        for(int i=0;i<m_nbcris;i++)
+        for(int i=0;i<CallsNumber;i++)
         {
-            if(!m_crisel[i] && !lesEtiq[i]->DataFields[ESPECE].isEmpty())
+            if(!SelectedCalls[i] && !EtiquetteArray[i]->DataFields[ESPECE].isEmpty())
             {
                 for(int jField=0;jField<NBFIELDS;jField++)
-                    if(pfc[jField]->Unic) lesEtiq[i]->DataFields[jField] = FileFields[jField];
+                    if(PFC[jField]->Unic) EtiquetteArray[i]->DataFields[jField] = FileFields[jField];
             }
         }
     }
 }
 
-void Fenim::repeint_en_vert()
+void Fenim::greenPaint()
 {
-    // on vient de valider une étiquette ou un groupe d'étiquette : on passe les champs simples
-    // en vert
-    for(int j=0;j<NBFIELDS;j++) pfc[j]->colour(couleur[2]);
+    for(int j=0;j<NBFIELDS;j++) PFC[j]->Colour(InputColors[2]);
 }
 
-bool Fenim::afficher_image(bool modesaisie)
+bool Fenim::ShowFenim(bool modesaisie)
 {
-    //m_logStream << "ZFenim afficher_image debut" << endl;
-
-    if(m_verRepLog <m_verLog || m_verRepUser < m_verUser)
+    if(FolderLogVersion <LogVersion || FolderUserVersion < UserVersion)
     {
-        QMessageBox::warning(fparent,"Fichier inaccessible","Version en retard : retraiter d'abord le dossier !", QMessageBox::Ok);
+        //QMessageBox::warning(fparent,"Fichier inaccessible","Version en retard : retraiter d'abord le dossier !", QMessageBox::Ok);
+        QMessageBox::warning(ParentWindow,"File is unreacheable","Version is late : reprocess first the folder !", QMessageBox::Ok);
         return(false);
     }
-    initialise_cris();
-    if(loadMatriceCris2(da2File)==false)
+    initCalls();
+    if(loadCallsMatrices(_da2FileName)==false)
     {
-        QMessageBox::warning(fparent,"Fichier inaccessible","Retraiter d'abord le dossier", QMessageBox::Ok);
+        QMessageBox::warning(ParentWindow,"File is unreacheable","Reprocess first the folder", QMessageBox::Ok);
         return(false);
     }
-    //m_logStream << "ZFenim afficher_image appelle cree_fenetre" << endl;
-    cree_fenetre(modesaisie);
-    //m_logStream << "ZFenim afficher_image retour de cree_fenetre" << endl;
-    m_mx = 10 ; m_my=12; // marges entre grandes parties de l'écran
-    m_hbou = 18;
-    wfenim->resize(1150,630);
-    fenima = new QImage;
-    fenima->load(imaNom);
-    scene = new MyQGraphicsScene(this,wfenim,false); // création de la scene
-    view = new MyQGraphicsView(wfenim); // création de la view
-    view->setScene(scene);  // ajout de la scene dans la view
-
-    //
-    //
-    if(_imaHeight<=128)
+    _windowOpen = true;
+    CreatFenimWindow(modesaisie);
+    if(loadLabels()==false)
     {
-        view->setFixedSize(1060,fenima->height()+200);
-    }
-    else
-    {
-        view->setFixedSize(1060,fenima->height()+72);
-    }
-    m_logStream << "_imaHeight = " << _imaHeight << "  view.height = " << view->height() << endl;
-    view->move(m_mx,m_my);
-    fenouv = true;
-    pix=(scene->addPixmap(QPixmap::fromImage(*fenima))); // ajout du pixmap dans la scene
-    //m_logStream << "ZFenim afficher_image 11" << endl;
-    // ------------------- 29/1/2014
-    wfenim->showMaximized();
-    m_l = wfenim->width();
-    m_h= wfenim->height();
-    m_rf = wfenim->geometry();
-    wfenim->activateWindow();
-    wfenim->raise();
-    //int hv = ((m_h - m_my*3)*2)/3;
-    int hv = ((m_h - m_my*4 - m_hbou)*2)/3;
-
-    int lv = m_l - m_mx*2;
-    view->setFixedSize(lv,hv);
-    // float rl = 50000f / ((h x 16) /9);
-    // ratio à revoir
-    //m_rl =   (float)m_h * (1+m_xmoitie) / (float)28125;
-    //m_rh = ((float)hv * m_iSizeFFTHalf) / ((float)fenima->height() * 120);
-
-    // edit yves - changer echelle xy
-    m_rl =   (float)m_h * (1+m_xmoitie) / (float)(tgui->Divrl);
-    m_rh = ((float)hv * _imaHeight) / ((float)fenima->height() * 160);
-
-    // m_rl *= 2;
-    view->SCALE(m_rl,m_rh);
-    //view->setAlignment(Qt::AlignBottom);
-    //int dy = m_iSizeFFTHalf - 121;
-    int yc = _imaHeight + _imaHeight - 121;
-    // yc : point central pour forcer le scrolling
-    view->centerOn(0,yc);
-
-    m_logStream << "fenima->height=" << fenima->height() << endl;
-    m_logStream << "yc=" << yc << endl;
-
-    //m_logStream << "m_iSizeFFTHalf = " << m_iSizeFFTHalf << endl;
-    //m_logStream << "m_rh = " << m_rh << endl;
-    //m_logStream << "m_rl = " << m_rl << endl;
-    // -----------------------------
-    // --
-    //m_logStream << "avant chargeEtiquettes" << endl;
-    if(chargeEtiquettes()==false)
-    {
-        if(crefen) wfenim->close();
+        if(_windowCreated) PFenimWindow->close();
         return(true);
     }
-    //m_logStream << "apres chargeEtiquettes et avant afficher_ecran" << endl;
-
-    afficher_ecran();
-    //m_logStream << "ZFenim après afficher_ecran et avant iz" << endl;
-
-    initialiseZones();
-    //m_logStream << "ZFenim après initialiseZones" << endl;
-
-    //m_logStream << "après afficher_ecran" << endl;
-    cree_points_maitres();
-    initialise_traits();
-    //m_logStream << "ai 12" << endl;
-    //
-    //m_logStream << "$$$ Fenim afficher_image apres chargement etiquettes : " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
-    //if(m_iSizeFFTHalf<=128) view->scale(1,2);
-    afficher_grille(true);
-    afficher_cris();
-    afficher_points_maitres();
-    //m_logStream << "$$$ Fenim afficher_image après affichage des cris : " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
-    // afficher_ecran();
-    view->setMouseTracking(true);
-
-    selectionneCri(0,false);
-
-    //QMessageBox::warning(wfenim,"Fenim","affim 4", QMessageBox::Ok);
-    //m_logStream << "$$$ Fenim fin afficher_image : " << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
+    showNbLabels();
+    initInputs();
+    initMasterPoints();
+    initLines();
+    PFenimWindow->CreateConnections();
+    PFenimWindow->showMaximized();
+    PFenimWindow->activateWindow();
+    PFenimWindow->raise();
     return(true);
 }
 
-bool Fenim::chargeCrisEtiquettes()
+bool Fenim::LoadCallsLabels()
 {
-    //m_logStream << "Fenim charge_cris_etiquettes" << endl;
-    if(!m_casRetraitement) initialise_cris();
-    if(loadMatriceCris2(da2File)==false)
+    if(!_reprocessingCase) initCalls();
+    if(loadCallsMatrices(_da2FileName)==false)
     {
-        fenouv = false;
+        _windowOpen = false;
         return(false);
     }
-    else fenouv = true;
-    if(chargeEtiquettes()==false) return(false);
-    //m_logStream << "Fenim charge_cris_etiquettes fin" << endl;
+    else _windowOpen = true;
+    if(loadLabels()==false) return(false);
     return(true);
 }
 
-void Fenim::zoome()
+void Fenim::Zoom()
 {
-    //QMessageBox::warning(wfenim,"zoom","Passe dans zoome !", QMessageBox::Ok);
-    zoomef(1.414f);
+    ZoomF(1.414f);
 }
-void Fenim::dezoome()
+void Fenim::UnZoom()
 {
-    zoomef(0.707f);
+    ZoomF(0.707f);
 }
-void Fenim::zoomef(float iz)
+void Fenim::ZoomF(float iz)
 {
-    //QMessageBox::warning(wfenim,"zoom","Passe dans zoome !", QMessageBox::Ok);
-    view->SCALE(iz,1);
-    m_rl *= iz;
-    /*
-    rafraichit_image();
-    afficher_grille(bcGrille->isChecked());
-    reafficher_cris();
-    */
-    // rafraichit_tout(); retiré le 26/2/2014
-    afficher_grille(bcGrille->isChecked());
-    afficher_points_maitres();
-    afficheratio();
+    PFenimWindow->View->SCALE(iz,1);
+    PFenimWindow->WidthRatio *= iz;
+    ShowGrid(PFenimWindow->BCGrid->isChecked());
+    ShowMasterPoints();
+    ShowRatio();
 }
 
-void Fenim::initialise_cris()
+void Fenim::initCalls()
 {
     for(int i=0;i<NCRETES;i++)
     {
-        m_matrixCalls[i].clear();
-        for(int j=0;j<NSUPPL;j++) m_pointsSuppl[i][j].clear();
+        CallsMatrix[i].clear();
+        for(int j=0;j<NSUPPL;j++) AddPointsVector[i][j].clear();
     }
-    m_pointsMaitres.clear();
-    m_matrixContours.clear();
+    MasterPointsVector.clear();
+    ContoursMatrices.clear();
 
 }
 
-void Fenim::afficher_cris()
+void Fenim::ShowCalls()
 {
-    // pour version contour
-    // if(m_mode==2) return;
-    bool affichercri = bcCris->isChecked();
-    for(int i=0;i<m_nbcris;i++) afficher_un_cri(i,m_crisel[i],affichercri);
+    bool affichercri = PFenimWindow->BCCalls->isChecked();
+    for(int i=0;i<CallsNumber;i++)
+    {
+        ShowOneCall(i,SelectedCalls[i],affichercri);
+    }
 }
 
-void Fenim::afficher_points_maitres()
+void Fenim::ShowMasterPoints()
 {
-    bool afficherpm = bcPMaitres->isChecked();
-    for(int i=0;i<m_nbcris;i++) afficher_un_point_maitre(i,m_crisel[i],afficherpm);
+    bool afficherpm = PFenimWindow->BCMasterPoints->isChecked();
+    for(int i=0;i<CallsNumber;i++) ShowOneMasterPoint(i,SelectedCalls[i],afficherpm);
 }
 
-void Fenim::rafraichit_image()
+void Fenim::ActivateGrid(int state)
 {
-    pix->setPixmap(QPixmap::fromImage(*fenima));
+    ShowGrid(state==Qt::Checked);
 }
 
-void Fenim::actdesactGrille(int state)
+void Fenim::ActivateMasterPoints()
 {
-    afficher_grille(state==Qt::Checked);
+    ShowMasterPoints();
 }
 
-void Fenim::actdesactPMaitres()
+void Fenim::ActivateCrests()
 {
-    afficher_points_maitres();
+    ShowCalls();
 }
 
-void Fenim::actdesactCris()
+void Fenim::ShowGrid(bool afficher)
 {
-    afficher_cris();
-}
-
-void Fenim::afficher_grille(bool afficher)
-{
-    if(nliv>0) for(int i=0;i<nliv;i++) delete gliv[i];
-    if(nlih>0) for(int i=0;i<nlih;i++) delete glih[i];
-    if(nte>0) for(int i=0;i<nte;i++) delete gte[i];
-    nliv=0; nlih=0; nte=0;
+    if(_nliv>0) for(int i=0;i<_nliv;i++) delete PFenimWindow->GLiv[i];
+    if(_nlih>0) for(int i=0;i<_nlih;i++) delete PFenimWindow->GLih[i];
+    if(_nte>0) for(int i=0;i<_nte;i++) delete PFenimWindow->GTe[i];
+    _nliv=0; _nlih=0; _nte=0;
     if(!afficher) return;
 
-    float invsx = 1.0f/m_rl;
-    float invsy = 1.0f/m_rh;
+    float invsx = 1.0f/PFenimWindow->WidthRatio;
+    float invsy = 1.0f/PFenimWindow->HeightRatio;
     QFont qf("Arial",8);
-    int xmax=fenima->width();
-    //m_logStream << "afficher_grille" <<  endl;
-    float tmax = getms(xmax-1);
+    int xmax=PFenimWindow->Fenima->width();
+    float tmax = Getms(xmax-1);
     float igt=0;
     float incrt = 500;
-    if(m_rl>0.25) incrt = 100;
+    if(PFenimWindow->WidthRatio>0.25) incrt = 100;
 
     QPen qp = QPen(QColor(128,128,128),0);
-    while(igt<tmax && nliv < 500 && nte<250)
+    while(igt<tmax && _nliv < 500 && _nte<250)
     {
-        float x=getx(igt);
-        gliv[nliv] = scene->addLine(x,0,x,_imaHeight-1,qp);
-        if((nliv & 1)==0 && nliv>0)
+        float x=GetX(igt);
+        PFenimWindow->GLiv[_nliv] = PFenimWindow->Scene->addLine(x,0,x,ImageHeight-1,qp);
+        if((_nliv & 1)==0 && _nliv>0)
         {
             int nigt =(int)igt; int ns = nigt/1000;
             QString affi;
             if(nigt == ns * 1000) affi = QString::number(ns)+" sec";
             else affi = QString::number(nigt)+" ms";
-            gte[nte] = scene->addSimpleText(affi,qf);
-            gte[nte]->setPos(x+invsx*2,_imaHeight-((float)30/m_rh));
+            PFenimWindow->GTe[_nte] = PFenimWindow->Scene->addSimpleText(affi,qf);
+            PFenimWindow->GTe[_nte]->setPos(x+invsx*2,ImageHeight-((float)30/PFenimWindow->HeightRatio));
             //gte[nte]->scale(invsx,invsy);
-            gte[nte]->SCALE(invsx,invsy);
-            nte++;
+            PFenimWindow->GTe[_nte]->SCALE(invsx,invsy);
+            _nte++;
         }
-        nliv++;
+        _nliv++;
         igt += incrt;
     }
-    //m_logStream << "m_rl = " << m_rl <<  endl;
-    //
-    float fmax = getkhz(0);
+    float fmax = GetkHz(0);
     float igf=0;
     float incrf = 10;
 
-    while(igf<fmax && nlih < 500)
+    while(igf<fmax && _nlih < 500)
     {
-        float y=gety(igf);
+        float y=GetY(igf);
         // for(int k=x;k<x+nbl;k++)
-        glih[nlih] = scene->addLine(0,y,xmax-1,y,qp);
-        if((nlih & 1)==0 && nlih>0)
+        PFenimWindow->GLih[_nlih] = PFenimWindow->Scene->addLine(0,y,xmax-1,y,qp);
+        if((_nlih & 1)==0 && _nlih>0)
         {
-            gte[nte] = scene->addSimpleText(QString::number(igf)+" kHz",qf);
-            gte[nte]->setPos(1+invsx,y-8+m_rh);
-            gte[nte]->SCALE(invsx,invsy);
-            nte++;
+            PFenimWindow->GTe[_nte] = PFenimWindow->Scene->addSimpleText(QString::number(igf)+" kHz",qf);
+            PFenimWindow->GTe[_nte]->setPos(1+invsx,y-8+PFenimWindow->HeightRatio);
+            PFenimWindow->GTe[_nte]->SCALE(invsx,invsy);
+            _nte++;
         }
-        //m_logStream << "grille x = " << x << " nliv = " << nliv <<  endl;
-        nlih++; igf += incrf;
-        //m_logStream << "grille y = " << y << " igf = " << igf <<  endl;
+        _nlih++; igf += incrf;
     }
-    //m_logStream << "m_rh = " << m_rh <<  endl;
 }
 
-void Fenim::afficher_un_cri(int ncri,bool crisel,bool affichercri)
+void Fenim::ShowOneCall(int ncri,bool crisel,bool affichercri)
 {
-    // pour version contour
-    // if(m_mode==2) return;
-    // prévoir un affichage lors de la sélection
-
     if(!(ncri<MAXCRI)) return;
-    bool etiquette = !lesEtiq[ncri]->DataFields[ESPECE].isEmpty();
-
+    bool etiquette = !EtiquetteArray[ncri]->DataFields[ESPECE].isEmpty();
     QPen qp = QPen(QColor(
                        (255-80*etiquette)*(!crisel)+20*crisel*etiquette,
                        (255-100*etiquette)*(!crisel),
                        255*(!crisel)+80*crisel*etiquette),
                        0);
-
-    //m_logStream << "afficher_un_cri pour ncri = " << ncri << endl;
     if(!affichercri)
     {
-        //m_logStream << "cas 1 - suppression "  << endl;
-        if(ilc[ncri])
+        if(_ilc[ncri])
         {
-            delete gplt[ncri];
-            ilc[ncri]=false;
+            delete PFenimWindow->GPlt[ncri];
+            _ilc[ncri]=false;
         }
     }
     else
     {
-        if(!ilc[ncri])
+        if(!_ilc[ncri])
         {
-            //m_logStream << "cas 2 - création"  << endl;
             QPolygonF polygone;
-            for(int j=0;j<m_matrixCalls[0][ncri].size();j++)
+            for(int j=0;j<CallsMatrix[0][ncri].size();j++)
             {
-                int x=m_matrixCalls[0][ncri][j].x()/(1+m_xmoitie);
-                int y=_imaHeight-m_matrixCalls[0][ncri][j].y()-1;
+                int x=CallsMatrix[0][ncri][j].x()/(1+XHalf);
+                int y=ImageHeight-CallsMatrix[0][ncri][j].y()-1;
                 polygone << QPointF(x,y);
             }
             QPainterPath path = QPainterPath();
             path.addPolygon(polygone);
-            gplt[ncri] = new QGraphicsPathItem(path);
-            gplt[ncri]->setPen(qp);
-            scene->addItem(gplt[ncri]);
-            ilc[ncri]=true;
+            PFenimWindow->GPlt[ncri] = new QGraphicsPathItem(path);
+            PFenimWindow->GPlt[ncri]->setPen(qp);
+            PFenimWindow->Scene->addItem(PFenimWindow->GPlt[ncri]);
+            _ilc[ncri]=true;
         }
         else
         {
             int counou=(int)etiquette*2+(int)crisel;
-            if(counou!=coucri[ncri])
+            if(counou!=_callColour[ncri])
             {
-                //m_logStream << "cas 3a - changement de couleur"  << endl;
-                gplt[ncri]->setPen(qp);
-                coucri[ncri]=counou;
+                PFenimWindow->GPlt[ncri]->setPen(qp);
+                _callColour[ncri]=counou;
             }
         }
     }
 }
 
-void Fenim::afficher_un_point_maitre(int ncri,bool crisel,bool afficherpm)
+void Fenim::ShowOneMasterPoint(int ncri,bool crisel,bool afficherpm)
 {
     if(!(ncri<MAXCRI)) return;
-    int x = m_pointsMaitres[ncri].x()/(1+m_xmoitie);
-    int y = _imaHeight - m_pointsMaitres[ncri].y()-1;
-    //QPen qpm = QPen(QColor(160-80*crisel,128*crisel,255-160*crisel),0);
-    //QBrush qb = QBrush(QColor(160-80*crisel,128*crisel,255-160*crisel),Qt::SolidPattern);
-    //QPen qpm = QPen(QColor(96*(1-crisel),96*(1-crisel),96*(1-crisel)),0);
-    //QBrush qb = QBrush(QColor(96*(1-crisel),96*(1-crisel),96*(1-crisel)),Qt::SolidPattern);
+    int x = MasterPointsVector[ncri].x()/(1+XHalf);
+    int y = ImageHeight - MasterPointsVector[ncri].y()-1;
 
-    bool etiquette = !lesEtiq[ncri]->DataFields[ESPECE].isEmpty();
-    int nspec= (lesEtiq[ncri]->SpecNumber);
+    bool etiquette = !EtiquetteArray[ncri]->DataFields[ESPECE].isEmpty();
+    int nspec= (EtiquetteArray[ncri]->SpecNumber);
     int rouge,vert,bleu,ajdec;
     bleu=0;
     ajdec=0;
@@ -1194,168 +1083,152 @@ void Fenim::afficher_un_point_maitre(int ncri,bool crisel,bool afficherpm)
         {vert=255-50*nspec+32*ajdec;rouge=50*nspec+32*ajdec;}
     }
     //
-    // QPen qpm = QPen(QColor(255*(1-crisel),128*etiquette*(1-crisel),0,0));
     QPen qpm = QPen(QColor(rouge,vert,bleu),0);
     QBrush qb = QBrush(QColor(rouge,vert,bleu),Qt::SolidPattern);
 
-    if(ipmc[ncri]==true)
+    if(_ipmc[ncri]==true)
     {
-        delete gepm[ncri];
-        ipmc[ncri]=false;
+        delete PFenimWindow->GEpm[ncri];
+        _ipmc[ncri]=false;
     }
     if(afficherpm)
     {
-        if(ipmc[ncri]==false)
+        if(_ipmc[ncri]==false)
         {
             // float w=3.0f/m_rl+m_rl/16;
             // float h=2.0f/m_rh+m_rh/16;
-            float w=6.0f/m_rl;
-            float h=6.0f/m_rh;
-            gepm[ncri]=scene->addEllipse(x-w/2,y-h/2,w,h,qpm,qb);
-            ipmc[ncri]=true;
+            float w=6.0f/PFenimWindow->WidthRatio;
+            float h=6.0f/PFenimWindow->HeightRatio;
+            PFenimWindow->GEpm[ncri]=PFenimWindow->Scene->addEllipse(x-w/2,y-h/2,w,h,qpm,qb);
+            _ipmc[ncri]=true;
 
         }
-        else gepm[ncri]->setPen(qpm);
+        else PFenimWindow->GEpm[ncri]->setPen(qpm);
     }
     // ----------------------------------------------------------
 }
 
 
-bool Fenim::loadMatriceCris2(QString da2File)
+bool Fenim::loadCallsMatrices(QString da2File)
 {
-
-    //m_logStream << "loadMatriceCris2 " << endl;
-    //m_logStream << " fichier cris :  " << da2File << endl;
-    m_cris2File.setFileName(da2File);
-    if(m_cris2File.open(QIODevice::ReadOnly)==false)
+    _da2File.setFileName(da2File);
+    if(_da2File.open(QIODevice::ReadOnly)==false)
     {
-        m_logStream << "fichier cris inexistant : " << da2File << endl;
-        if(!m_casRetraitement)
-        QMessageBox::warning(wfenim, "Fin", "Fichier de cris inexistant", QMessageBox::Ok);
+        LogStream << "da2 file is missing : " << da2File << endl;
+        if(!_reprocessingCase)
+        QMessageBox::warning(PFenimWindow, "Error", "da2 file is missing", QMessageBox::Ok);
         return(false);
     }
     // gérer les retours...
-    m_cris2Stream.setDevice(&m_cris2File);
+    _da2Stream.setDevice(&_da2File);
 
     // numéro de version
     int numver=0,numveruser=0;
 
-    m_cris2Stream >> numver;
+    _da2Stream >> numver;
 
 
-    if(numver>3) m_cris2Stream >> numveruser;
+    if(numver>3) _da2Stream >> numveruser;
     if(numver<11)
     {
-        QMessageBox::warning(wfenim, "Fin", "Fichier de cris incompatible avec la version du logiciel", QMessageBox::Ok);
+        QMessageBox::warning(PFenimWindow, "Error", "da2 file is incompatible with software version", QMessageBox::Ok);
         return(false);
     }
 
-    m_logStream << "numver,m_verLog=" << numver << "," << m_verLog << endl;
-    m_logStream << "numveruser,m_verUser=" << numveruser << "," << m_verUser << endl;
+    LogStream << "numver,m_verLog=" << numver << "," << LogVersion << endl;
+    LogStream << "numveruser,m_verUser=" << numveruser << "," << UserVersion << endl;
 
-    if(!m_casRetraitement)
+    if(!_reprocessingCase)
     {
-        if(numver < m_verLog || numveruser < m_verUser)
+        if(numver < LogVersion || numveruser < UserVersion)
         {
-            m_logStream << "version du dat en retard" << endl;
-            m_logStream << "numveruser,m_verUser=" << numveruser << "," << m_verUser << endl;
-            m_cris2File.close();
+            LogStream << "da2 file version is late" << endl;
+            LogStream << "numveruser,m_verUser=" << numveruser << "," << UserVersion << endl;
+            _da2File.close();
             return(false);
         }
     }
 
-    m_logStream << "version " << numver << endl;
+    LogStream << "version " << numver << endl;
 
     // nombre de cris
-    m_cris2Stream >> m_nbcris;
-    m_logStream << "loadmatricecris2  -->  nbre cris = " << m_nbcris << endl;
+    _da2Stream >> CallsNumber;
+    LogStream << " nb calls = " << CallsNumber << endl;
 
-    m_cris2Stream >> _imaHeight;
-    m_logStream << "loadmatricecris2  -->  _imaHeight " << _imaHeight << endl;
-    if(numver > 1) m_cris2Stream >> m_xmoitie;
-    //m_logStream << "2 m_xmoitie=" << m_xmoitie << endl;
+    _da2Stream >> ImageHeight;
+    LogStream << " _imaHeight = " << ImageHeight << endl;
+    if(numver > 1)
+    {
+        _da2Stream >> XHalf;
+        LogStream << "m_xmoitie = " << XHalf << endl;
+    }
 
     if(numver>2)
     {
-        m_cris2Stream >> m_factorX;
-        m_cris2Stream >> m_factorY;
+        _da2Stream >> FactorX;
+        _da2Stream >> FactorY;
+        LogStream << "m_factory=" << FactorY << endl;
+        LogStream << "m_factorx=" << FactorX << endl;
     }
-    m_logStream << "m_factory=" << m_factorY << endl;
-    m_logStream << "_imaHeight=" << _imaHeight << endl;
-    // £££ 27/05/2015
-    _numVer = numver;
-    _tE = 10;
+    NumVer = numver;
+    PtE = 10;
     if(numver>19)
     {
-        m_cris2Stream >> _tE;
+        _da2Stream >> PtE;
     }
     else
     {
-        _numtE = m_factorY * _imaHeight * 2000;
+        NumtE = FactorY * ImageHeight * 2000;
     }
-    // fin £££ 27/05/2015
-
-    // m_logStream << "nbre de cris : " << nbcris << endl;
-    // m_logStream << "sizeffthalf = " << m_iSizeFFTHalf << endl;
-    // m_logStream << "m_xmoitie = " << m_xmoitie << endl;
     // -------------------
     // pour chaque cri
 
     int xpointm,ypointm;
-    if(m_nbcris >0 && m_nbcris < MAXCRI)
+    if(CallsNumber >0 && CallsNumber < MAXCRI)
 
-    for(int i=0;i<m_nbcris;i++)
+    for(int i=0;i<CallsNumber;i++)
     {
-        //m_logStream << endl;
-        //m_logStream << "Cri n° " << i << endl;
-        m_cris2Stream >> xpointm;
-        m_cris2Stream >> ypointm;
-
+        _da2Stream >> xpointm;
+        _da2Stream >> ypointm;
         QPoint p;
         p.setX(xpointm);
         p.setY(ypointm);
-        m_pointsMaitres.push_back(p);
-
+        MasterPointsVector.push_back(p);
         int longCri;
-        m_cris2Stream >> longCri;
-
-        //m_logStream << "loncri = " << longCri << endl;
-
-        m_vectorContours.clear();
-        m_vectorEnergie.clear();
-		
-
+        _da2Stream >> longCri;
+        _contoursVector.clear();
+        _energyVector.clear();
         int x,y;
         float e;
         for(int j=0;j<longCri;j++)
         {
-            m_cris2Stream >> x >> y >> e;
+            _da2Stream >> x >> y >> e;
             QPoint p;
             p.setX(x);
             p.setY(y);
-            m_vectorContours.push_back(p);
+            _contoursVector.push_back(p);
 			
-            m_vectorEnergie.push_back(e);
+            _energyVector.push_back(e);
 			
         }
-        m_matrixContours.push_back(m_vectorContours);
-        m_matrixEnergie.push_back(m_vectorEnergie);
+        ContoursMatrices.push_back(_contoursVector);
+        EnergyMatrix.push_back(_energyVector);
         //
         int longCrete;
         //
         for(int jcrete=0;jcrete<NCRETES;jcrete++)
         {
-            m_vectorCalls.clear();
-            m_cris2Stream >> longCrete;
+            _callsVector.clear();
+            _da2Stream >> longCrete;
             for(int j=0;j<longCrete;j++)
             {
-                m_cris2Stream >> x >> y;
+                _da2Stream >> x >> y;
                 QPoint p;
                 p.setX(x);
                 p.setY(y);
-                m_vectorCalls.push_back(p);
+                _callsVector.push_back(p);
             }
-            m_matrixCalls[jcrete].push_back(m_vectorCalls);
+            CallsMatrix[jcrete].push_back(_callsVector);
 
         }
         //
@@ -1363,80 +1236,74 @@ bool Fenim::loadMatriceCris2(QString da2File)
         for(int jcrete=0;jcrete<NCRETES;jcrete++)
             for(int k=0;k<NSUPPL;k++)
             {
-                m_cris2Stream >> x >> y;
+                _da2Stream >> x >> y;
                 QPoint p;
                 p.setX(x);
                 p.setY(y);
-                m_pointsSuppl[jcrete][k].push_back(p);
+                AddPointsVector[jcrete][k].push_back(p);
             }
 
     }
     //
     if(numver>20)
     {
-        m_cris2Stream >> _sonogramWidth;
+        _da2Stream >> SonogramWidth;
         int f0;
-        m_cris2Stream >> f0;
-        _withSilence = (bool)f0;
-        if(_withSilence)
+        _da2Stream >> f0;
+        WithSilence = (bool)f0;
+        if(WithSilence)
         {
-            m_logStream << "withSilence=true" << endl;
-
-            for(int j=0;j<_sonogramWidth;j++)
+            LogStream << "withSilence=true" << endl;
+            for(int j=0;j<SonogramWidth;j++)
             {
                 qint8 f1,f2,f3;
-                m_cris2Stream >> f1 >> f2 >> f3;
-                _flagGoodCol[j] = f1;
-                _flagGoodColInitial[j] = f2;
-                _energyMoyCol[j] = f3;
+                _da2Stream >> f1 >> f2 >> f3;
+                FlagGoodCol[j] = f1;
+                FlagGoodColInitial[j] = f2;
+                EnergyAverageCol[j] = f3;
             }
         }
-        else m_logStream << "withSilence=false" << endl;
-
+        else LogStream << "withSilence=false" << endl;
     }
-    else _withSilence = false;
+    else WithSilence = false;
 
     //
-    m_cris2File.close();
+    _da2File.close();
     return(true);
 }
 
-int Fenim::rematcheEtiquettes(Fenim * fenim1,bool initial,QString recupVersion,int *cpma)
+int Fenim::MatchLabels(Fenim * fenim1,bool initial,QString recupVersion,int *cpma)
 {
     // apriori : rien à changer pour la version contour !
-    m_logStream << "rematcheEtiquettes - m_nbcris = " << m_nbcris << endl;
-    m_logStream << "rematcheEtiquettes - nb points maitres = " << m_pointsMaitres.size() << endl;
-    m_logStream << "rematcheEtiquettes - fenim1 nb points maitres = " << fenim1->m_pointsMaitres.size() << endl;
+    LogStream << "rematcheEtiquettes - m_nbcris = " << CallsNumber << endl;
+    LogStream << "rematcheEtiquettes - nb master points = " << MasterPointsVector.size() << endl;
+    LogStream << "rematcheEtiquettes - fenim1 nb master points = " << fenim1->MasterPointsVector.size() << endl;
     // ajoutr le nombre d'étiquettes !
     int nrecup=0;
     QStringList listSpecrecup;
-    for(int i=0;i<m_nbcris;i++)
+    for(int i=0;i<CallsNumber;i++)
     {
-        //m_logStream << "i = " << i << endl;
-        if(!initial) if(!lesEtiq[i]->DataFields[ESPECE].isEmpty()) continue;
-        QPoint p = this->m_pointsMaitres.at(i);
+        if(!initial) if(!EtiquetteArray[i]->DataFields[ESPECE].isEmpty()) continue;
+        QPoint p = this->MasterPointsVector.at(i);
         int x=p.x(),y=p.y();
-        for(int j=0;j<fenim1->m_pointsMaitres.size();j++)
+        for(int j=0;j<fenim1->MasterPointsVector.size();j++)
         {
-            //m_logStream << "j = " << j << endl;
-            QPoint p1 = fenim1->m_pointsMaitres.at(j);
+            QPoint p1 = fenim1->MasterPointsVector.at(j);
             int x1=p1.x(),y1=p1.y();
             *cpma += (x1+y1);
             int d=(x-x1)*(x-x1)+(y-y1)*(y-y1);
             if(d<20)
             {
-                QString esp = fenim1->lesEtiq[j]->DataFields[ESPECE];
+                QString esp = fenim1->EtiquetteArray[j]->DataFields[ESPECE];
                 if(!esp.isEmpty())
                 {
-                    m_nbeti++;
-                    lesEtiq[i]->recopie(fenim1->lesEtiq[j]);
+                    LabelsNumber++;
+                    EtiquetteArray[i]->EtiquetteClone(fenim1->EtiquetteArray[j]);
                     if(!initial)
                         if(!_listTaggedSpecies.contains(esp))
                             if(!listSpecrecup.contains(esp))
                                 listSpecrecup.append(esp);
-
                     nrecup++;
-                    // m_logStream << "copie faite" << endl;
                 }
                 break;
             }
@@ -1447,244 +1314,237 @@ int Fenim::rematcheEtiquettes(Fenim * fenim1,bool initial,QString recupVersion,i
         for(int i=0;i<listSpecrecup.size();i++)
         {
             QString esp = listSpecrecup.at(i);
-        tgui->RetreatText << "Recuperaton de l'espèce " << esp << " pour le fichier " << nomFic
-                          << " dans le dossier de la version " << recupVersion << endl;
+            PMainWindow->RetreatText << "Recovered species " << esp << " in the file " << _mainFileName
+                          << " of version " << recupVersion << endl;
         }
     }
     return(nrecup);
 }
 
-void Fenim::cree_points_maitres()
+void Fenim::initMasterPoints()
 {
-    for(int i=0;i<m_nbcris && i<MAXCRI;i++)
-        ipmc[i]=false;
+    for(int i=0;i<CallsNumber && i<MAXCRI;i++)
+        _ipmc[i]=false;
 }
 
-void Fenim::initialise_traits()
+void Fenim::initLines()
 {
-    // on laisse car cela doit reservir et ne coute pas cher
-    for(int i=0;i<m_nbcris && i<MAXCRI;i++)
+    for(int i=0;i<CallsNumber && i<MAXCRI;i++)
     {
-        ilc[i]=false;
-        coucri[i]=0;
+        _ilc[i]=false;
+        _callColour[i]=0;
     }
 }
 
 void Fenim::updateTagNSpec(int i)
 {
     int pos = _listTaggedSpecies.size();
-    QString esp = lesEtiq[i]->DataFields[ESPECE];
+    QString esp = EtiquetteArray[i]->DataFields[ESPECE];
     if(!_listTaggedSpecies.contains(esp)) _listTaggedSpecies.append(esp);
     else pos=_listTaggedSpecies.indexOf(esp);
-	lesEtiq[i]->SpecNumber = pos;
-    m_logStream<< "updateTagNSpec : i=" << i << " - esp=" << esp << endl;
-    //m_logStream<< "updateTagNSpec : liste=" << _listTaggedSpecies << endl;
-    m_logStream<< "updateTagNSpec : pos=" << pos << endl << endl;
-
+    EtiquetteArray[i]->SpecNumber = pos;
 }
 
 void Fenim::updateChbTagSpec()
 {
-    chbTagSpec->clear();
-    chbTagSpec->insertItems(0,_listTaggedSpecies);
+    PFenimWindow->ChbTagSpec->clear();
+    PFenimWindow->ChbTagSpec->insertItems(0,_listTaggedSpecies);
 }
 
-bool Fenim::chargeEtiquettes()
+bool Fenim::loadLabels()
 {
     //
     // pour version contours : mise en rem: m_nbcris est tj chargé dans loadmatricecris
     //m_nbcris = m_matrixCalls.size();
-    m_logStream << "chargeEtiquettes 1 - m__nbcris=" << m_nbcris << endl;
-    m_crisel = new bool[m_nbcris];
-    m_excrisel = new bool[m_nbcris];
-    lesEtiq = new Etiquette*[m_nbcris];
-    for(int i=0;i<m_nbcris;i++)
+    LogStream << "loadLabels 1 - nbcris=" << CallsNumber << endl;
+    SelectedCalls = new bool[CallsNumber];
+    _oldSelectedCalls = new bool[CallsNumber];
+    EtiquetteArray = new Etiquette*[CallsNumber];
+    for(int i=0;i<CallsNumber;i++)
     {
-        m_crisel[i]=false;
-        m_excrisel[i]=false;
-        lesEtiq[i]=new Etiquette((int)i);
-        lesEtiq[i]->vide();
+        SelectedCalls[i]=false;
+        _oldSelectedCalls[i]=false;
+        EtiquetteArray[i]=new Etiquette((int)i);
+        EtiquetteArray[i]->EtiquetteClear();
     }
-    repEti = repWav + "/eti";
-    QDir direti(repEti);
-    if(!direti.exists()) direti.mkdir(repEti);
+    LabelsFolderName = _wavFolder + "/eti";
+    QDir direti(LabelsFolderName);
+    if(!direti.exists()) direti.mkdir(LabelsFolderName);
     // pour version contour
-    nomEti = nomFic + ".eti";
-    m_etiNom = repEti + "/" + nomEti;
-    m_etiFile.setFileName(m_etiNom);
-    m_ecraserFichier = false;
+    LabelsFileName = _mainFileName + ".eti";
+    _labelsFullFileName = LabelsFolderName + "/" + LabelsFileName;
+    _labelsFile.setFileName(_labelsFullFileName);
+    _overwriteFile = false;
     int ncrilus=0;
-    m_nbeti = 0;
-    if(m_casRetraitement && m_typeretraitement == 2)
+    LabelsNumber = 0;
+    if(_reprocessingCase && _reprocessingType == 2)
     {
-        m_ecraserFichier = true;
+        _overwriteFile = true;
     }
     else
     {
-        if(m_etiFile.open(QIODevice::ReadOnly | QIODevice::Text))
+        if(_labelsFile.open(QIODevice::ReadOnly | QIODevice::Text))
         {
-            m_etiStream.setDevice(&m_etiFile);
-            m_etiStream.readLine(); // pour éliminer ligne titre
-            for(int i=0;i<=m_nbcris;i++)
+            _labelsStream.setDevice(&_labelsFile);
+            _labelsStream.readLine(); // pour éliminer ligne titre
+            for(int i=0;i<=CallsNumber;i++)
             {
-                if(m_etiStream.atEnd()) break;
-                QString ligne = (m_etiStream.readLine());
+                if(_labelsStream.atEnd()) break;
+                QString ligne = (_labelsStream.readLine());
                 if(ligne.isNull() or ligne.isEmpty()) break;
                 int postab = ligne.indexOf((char)'\t');
                 if(postab>0)
                 {
                     if(ligne.left(postab) != QString::number(i)) break;
                     ncrilus++;
-                    if(i<=m_nbcris-1)
+                    if(i<=CallsNumber-1)
                     {
-                        lesEtiq[i]->DataFields[ESPECE]=ligne.section('\t',1,1);
-                        if(!lesEtiq[i]->DataFields[ESPECE].isEmpty())
+                        EtiquetteArray[i]->DataFields[ESPECE]=ligne.section('\t',1,1);
+                        if(!EtiquetteArray[i]->DataFields[ESPECE].isEmpty())
                         {
-                            // 05-03-2015
-                            // if(!m_casRetraitement) updateTagNSpec(i);
                             updateTagNSpec(i);
-                            m_nbeti++;
+                            LabelsNumber++;
                         }
-                        lesEtiq[i]->DataFields[TYPE]=ligne.section('\t',2,2);
-                        lesEtiq[i]->DataFields[INDICE]=ligne.section('\t',3,3);
-                        lesEtiq[i]->DataFields[ZONE]=ligne.section('\t',4,4);
-                        lesEtiq[i]->DataFields[SITE]=ligne.section('\t',5,5);
-                        lesEtiq[i]->DataFields[COMMENTAIRE]=ligne.section('\t',6,6);
-                        lesEtiq[i]->DataFields[MATERIEL]=ligne.section('\t',7,7);
-                        lesEtiq[i]->DataFields[CONFIDENTIEL]=ligne.section('\t',8,8);
-                        lesEtiq[i]->DataFields[DATENREG]=ligne.section('\t',9,9);
-                        lesEtiq[i]->DataFields[AUTEUR]=ligne.section('\t',10,10);
-                        lesEtiq[i]->DataFields[ETIQUETEUR]=ligne.section('\t',11,11);
+                        EtiquetteArray[i]->DataFields[TYPE]=ligne.section('\t',2,2);
+                        EtiquetteArray[i]->DataFields[INDICE]=ligne.section('\t',3,3);
+                        EtiquetteArray[i]->DataFields[ZONE]=ligne.section('\t',4,4);
+                        EtiquetteArray[i]->DataFields[SITE]=ligne.section('\t',5,5);
+                        EtiquetteArray[i]->DataFields[COMMENTAIRE]=ligne.section('\t',6,6);
+                        EtiquetteArray[i]->DataFields[MATERIEL]=ligne.section('\t',7,7);
+                        EtiquetteArray[i]->DataFields[CONFIDENTIEL]=ligne.section('\t',8,8);
+                        EtiquetteArray[i]->DataFields[DATENREG]=ligne.section('\t',9,9);
+                        EtiquetteArray[i]->DataFields[AUTEUR]=ligne.section('\t',10,10);
+                        EtiquetteArray[i]->DataFields[ETIQUETEUR]=ligne.section('\t',11,11);
                     }
                     else break;
                 }
                 else break;
             }
-            m_etiFile.close();
-            if(ncrilus != m_nbcris)
+            _labelsFile.close();
+            if(ncrilus != CallsNumber)
             {
                 if(ncrilus>0)
                 {
-                    reinitialise_etiquettes();
-                    if(QMessageBox::question(wfenim, "Attention", "Le fichier d'Etiquettes ne correspond pas : confirmer son ecrasement ?",
+                    reinitLabels();
+                    if(QMessageBox::question(PFenimWindow, "Question", "The labels file does not match: confirm overwriting ?",
                                              QMessageBox::Yes|QMessageBox::No)
                             == QMessageBox::No)
                     {
-                        wfenim->close();
+                        PFenimWindow->close();
                         return(false);
                     }
-
                 }
-                m_ecraserFichier = true;
+                _overwriteFile = true;
             }
             else
             {
-                if(!m_casRetraitement) updateChbTagSpec();
+                if(!_reprocessingCase) updateChbTagSpec();
             }
+
         } // fin du else % cas retraitement
     }
     return(true);
 }
 
-void Fenim::affiche_nbeti()
+void Fenim::showNbLabels()
 {
-    labelNbeti->setText(QString::number(m_nbeti)+" etiquettes");
+    if(LabelsNumber<2)  PFenimWindow->LabelNbLabs->SetText(QString::number(LabelsNumber)+" label");
+    else PFenimWindow->LabelNbLabs->SetText(QString::number(LabelsNumber)+" labels");
 }
 
-void Fenim::reinitialise_etiquettes()
+void Fenim::reinitLabels()
 {
-    m_nbeti=0;
-    for(int i=0;i<m_nbcris;i++)
-        lesEtiq[i]->vide();
+    LabelsNumber=0;
+    for(int i=0;i<CallsNumber;i++)
+        EtiquetteArray[i]->EtiquetteClear();
 }
 
-void Fenim::EnregEtiquettes()
+void Fenim::SaveLabels()
 {
-    m_logStream << "EnregEtiquettes - debut" << endl;
-    if(m_ecraserFichier) m_etiFile.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate);
-    else m_etiFile.open(QIODevice::WriteOnly | QIODevice::Text);
-    m_etiStream.setDevice(&m_etiFile);
-    m_etiStream.setRealNumberNotation(QTextStream::FixedNotation);
-    m_etiStream.setRealNumberPrecision(6);
-    m_etiStream << "Cri\tEspece\tType\tIndice\tZone\tSite\tCommentaire\tMateriel\tConfidentiel\tDate\tAuteur\tEtiqueteur\n";
-    m_logStream << "EnregEtiquettes - avant boucle - m_nbcris  = " << m_nbcris << endl;
-    for (int i = 0 ; i < m_nbcris ; i++)
+    LogStream << "SaveLabels" << endl;
+    if(_overwriteFile) _labelsFile.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate);
+    else _labelsFile.open(QIODevice::WriteOnly | QIODevice::Text);
+    _labelsStream.setDevice(&_labelsFile);
+    _labelsStream.setRealNumberNotation(QTextStream::FixedNotation);
+    _labelsStream.setRealNumberPrecision(6);
+    _labelsStream << "Cri\tEspece\tType\tIndice\tZone\tSite\tCommentaire\tMateriel\tConfidentiel\tDate\tAuteur\tEtiqueteur\n";
+    for (int i = 0 ; i < CallsNumber ; i++)
     {
-        m_etiStream << lesEtiq[i]->e_numCri << '\t';
-        for(int j=0;j<NBFIELDS;j++) m_etiStream << lesEtiq[i]->DataFields[j] << '\t';
-        m_etiStream << endl;
+        _labelsStream << EtiquetteArray[i]->CallNumber << '\t';
+        for(int j=0;j<NBFIELDS;j++) _labelsStream << EtiquetteArray[i]->DataFields[j] << '\t';
+        _labelsStream << endl;
     }
     //
-    m_etiFile.close();
+    _labelsFile.close();
     //
-    bouge_fichiers = true;
-    saisie_a_sauver = false;
-    m_ecraserFichier = false;
+    _filesUpdated = true;
+    InputToSave = false;
+    _overwriteFile = false;
 }
 
-void Fenim::archive_crisel()
+void Fenim::StockSelectedCalls()
 {
-    for(int i=0;i<m_nbcris;i++) m_excrisel[i]=m_crisel[i];
+    for(int i=0;i<CallsNumber;i++) _oldSelectedCalls[i]=SelectedCalls[i];
 }
 
-bool Fenim::affiche_selections(bool specSelect)
+void Fenim::ShowSelections(bool specSelect)
 {
     QString lsai[NBFIELDS];
     bool bsai[NBFIELDS],bsai2[NBFIELDS];
     for(int j=0;j<NBFIELDS;j++) {lsai[j]=""; bsai[j]=false; bsai2[j]=false;}
-    m_lesCris = "";
+    _callsString = "";
     int nbcrisel = 0;
-    if(specSelect) {specTagNumber=0; specTagSel=-1;}
-    bool affichercri = bcCris->isChecked();
-    bool afficherpm = bcPMaitres->isChecked();
+    if(specSelect) {SpecTagNumber=0; SpecTagSel=-1;}
+    bool affichercri = PFenimWindow->BCCalls->isChecked();
+    bool afficherpm = PFenimWindow->BCMasterPoints->isChecked();
     bool laffichercri = false;
     bool lafficherpm  = false;
     bool laffichersuppl  = false;
-    if(affloupe)
+    if(ShowLoupe)
     {
-        laffichercri = floupe->bcCris->isChecked();
-        lafficherpm  = floupe->bcPMaitres->isChecked();
-        laffichersuppl  = floupe->bcSuppl->isChecked();
+        laffichercri = PLoupe->BcCalls->isChecked();
+        lafficherpm  = PLoupe->BcMasterPoints->isChecked();
+        laffichersuppl  = PLoupe->BcSuppl->isChecked();
     }
-    for(int i=0;i<m_nbcris;i++)
+    for(int i=0;i<CallsNumber;i++)
     {
-        if(m_excrisel[i] != m_crisel[i])
+        if(_oldSelectedCalls[i] != SelectedCalls[i])
         {
-            afficher_un_cri(i,m_crisel[i],affichercri);
-            afficher_un_point_maitre(i,m_crisel[i],afficherpm);
-            if(affloupe)
+            ShowOneCall(i,SelectedCalls[i],affichercri);
+            ShowOneMasterPoint(i,SelectedCalls[i],afficherpm);
+            if(ShowLoupe)
             {
-                floupe->afficher_un_cri(i,m_crisel[i],laffichercri);
-                floupe->afficher_un_point_maitre(i,m_crisel[i],lafficherpm);
-                floupe->afficher_une_crete_suppl(i,laffichersuppl);
-                floupe->afficher_un_point_suppl(i,laffichersuppl);
+                PLoupe->ShowOneCall(i,SelectedCalls[i],laffichercri);
+                PLoupe->ShowOneMasterPoint(i,SelectedCalls[i],lafficherpm);
+                PLoupe->ShowOneOtherCrestl(i,laffichersuppl);
+                PLoupe->ShowOneOtherPoint(i,laffichersuppl);
             }
         }
-        if(m_crisel[i])
+        if(SelectedCalls[i])
         {
             nbcrisel++;
             if(nbcrisel == 1)
             {
-                m_lesCris = QString::number(i+1);
-                npremcrisel = i;
+                _callsString = QString::number(i+1);
+                _firstCallSelected = i;
             }
-            else m_lesCris += ","+QString::number(i+1);
-            ndercrisel = i;
-            if(specSelect) specTagList[specTagNumber++] = i;
+            else _callsString += ","+QString::number(i+1);
+            _lastCallSelected = i;
+            if(specSelect) SpecTagList[SpecTagNumber++] = i;
             for(int jField=0;jField<NBFIELDS;jField++)
             {
-                if(!lesEtiq[i]->DataFields[jField].isEmpty())
+                if(!EtiquetteArray[i]->DataFields[jField].isEmpty())
                 {
                     if(bsai[jField]==false)
                     {
-                        lsai[jField] = lesEtiq[i]->DataFields[jField];
-                        pfc[jField]->affect(lsai[jField]);
+                        lsai[jField] = EtiquetteArray[i]->DataFields[jField];
+                        PFC[jField]->Affect(lsai[jField]);
                         bsai[jField]=true;
                     }
                     else
                     {
-                        if(!pfc[jField]->Unic)
-                            if(lsai[jField] != lesEtiq[i]->DataFields[jField])
+                        if(!PFC[jField]->Unic)
+                            if(lsai[jField] != EtiquetteArray[i]->DataFields[jField])
                                 bsai2[jField]=true;
                     }
                 }
@@ -1692,7 +1552,7 @@ bool Fenim::affiche_selections(bool specSelect)
             }
         }
     }
-    editCri->setText(m_lesCris);
+    PFenimWindow->EditCall->setText(_callsString);
     // ----------------------------------------------------------------
     // affichage en rouge ou vert des champs
     int coul=0;
@@ -1703,101 +1563,107 @@ bool Fenim::affiche_selections(bool specSelect)
             if(bsai2[jField]) coul=1; else coul=2;
         }
         else coul=0;
-        pfc[jField]->colour(couleur[coul]);
+        PFC[jField]->Colour(InputColors[coul]);
     }
 }
 
-void Fenim::selectionneCri(int n,bool specSelect)
+void Fenim::SelectCall(int n,bool specSelect)
 {
-    archive_crisel();
-    for(int j=0;j<m_nbcris;j++)
-        if(j==n) m_crisel[j]=true;
-        else m_crisel[j]=false;
+    StockSelectedCalls();
+    for(int j=0;j<CallsNumber;j++)
+        if(j==n) SelectedCalls[j]=true;
+        else SelectedCalls[j]=false;
     if(!specSelect) clearSpecTagsSelection();
-    affiche_selections(false);
-    if(affloupe)
+    ShowSelections(false);
+    if(ShowLoupe)
     {
-        int x = m_pointsMaitres[n].x()/(1+m_xmoitie);
-        int y = _imaHeight - m_pointsMaitres[n].y()-1;
-        floupe->lview->centerOn(x,y);
+        int x = MasterPointsVector[n].x()/(1+XHalf);
+        int y = ImageHeight - MasterPointsVector[n].y()-1;
+        PLoupe->LoupeView->centerOn(x,y);
     }
 }
 
-void Fenim::crisuiv()
+void Fenim::NextCall()
 {
-    if(ndercrisel<m_nbcris-1) selectionneCri(ndercrisel+1,false);
-    else selectionneCri(ndercrisel,false);
-}
-
-void Fenim::criprec()
-{
-    if(npremcrisel>0) selectionneCri(npremcrisel-1,false);
-    else selectionneCri(npremcrisel,false);
-}
-
-void Fenim::crifin()
-{
-    selectionneCri(m_nbcris-1,false);
-}
-
-void Fenim::crideb()
-{
-    selectionneCri(0,false);
-}
-
-void Fenim::specTagNext()
-{
-    if(specTagNumber>0)
+    if(_lastCallSelected<CallsNumber-1)
+   {
+        SelectCall(_lastCallSelected+1,false);
+    }
+    else
     {
-        if(specTagSel>-1 && specTagSel<specTagNumber-1)
+        SelectCall(_lastCallSelected,false);
+    }
+}
+
+void Fenim::PreviousCall()
+{
+    if(_firstCallSelected>0) SelectCall(_firstCallSelected-1,false);
+    else SelectCall(_firstCallSelected,false);
+}
+
+void Fenim::EndCall()
+{
+    SelectCall(CallsNumber-1,false);
+}
+
+void Fenim::StartCall()
+{
+    SelectCall(0,false);
+}
+
+void Fenim::SpecTagNext()
+{
+    if(SpecTagNumber>0)
+    {
+        if(SpecTagSel>-1 && SpecTagSel<SpecTagNumber-1)
         {
-            specTagSel++;
-            selectionneCri(specTagList[specTagSel],true);
+            SpecTagSel++;
+            SelectCall(SpecTagList[SpecTagSel],true);
         }
     }
 }
 
-void Fenim::specTagPrevious()
+void Fenim::SpecTagPrevious()
 {
-    if(specTagNumber>0)
+    if(SpecTagNumber>0)
     {
-        if(specTagSel>0)
+        if(SpecTagSel>0)
         {
-            specTagSel--;
-            selectionneCri(specTagList[specTagSel],true);
+            SpecTagSel--;
+            SelectCall(SpecTagList[SpecTagSel],true);
         }
     }
 }
 
-void Fenim::specTagLast()
+void Fenim::SpecTagLast()
 {
-    if(specTagNumber>0)
+    if(SpecTagNumber>0)
     {
-        specTagSel=specTagNumber-1;
-        selectionneCri(specTagList[specTagSel],true);
+        SpecTagSel=SpecTagNumber-1;
+        SelectCall(SpecTagList[SpecTagSel],true);
         enableMoreArrows();
     }
 }
 
-void Fenim::specTagFirst()
+void Fenim::SpecTagFirst()
 {
-    if(specTagNumber>0)
+    if(SpecTagNumber>0)
     {
-        specTagSel=0;
-        selectionneCri(specTagList[specTagSel],true);
+        SpecTagSel=0;
+        SelectCall(SpecTagList[SpecTagSel],true);
         enableMoreArrows();
     }
 }
 
 
-void Fenim::selectionneCri(int x,int y,bool isCTRL)
+void Fenim::SelectCall(int x,int y,bool isCTRL)
 {
     float distmax = 3000;
     int ntrouve = -1;
-    int xr=x*(1+m_xmoitie),yr=_imaHeight-y-1;
-    for(int i=0;i<m_nbcris;i++)
+    int xr=x*(1+XHalf),yr=ImageHeight-y-1;
+    for(int i=0;i<CallsNumber;i++)
     {
-        float dist=pow(xr-m_pointsMaitres[i].x(),2)+pow(yr-m_pointsMaitres[i].y(),2);
+        float dist=pow(xr-MasterPointsVector[i].x(),2)+pow(yr-MasterPointsVector[i].y(),2);
         if(dist < distmax)
         {
             ntrouve = i;
@@ -1806,32 +1672,32 @@ void Fenim::selectionneCri(int x,int y,bool isCTRL)
     }
     if(ntrouve>=0)
     {
-        archive_crisel();
+        StockSelectedCalls();
         if(isCTRL)
         {
-            m_crisel[ntrouve]=!m_crisel[ntrouve];
+            SelectedCalls[ntrouve]=!SelectedCalls[ntrouve];
         }
         else
         {
             // cas général
-            for(int j=0;j<m_nbcris;j++) if(j==ntrouve) m_crisel[j]=true;
-            else m_crisel[j]=false;
+            for(int j=0;j<CallsNumber;j++) if(j==ntrouve) SelectedCalls[j]=true;
+            else SelectedCalls[j]=false;
         }
         clearSpecTagsSelection();
-        affiche_selections(false);
+        ShowSelections(false);
     }
 }
 
-QString Fenim::calculebulle(int x,int y)
+QString Fenim::CalculateBubble(int x,int y)
 {
     QString retour("");
     float distmax = 100;
     int ntrouve = -1;
-    int xr=x,yr=_imaHeight-y-1;
-    if(m_xmoitie) xr*=2;
-    for(int i=0;i<m_nbcris;i++)
+    int xr=x,yr=ImageHeight-y-1;
+    if(XHalf) xr*=2;
+    for(int i=0;i<CallsNumber;i++)
     {
-        float dist=pow(xr-m_pointsMaitres[i].x(),2)+pow(yr-m_pointsMaitres[i].y(),2);
+        float dist=pow(xr-MasterPointsVector[i].x(),2)+pow(yr-MasterPointsVector[i].y(),2);
         if(dist < distmax)
         {
             ntrouve = i;
@@ -1841,199 +1707,187 @@ QString Fenim::calculebulle(int x,int y)
     }
     if(ntrouve>=0)
     {
-        QString esp = lesEtiq[ntrouve]->DataFields[ESPECE];
-        QString typ = lesEtiq[ntrouve]->DataFields[TYPE];
-        QString ind = lesEtiq[ntrouve]->DataFields[INDICE];
+        QString esp = EtiquetteArray[ntrouve]->DataFields[ESPECE];
+        QString typ = EtiquetteArray[ntrouve]->DataFields[TYPE];
+        QString ind = EtiquetteArray[ntrouve]->DataFields[INDICE];
         if(!esp.isEmpty() || !typ.isEmpty())
-            retour=QString("Cri ")+QString::number(ntrouve+1)+" : "+esp+" - "+typ+ "    ("+ind+")";
+            retour=QString("Cry ")+QString::number(ntrouve+1)+" : "+esp+" - "+typ+ "    ("+ind+")";
         else
-            retour=QString("Cri ")+QString::number(ntrouve+1)+" : cri sans Etiquette";
+            retour=QString("Cry ")+QString::number(ntrouve+1)+" : without label";
         retour += " - ";
     }
     //
     // TODO : mettre une condition (case à cocher) :
-    if(_withSilence && y<6)
+    if(WithSilence && y<6)
     {
-        int xr = x * (1+m_xmoitie);
-        if(xr>=0 && xr <_sonogramWidth)
-        retour += QString(" ( ") + QString::number((int)(_energyMoyCol[xr])) + " )";
+        int xr = x * (1+XHalf);
+        if(xr>=0 && xr <SonogramWidth)
+        retour += QString(" ( ") + QString::number((int)(EnergyAverageCol[xr])) + " )";
 
     }
     return(retour);
 }
 
-void Fenim::affbulle(QString sbulle)
+void Fenim::ShowBubble(QString sbulle)
 {
         QToolTip::showText(QCursor::pos(),sbulle);
 }
 
 
-void Fenim::selectionneRectCri(int x1,int y1,int x2,int y2,bool isCTRL)
+void Fenim::SelectCallsRect(int x1,int y1,int x2,int y2,bool isCTRL)
 {
-    y1 = _imaHeight-y1-1;
-    y2 = _imaHeight-y2-1;
-    if(m_xmoitie) {x1*=2; x2*=2;}
-    archive_crisel();
+    y1 = ImageHeight-y1-1;
+    y2 = ImageHeight-y2-1;
+    if(XHalf) {x1*=2; x2*=2;}
+    StockSelectedCalls();
     if(!isCTRL)
-    for(int i=0;i<m_nbcris;i++) m_crisel[i]=false;
-    for(int i=0;i<m_nbcris;i++)
+    for(int i=0;i<CallsNumber;i++) SelectedCalls[i]=false;
+    for(int i=0;i<CallsNumber;i++)
     {
-        int x = m_pointsMaitres[i].x();
-        int y = m_pointsMaitres[i].y();
+        int x = MasterPointsVector[i].x();
+        int y = MasterPointsVector[i].y();
         if(x>=x1 && x<=x2 && y<=y1 && y>=y2)
         {
-            if(isCTRL) m_crisel[i] = ! m_crisel[i];
-            else m_crisel[i] = true;
+            if(isCTRL) SelectedCalls[i] = ! SelectedCalls[i];
+            else SelectedCalls[i] = true;
         }
     }
     clearSpecTagsSelection();
-    affiche_selections(false);
+    ShowSelections(false);
 }
 
-void Fenim::selectAllCalls()
+void Fenim::SelectAllCalls()
 {
-    archive_crisel();
-    for(int i=0;i<m_nbcris;i++) m_crisel[i]=true;
+    StockSelectedCalls();
+    for(int i=0;i<CallsNumber;i++) SelectedCalls[i]=true;
     clearSpecTagsSelection();
-    affiche_selections(false);
+    ShowSelections(false);
 }
 
 
-void Fenim::selectSpecTags(const QString& codsel)
+void Fenim::SelectSpecTags(const QString& codsel)
 {
-    labelTagSpec->setText(codsel);
-    archive_crisel();
-    for(int i=0;i<m_nbcris;i++) m_crisel[i]=false;
-    for(int i=0;i<m_nbcris;i++)
-        if(lesEtiq[i]->DataFields[ESPECE]==codsel) m_crisel[i] = true;
-    affiche_selections(true);
-    bFlecheDebutSpec->setEnabled(true);
-    bFlecheFinSpec->setEnabled(true);
+    PFenimWindow->LabelTagSpec->SetText(codsel);
+    StockSelectedCalls();
+    for(int i=0;i<CallsNumber;i++) SelectedCalls[i]=false;
+    for(int i=0;i<CallsNumber;i++)
+        if(EtiquetteArray[i]->DataFields[ESPECE]==codsel) SelectedCalls[i] = true;
+    ShowSelections(true);
+    PFenimWindow->BStartArrowSpec->setEnabled(true);
+    PFenimWindow->BEndArrowSpec->setEnabled(true);
 }
 
 void Fenim::clearSpecTagsSelection()
 {
-    labelTagSpec->setText("");
-    specTagNumber=0;
-    bFlecheDebutSpec->setEnabled(false);
-    bFlecheFinSpec->setEnabled(false);
-    bFlecheDroiteSpec->setEnabled(false);
-    bFlecheGaucheSpec->setEnabled(false);
+    PFenimWindow->LabelTagSpec->SetText("");
+    SpecTagNumber=0;
+    PFenimWindow->BStartArrowSpec->setEnabled(false);
+    PFenimWindow->BEndArrowSpec->setEnabled(false);
+    PFenimWindow->BRightArrowSpec->setEnabled(false);
+    PFenimWindow->BLeftArrowSpec->setEnabled(false);
 }
 
 void Fenim::enableMoreArrows()
 {
-    bFlecheDroiteSpec->setEnabled(true);
-    bFlecheGaucheSpec->setEnabled(true);
+    PFenimWindow->BRightArrowSpec->setEnabled(true);
+    PFenimWindow->BLeftArrowSpec->setEnabled(true);
 }
 
-void Fenim::videfenim()
+void Fenim::ClearFenim()
 {
-    m_logStream << "debut videfenim" << endl;
-    neplus=true;
-    if(fenouv == true)
+    LogStream << "videfenim" << endl;
+    NoMore=true;
+    if(_windowOpen == true)
     {
-        m_logStream << "v1" << endl;
-        if(!m_casRetraitement)
+        if(!_reprocessingCase)
         {
-            m_logStream << "v2" << endl;
-        delete fenima;
-            m_logStream << "v3" << endl;
-        delete scene;
-            m_logStream << "v4" << endl;
-        delete view;
-            m_logStream << "v5" << endl;
+        delete PFenimWindow->Fenima;
+        delete PFenimWindow->Scene;
+        delete PFenimWindow->View;
         }
-        delete m_crisel;
-        m_logStream << "v6" << endl;
-        delete m_excrisel;
-        m_logStream << "v7" << endl;
-        m_logStream << "m_nbcris = " << m_nbcris << endl;
-        for(int i=0;i<m_nbcris;i++) delete lesEtiq[i];
-        m_logStream << "v8" << endl;
-        delete lesEtiq;
-        m_logStream << "v9" << endl;
-        if(affloupe) delete floupe;
-        m_logStream << "v10" << endl;
-        fenouv = false;
+        delete SelectedCalls;
+        delete _oldSelectedCalls;
+        for(int i=0;i<CallsNumber;i++) delete EtiquetteArray[i];
+        delete EtiquetteArray;
+        if(ShowLoupe) delete PLoupe;
+        _windowOpen = false;
     }
 }
 
-void Fenim::fermeFenim()
+void Fenim::CloseFenim()
 {
     //videfenim();
-    wfenim->close();
+    PFenimWindow->close();
 }
 
-void Fenim::termine_session()
+void Fenim::SessionFinish()
 {
-    if(m_casRetraitement) return;
-    if(!casA) return;
+    if(_reprocessingCase) return;
+    if(!ACase) return;
     // cette méthode doit passer les fichiers du répertoire de travail dans la base
     // Bien distinguer les 2 cas :
     // cas a : création e fichier d'étiquette sur répertoire de travail
     // cas b : modif de fichier d'étiquettes directement dans la base
     // et bien éliminer le cas du retraitement !
-    //
-    //m_logStream << "ts1" << endl;
 
     bool version_a_ecrire = false;
     // 0) tester s'il y a eu enregistrement - sinon retour
-    if(!bouge_fichiers) return;
+    if(!_filesUpdated) return;
     //
     // 1) positionnement sur le répertoire du jour de la base
-    if(!baseJour.exists())
+    if(!_dayBaseFolder.exists())
     {
-        baseJour.mkdir(baseJour.path());
+        _dayBaseFolder.mkdir(_dayBaseFolder.path());
         version_a_ecrire = true;
     }
-    if(!baseJourDat.exists()) baseJourDat.mkdir(baseJourDat.path());
-    tgui->DayPath = baseJour.path();
+    if(!_dayDatFolder.exists()) _dayDatFolder.mkdir(_dayDatFolder.path());
+    PMainWindow->DayPath = _dayBaseFolder.path();
     //
-    if(!baseJourIma.exists()) baseJourIma.mkdir(baseJourIma.path());
-    if(!baseJourEti.exists()) baseJourEti.mkdir(baseJourEti.path());
-    if(!baseJourTxt.exists()) baseJourTxt.mkdir(baseJourTxt.path());
+    if(!_dayImaFolder.exists()) _dayImaFolder.mkdir(_dayImaFolder.path());
+    if(!_dayEtiFolder.exists()) _dayEtiFolder.mkdir(_dayEtiFolder.path());
+    if(!_dayTxtFolder.exists()) _dayTxtFolder.mkdir(_dayTxtFolder.path());
     //
-    //m_logStream << "ts1" << endl;
     // 2) recopie des fichiers wav-dat-ima-eti dans ce répertoire
-    QString nomFicWav = nomFic+".wav";
-    QFile wavFile(repWav+"/"+nomFicWav);
-    wavFile.copy(baseJour.path() + "/" + nomFic + ".wav");
+    QString nomFicWav = _mainFileName+".wav";
+    QFile wavFile(_wavFolder+"/"+nomFicWav);
+    wavFile.copy(_dayBaseFolder.path() + "/" + _mainFileName + ".wav");
 
-    QString nomFicTxt = nomFic+".ta";
-    QFile txtFile(repWav+"/txt/"+nomFicTxt);
-    txtFile.copy(baseJourTxt.path() + "/" + nomFic + ".ta");
+    QString nomFicTxt = _mainFileName+".ta";
+    QFile txtFile(_wavFolder+"/txt/"+nomFicTxt);
+    txtFile.copy(_dayTxtFolder.path() + "/" + _mainFileName + ".ta");
 
-    m_cris2File.copy(baseJourDat.path() + "/" + nomFic + ".da2");
+    _da2File.copy(_dayDatFolder.path() + "/" + _mainFileName + ".da2");
     //
-    m_etiFile.copy(baseJourEti.path() + "/" + nomFic + ".eti");
+    _labelsFile.copy(_dayEtiFolder.path() + "/" + _mainFileName + ".eti");
 
 
-    QFile imaFile(imaNom);
-    imaFile.copy(baseJourIma.path() + "/" + nomFic + ".jpg");
+    QFile imaFile(ImageFullName);
+    imaFile.copy(_dayImaFolder.path() + "/" + _mainFileName + ".jpg");
     //
-    //m_logStream << "ts2" << endl;
     // 3) effacement du répertoire source des fichiers : wav,dat,ima,eti
     wavFile.remove();
     imaFile.remove();
     txtFile.remove();
-    m_crisFile.remove();
-    m_etiFile.remove();
+    _callsFile.remove();
+    _labelsFile.remove();
     // pour version contour
-    m_cris2File.remove();
-    //
-    //m_logStream << "ts3" << endl;
+    _da2File.remove();
     //
     // 4) écriture du fichier version.ini s'il n'existait pas
-    if(version_a_ecrire) writeVersionRep();
-    m_logStream << "ts_fin" << endl;
+    if(version_a_ecrire) WriteFolderVersion();
 }
 
+void FenimWindow::resizeEvent(QResizeEvent *re)
+{
+    ResizeFenimWindow(false);
+    show();
+}
 
-void FenetreFenim::closeEvent(QCloseEvent *event)
+void FenimWindow::closeEvent(QCloseEvent *event)
  {
-    if(pfenim->saisie_a_sauver)
-        if(QMessageBox::question(this, "Attention", "Quitter sans sauvegarder les saisies ?",
+    if(PFenim->InputToSave)
+        //fr if(QMessageBox::question(this, "Question", "Quitter sans sauvegarder les saisies ?",
+        if(QMessageBox::question(this, "Question", "Exit without saving labels file ?",
                                  QMessageBox::Yes|QMessageBox::No)
                 == QMessageBox::No)
         {
@@ -2041,55 +1895,55 @@ void FenetreFenim::closeEvent(QCloseEvent *event)
             return;
         }
     //
-    if(pfenim->casA) pfenim->termine_session();
+    if(PFenim->ACase) PFenim->SessionFinish();
     //
 
-    pfenim->neplus=true;
-    pfenim->videfenim();
+    PFenim->NoMore=true;
+    PFenim->ClearFenim();
     event->accept();
 
  }
 
-void Fenim::creeloupe(int x,int y)
+void Fenim::CreateLoupe(int x,int y)
 {
-    if(affloupe) delete floupe;
-    floupe = new Loupe(this,wfenim,x,y);
-    floupe->afficherLoupe();
-    affloupe = true;
+    if(ShowLoupe) delete PLoupe;
+    PLoupe = new Loupe(this,PFenimWindow,x,y);
+    PLoupe->ShowLoupe();
+    ShowLoupe = true;
 }
 
-float Fenim::getratio()
+float Fenim::GetRatio()
 {
     // return((m_rh * m_factorY) / (m_rl * m_factorX * (1+m_xmoitie)));
     //return((m_rh * m_factorX * (1+m_xmoitie)) / (m_rl * m_factorY));
-    return((m_rh * m_factorX * (1+m_xmoitie)) / (m_rl * m_factorY));
+    return((PFenimWindow->HeightRatio * FactorX * (1+XHalf)) / (PFenimWindow->WidthRatio * FactorY));
 }
 
-void Fenim::afficheratio()
+void Fenim::ShowRatio()
 {
     QString ratio;
-    ratio.setNum(getratio(),'f',2);
-    labelr->setText(QString("r=")+ratio);
+    ratio.setNum(GetRatio(),'f',2);
+    PFenimWindow->LabelR->setText(QString("r=")+ratio);
 }
 
-float Fenim::getms(int x)
+float Fenim::Getms(int x)
 {
-    return((m_factorX * x) * (1+m_xmoitie));
+    return((FactorX * x) * (1+XHalf));
 }
 
-float Fenim::getx(float t)
+float Fenim::GetX(float t)
 {
-    return(t/(m_factorX * (1+m_xmoitie)));
+    return(t/(FactorX * (1+XHalf)));
 }
 
-float Fenim::getkhz(int y)
+float Fenim::GetkHz(int y)
 {
-    return(m_factorY * (_imaHeight - y -1));
+    return(FactorY * (ImageHeight - y -1));
 }
 
-float Fenim::gety(float f)
+float Fenim::GetY(float f)
 {
-    return((float)_imaHeight - 1 - f/m_factorY );
+    return((float)ImageHeight - 1 - f/FactorY );
 }
 
 /*
@@ -2104,14 +1958,14 @@ void MyQGraphicsScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * mouseEvent )
     QPointF pos = mouseEvent->lastScenePos();
     int x = pos.x();
     int y = pos.y();
-    if(iloupe)
+    if(Iloupe)
     {
-        if(x>=0 && y>=0 && x<pfenim->getImage()->width() && y<pfenim->getImage()->height())
+        if(x>=0 && y>=0 && x<PFenim->GetImage()->width() && y<PFenim->GetImage()->height())
         {
             this->views().size();
-            QRectF r = ploupe->lview->mapToScene(ploupe->lview->viewport()->geometry()).boundingRect();
-            ploupe->dercx = r.left()+r.width()/2;
-            ploupe->dercy = r.top()+r.height()/2;
+            QRectF r = Ploupe->LoupeView->mapToScene(Ploupe->LoupeView->viewport()->geometry()).boundingRect();
+            Ploupe->LastCenterX = r.left()+r.width()/2;
+            Ploupe->LastCenterY = r.top()+r.height()/2;
         }
 
     }
@@ -2119,28 +1973,25 @@ void MyQGraphicsScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * mouseEvent )
 
     // revoir le calcul de bulle en mode contour : n'afficher que lorsqu'on est au-dessus du contour !
 
-    QString bulle = pfenim->calculebulle(x,y);
-    int xr=x,yr=pfenim->_imaHeight-y-1;
-    if(pfenim->m_xmoitie) xr*=2;
-    if(y > pfenim->getImage()->height()-1) y=pfenim->getImage()->height()-1;
+    QString bulle = PFenim->CalculateBubble(x,y);
+    int xr=x,yr=PFenim->ImageHeight-y-1;
+    if(PFenim->XHalf) xr*=2;
+    if(y > PFenim->GetImage()->height()-1) y=PFenim->GetImage()->height()-1;
     QString ms,khz;
-    ms.setNum(pfenim->getms(x),'f',0);
-    khz.setNum(pfenim->getkhz(y),'f',2);
-
-    //bulle += QString("y=")+QString::number(y);
-
+    ms.setNum(PFenim->Getms(x),'f',0);
+    khz.setNum(PFenim->GetkHz(y),'f',2);
     if(bulle.length()>0)
     {
-        if(iloupe) ploupe->affbulle(bulle);
-        else pfenim->affbulle(bulle);
+        if(Iloupe) Ploupe->ShowBubble(bulle);
+        else PFenim->ShowBubble(bulle);
     }
 
-    pfenim->labelx->setText(ms+" ms");
-    pfenim->labely->setText(khz+" khz");
+    PFenim->PFenimWindow->LabelX->setText(ms+" ms");
+    PFenim->PFenimWindow->LabelY->setText(khz+" khz");
 
     // --------------
     // ZZZ 08/07/2014
-    if(iloupe)
+    if(Iloupe)
     {
 
         bool pointdansforme = false,pdf2=false;
@@ -2148,41 +1999,40 @@ void MyQGraphicsScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * mouseEvent )
         int distmax = 10000;
         int nbcf = -1;
         int nbpt = 0;
-        for(int i=0;i<pfenim->m_matrixContours.size();i++)
+        for(int i=0;i<PFenim->ContoursMatrices.size();i++)
         {
-            float dist=pow(xr-pfenim->m_pointsMaitres[i].x(),2)
-                    +pow(yr-pfenim->m_pointsMaitres[i].y(),2);
+            float dist=pow(xr-PFenim->MasterPointsVector[i].x(),2)
+                    +pow(yr-PFenim->MasterPointsVector[i].y(),2);
             if(dist < distmax)
             {
-                QVector<QPoint> unemat = pfenim->m_matrixContours.at(i);
+                QVector<QPoint> unemat = PFenim->ContoursMatrices.at(i);
                 for(int j=0;j<unemat.size();j++)
                 {
                     if(xr==unemat.at(j).x() && yr==unemat.at(j).y())
                     {
                         pointdansforme = true;
                         nbcf = i+1;
-                        ener = pfenim->m_matrixEnergie[i][j];
+                        ener = PFenim->EnergyMatrix[i][j];
                         nbpt++;
-                        if(!pfenim->m_xmoitie || nbpt==2) break;
+                        if(!PFenim->XHalf || nbpt==2) break;
                     }
-                    if(pfenim->m_xmoitie)
+                    if(PFenim->XHalf)
                     {
                         if(xr+1==unemat.at(j).x() && yr==unemat.at(j).y())
                         {
                             nbcf = i+1;
                             pdf2 = true;
-                            ener2 = pfenim->m_matrixEnergie[i][j];
+                            ener2 = PFenim->EnergyMatrix[i][j];
                             nbpt++;
                             if(nbpt==2) break;
                         }
                     }
                 }
-                //if(pointdansforme || pdf2) break;
             }
         }
 
-        ploupe->labelx->setText(ms+" ms");
-        ploupe->labely->setText(khz+" khz");
+        Ploupe->LabelX->setText(ms+" ms");
+        Ploupe->LabelY->setText(khz+" khz");
         QString affi="";
         //
         if(pointdansforme || pdf2)
@@ -2190,13 +2040,13 @@ void MyQGraphicsScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * mouseEvent )
             affi = QString::number(nbcf)+": ";
             if(pointdansforme) affi += QString::number(ener);
             else affi += " - ";
-            if(pfenim->m_xmoitie)
+            if(PFenim->XHalf)
             {
                 affi += QString(" ; ");
                 if(pdf2) affi += QString::number(ener2); else affi+= " - ";
             }
         }
-        ploupe->label_ener->setText(affi);
+        Ploupe->LabelEnergy->setText(affi);
     }
 
     if(derx>0)
@@ -2211,16 +2061,16 @@ void MyQGraphicsScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * mouseEvent )
 
 MyQGraphicsScene::MyQGraphicsScene(Fenim *pf,QMainWindow *parent,bool il):QGraphicsScene(parent)
 {
-    qmaitre = parent;
-    iloupe=il;
+    Qmaitre = parent;
+    Iloupe=il;
     if(il)
     {
-        ploupe = (Loupe *)qmaitre;
-        pfenim = pf;
+        Ploupe = (Loupe *)Qmaitre;
+        PFenim = pf;
     }
     else
     {
-        pfenim = pf;
+        PFenim = pf;
     }
 
     derx=-1;
@@ -2242,13 +2092,13 @@ void MyQGraphicsScene::mouseDoubleClickEvent ( QGraphicsSceneMouseEvent * mouseE
     QPointF pos = mouseEvent->lastScenePos();
     int x = pos.x();
     int y = pos.y();
-    if(iloupe)
+    if(Iloupe)
     {
-        ploupe->zoome(x,y);
+        Ploupe->Zoom(x,y);
     }
     else
     {
-        pfenim->creeloupe(x,y);
+        PFenim->CreateLoupe(x,y);
     }
 }
 
@@ -2260,7 +2110,7 @@ void MyQGraphicsScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * mouseEvent
     Qt::KeyboardModifiers keyMod = QApplication::keyboardModifiers ();
     bool isCTRL = keyMod.testFlag(Qt::ControlModifier);
     if(abs(pos.x()-derx)+abs(pos.y()-dery) < 5)
-        pfenim->selectionneCri(pos.x(),pos.y(),isCTRL);
+        PFenim->SelectCall(pos.x(),pos.y(),isCTRL);
     else
     {
         // rectangle
@@ -2269,7 +2119,7 @@ void MyQGraphicsScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * mouseEvent
         else {x1=derx; x2=pos.x();}
         if(dery>pos.y()) {y1=pos.y(); y2=dery;}
         else {y1=dery; y2=pos.y();}
-        pfenim->selectionneRectCri(x1,y1,x2,y2,isCTRL);
+        PFenim->SelectCallsRect(x1,y1,x2,y2,isCTRL);
     }
     derx = -1; dery = -1;
 }
@@ -2277,56 +2127,57 @@ void MyQGraphicsScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * mouseEvent
 void MyQGraphicsScene::keyPressEvent(QKeyEvent* e)
 {
     Qt::KeyboardModifiers keyMod = QApplication::keyboardModifiers ();
-    if(keyMod.testFlag(Qt::ControlModifier) && e->key() == 'A') pfenim->selectAllCalls();
+    if(keyMod.testFlag(Qt::ControlModifier) && e->key() == 'A') PFenim->SelectAllCalls();
 }
 
 
 MyQLineEdit::MyQLineEdit(QWidget *parent,Fenim *fen,QString cod):QLineEdit(parent)
 {
-    qmaitre = parent;
-    pfenim = (Fenim *)fen;
-    codeedit=cod;
+    Qmaitre = parent;
+    Pfenim = (Fenim *)fen;
+    Codeedit=cod;
     setFont(QFont("Arial",10,QFont::Normal));
 }
 
 EC_LineEdit::EC_LineEdit(QWidget *parent,Fenim *fen,QString cod):MyQLineEdit(parent,fen,cod)
 {
-    pfenim=fen;
+    _pFenim=fen;
     connect(this,SIGNAL(textEdited(const QString&)),this,SLOT(modifie_texte(const QString&)));
 }
 
 Simple_LineEdit::Simple_LineEdit(QWidget *parent,Fenim *fen,QString cod):MyQLineEdit(parent,fen,cod)
 {
-    pfenim=fen;
+    _pFenim=fen;
     connect(this,SIGNAL(textEdited(const QString&)),this,SLOT(modifie_texte(const QString&)));
 }
 
-void EC_LineEdit::setecp(EditCombo *pec)
+void EC_LineEdit::SetEcp(EditCombo *pec)
 {
-    ecp=pec;
+    Ecp=pec;
 }
 
 EC_ComboBoxEdit::EC_ComboBoxEdit(QWidget *parent,Fenim *fen,QString cod):MyQComboBox(parent,fen,cod)
 {
-    connect(this, SIGNAL(activated(const QString&)), this, SLOT(selectionne_code(const QString&)));
+    connect(this, SIGNAL(activated(const QString&)), this, SLOT(SelectionneCode(const QString&)));
 }
 
-void EC_ComboBoxEdit::setecp(EditCombo *pec)
+void EC_ComboBoxEdit::SetEcp(EditCombo *pec)
 {
-    ecp=pec;
+    Ecp=pec;
 }
 
-EditCombo::EditCombo(QWidget *parent,Fenim *fen,QString cod,bool autaj)
+EditCombo::EditCombo(QWidget *parent,Fenim *fen,QString cod,QString englishCode,bool autaj)
 {
-    fenpar = fen->wfenim;
-    ec_le=new EC_LineEdit(parent,fen,cod);
-    ec_co=new EC_ComboBoxEdit(parent,fen,cod);
-    ec_le->setecp(this);
-    ec_co->setecp(this);
+    Fenpar = fen->PFenimWindow;
+    EcLe=new EC_LineEdit(parent,fen,cod);
+    EcCo=new EC_ComboBoxEdit(parent,fen,cod);
+    EcLe->SetEcp(this);
+    EcCo->SetEcp(this);
     // alimentation de la liste
-    codefi = cod;
+    CodeFi = cod;
+    EnglishCode = englishCode;
     autorise_ajout=autaj;
-    liste_codes = new QStringList();
+    ListCodes = new QStringList();
     QFile fichier;
     fichier.setFileName(cod+".txt");
     QTextStream textefi;
@@ -2345,7 +2196,7 @@ EditCombo::EditCombo(QWidget *parent,Fenim *fen,QString cod,bool autaj)
                 else
                 {
                     if(lte.isEmpty()) trcod = false;
-                    else liste_codes->append(lte);
+                    else ListCodes->append(lte);
                 }
             }
         }
@@ -2362,14 +2213,14 @@ void EditCombo::set_autor(bool autor)
 
 void EC_LineEdit::modifie_texte(const QString& s)
 {
-    ecp->realim_liste(s);
-    ecp->ec_le->setStyleSheet(pfenim->couleur[4]);
+    Ecp->realim_liste(s);
+    Ecp->EcLe->setStyleSheet(_pFenim->InputColors[4]);
 }
 
-void EC_ComboBoxEdit::selectionne_code(const QString& s)
+void EC_ComboBoxEdit::SelectionneCode(const QString& s)
 {
-    ecp->selectionne_code(s);
-    ecp->ec_le->setStyleSheet(pfenim->couleur[4]);
+    Ecp->selectionne_code(s);
+    Ecp->EcLe->setStyleSheet(PFenim->InputColors[4]);
 }
 
 void EC_LineEdit::keyPressEvent(QKeyEvent* e)
@@ -2377,44 +2228,44 @@ void EC_LineEdit::keyPressEvent(QKeyEvent* e)
     if(e->key()==Qt::Key_Return)
     {
 
-        QString sc = ecp->ec_co->currentText();
+        QString sc = Ecp->EcCo->currentText();
         QString se = text();
         if(se.length()>0 && sc.length()>0 && sc.contains(se))
-            ecp->selectionne_code(sc);
+            Ecp->selectionne_code(sc);
     }
     MyQLineEdit::keyPressEvent(e);
 }
 
 void Simple_LineEdit::modifie_texte(const QString& s)
 {
-    this->setStyleSheet(pfenim->couleur[4]);
+    this->setStyleSheet(_pFenim->InputColors[4]);
 }
 
 
 void MyQLineEdit::keyPressEvent(QKeyEvent* e)
 {
     Qt::KeyboardModifiers keyMod = QApplication::keyboardModifiers ();
-    if(keyMod.testFlag(Qt::ControlModifier) && e->key() == 'A') pfenim->selectAllCalls();
+    if(keyMod.testFlag(Qt::ControlModifier) && e->key() == 'A') Pfenim->SelectAllCalls();
 
     if(e->key()==Qt::Key_Down)
     {
-        if(codeedit=="cri") pfenim->pfc[ESPECE]->_le->setFocus();
+        if(Codeedit=="cri") Pfenim->PFC[ESPECE]->LE->setFocus();
         else
         {
             for(int j=0;j<NBFIELDS;j++)
             {
-                int ft = pfenim->pfc[j]->_fieldType;
-                if(codeedit==pfenim->pfc[j]->_fieldCode)
+                int ft = Pfenim->PFC[j]->FieldType;
+                if(Codeedit==Pfenim->PFC[j]->FieldCode)
                 {
-                    if(ft==EC) pfenim->pfc[j]->_ec->ec_co->setFocus();
+                    if(ft==EC) Pfenim->PFC[j]->ECo->EcCo->setFocus();
                     else
                     {
                         if(j<NBFIELDS)
                         {
-                            int ftb = pfenim->pfc[j+1]->_fieldType;
+                            int ftb = Pfenim->PFC[j+1]->FieldType;
 
                             if(ftb==EC || ftb==SLI || ftb== SLE)
-                                pfenim->pfc[j+1]->_le->setFocus();
+                                Pfenim->PFC[j+1]->LE->setFocus();
                         }
                     }
                 }
@@ -2424,18 +2275,18 @@ void MyQLineEdit::keyPressEvent(QKeyEvent* e)
     }
     if(e->key()==Qt::Key_Up)
     {
-        if(codeedit=="especes") pfenim->editCri->setFocus();
+        if(Codeedit=="especes") Pfenim->PFenimWindow->EditCall->setFocus();
         else
         {
             for(int j=0;j<NBFIELDS;j++)
             {
-                if(codeedit==pfenim->pfc[j]->_fieldCode)
+                if(Codeedit==Pfenim->PFC[j]->FieldCode)
                 {
                     if(j>0)
                     {
-                        int ftb = pfenim->pfc[j-1]->_fieldType;
+                        int ftb = Pfenim->PFC[j-1]->FieldType;
                         if(ftb==EC || ftb==SLI || ftb== SLE)
-                            pfenim->pfc[j-1]->_le->setFocus();
+                            Pfenim->PFC[j-1]->LE->setFocus();
                     }
                 }
             }
@@ -2446,12 +2297,12 @@ void MyQLineEdit::keyPressEvent(QKeyEvent* e)
 
 MyQLabel::MyQLabel(QWidget *parent):QLabel(parent)
 {
-    qmaitre = parent;
+    QMaster = parent;
     setFont(QFont("Arial",10,QFont::Normal));
     setStyleSheet("background-color: #F8F8FE");
 }
 
-void MyQLabel::setText(QString mess)
+void MyQLabel::SetText(QString mess)
 {
     if(mess.isEmpty())
     {
@@ -2467,24 +2318,18 @@ void MyQLabel::setText(QString mess)
 
 MyQComboBox::MyQComboBox(QWidget *parent,Fenim *fen,QString esp):QComboBox(parent)
 {
-    qmaitre = parent;
-    pfenim = fen;
-    codecombo=esp;
+    Qmaitre = parent;
+    PFenim = fen;
+    Codecombo=esp;
     setFont(QFont("Arial",10,QFont::Normal));
 }
-
-/*
-void MyQComboBox:: focusInEvent(QFocusEvent *e)
-{
-}
-*/
 
 void EC_ComboBoxEdit::keyPressEvent(QKeyEvent* e)
 {
     if(e->key()==Qt::Key_Backspace || e->key()==Qt::Key_Delete)
     {
-        ecp->ec_le->setText("");
-        ecp->realim_liste("");
+        Ecp->EcLe->setText("");
+        Ecp->realim_liste("");
         showPopup();
     }
     if(e->key()==Qt::Key_Down)
@@ -2493,17 +2338,17 @@ void EC_ComboBoxEdit::keyPressEvent(QKeyEvent* e)
     }
     if(e->key()==Qt::Key_Return)
     {
-        ecp->selectionne_code(currentText());
+        Ecp->selectionne_code(currentText());
     }
     MyQComboBox::keyPressEvent(e);
 }
 
 void MyQComboBox::keyPressEvent(QKeyEvent* e)
 {
-    if(pfenim!=0)
+    if(PFenim!=0)
     {
         Qt::KeyboardModifiers keyMod = QApplication::keyboardModifiers ();
-        if(keyMod.testFlag(Qt::ControlModifier) && e->key() == 'A') pfenim->selectAllCalls();
+        if(keyMod.testFlag(Qt::ControlModifier) && e->key() == 'A') PFenim->SelectAllCalls();
     }
     QComboBox::keyPressEvent(e);
 }
@@ -2511,7 +2356,7 @@ void MyQComboBox::keyPressEvent(QKeyEvent* e)
 
 MyQPushButton::MyQPushButton(QWidget *parent):QPushButton(parent)
 {
-    qmaitre = parent;
+    QMaster = parent;
     setFont(QFont("Arial",10,QFont::Normal));
 }
 
@@ -2521,34 +2366,28 @@ MyQGraphicsView::MyQGraphicsView(QMainWindow *parent):QGraphicsView(parent)
     qmaitre = parent;
 }
 
-void MyQGraphicsView::resizeEvent(QResizeEvent *re)
-{
-}
 
-bool Fenim::readVersionRep()
+bool Fenim::ReadFolderVersion()
 {
-    QString cbase = repWav + _baseIniFile;
-    m_verRepLog = 0;
-    m_verRepUser = 0;
-    m_modeRep = 1; // si pas de mode : on suppose répertoire resté en mode 1
+    QString cbase = _wavFolder + _baseIniFile;
+    FolderLogVersion = 0;
+    FolderUserVersion = 0;
     if(!QFile::exists(cbase)) return(false);
-    QSettings settings(repWav + _baseIniFile, QSettings::IniFormat);
+    QSettings settings(_wavFolder + _baseIniFile, QSettings::IniFormat);
     settings.beginGroup("version");
-    m_verRepLog = settings.value("log").toInt();
-    m_verRepUser = settings.value("user").toInt();
-    // pour version rep
-    m_modeRep = settings.value("mode").toInt();
+    FolderLogVersion = settings.value("log").toInt();
+    FolderUserVersion = settings.value("user").toInt();
     settings.endGroup();
     return(true);
 }
 
-void Fenim::writeVersionRep()
+void Fenim::WriteFolderVersion()
 {
-    QSettings settings(baseJour.path() + _baseIniFile, QSettings::IniFormat);
+    QSettings settings(_dayBaseFolder.path() + _baseIniFile, QSettings::IniFormat);
     settings.beginGroup("version");
-    settings.setValue("log", QVariant::fromValue(m_verLog));
-    settings.setValue("user", QVariant::fromValue(m_verUser));
-    // pour version rep
+    settings.setValue("log", QVariant::fromValue(LogVersion));
+    settings.setValue("user", QVariant::fromValue(UserVersion));
+    settings.setValue("modeFreq", QVariant::fromValue(FrequencyType));
     settings.endGroup();
 }
 

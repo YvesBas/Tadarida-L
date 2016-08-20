@@ -19,7 +19,7 @@ Recherche::Recherche(QMainWindow *parent) :
         if(i<_controlTableList.size())
             if(_controlTableList.at(i).length()>0) _withControl[i]=true;
     }
-    _detecTreatment = new DetecTreatment(this);
+    _detecTreatment = new DetecTreatment();
     // ne sert qu'à utiliser _detecTreatment->_vectPar
 }
 
@@ -34,7 +34,7 @@ void Recherche::afficher_ecran()
 
     _labelSearch = new QLabel(this);
     _labelSearch->setGeometry(30,30,120,20);
-    _labelSearch->setText("Texte recherché");
+    _labelSearch->setText("Searched text");
     _labelSearch->setVisible(true);
     _editSearch = new QLineEdit(this);
     _editSearch->setGeometry(150,30,200,20);
@@ -42,7 +42,7 @@ void Recherche::afficher_ecran()
 
     _labelSearch2 = new QLabel(this);
     _labelSearch2->setGeometry(400,30,50,20);
-    _labelSearch2->setText("ou");
+    _labelSearch2->setText("or");
     _labelSearch2->setVisible(true);
     _editSearch2 = new QLineEdit(this);
     _editSearch2->setGeometry(500,30,200,20);
@@ -52,13 +52,9 @@ void Recherche::afficher_ecran()
     _cbField->setGeometry(150,55,200,20);
     _cbField->insertItems(0,tgui->FieldsList);
     _cbField->setVisible(true);
-	
-// $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-// ajouté le 3/8/2015
-
     _labelSearchB = new QLabel(this);
     _labelSearchB->setGeometry(30,85,120,20);
-    _labelSearchB->setText("Texte recherché");
+    _labelSearchB->setText("Searched text");
     _labelSearchB->setVisible(true);
 
     _editSearchB = new QLineEdit(this);
@@ -67,7 +63,7 @@ void Recherche::afficher_ecran()
 
     _labelSearchB2 = new QLabel(this);
     _labelSearchB2->setGeometry(400,85,50,20);
-    _labelSearchB2->setText("ou");
+    _labelSearchB2->setText("or");
     _labelSearchB2->setVisible(true);
 
     _editSearchB2 = new QLineEdit(this);
@@ -79,11 +75,9 @@ void Recherche::afficher_ecran()
     _cbFieldB->insertItems(0,tgui->FieldsList);
     _cbFieldB->setVisible(true);
 	
-// ££££££££££££££££££££££££££££££
-	
     _labelDir = new QLabel(this);
     _labelDir->setGeometry(30,140,100,20);
-    _labelDir->setText("Répertoire début");
+    _labelDir->setText("Folder from");
     _labelDir->setVisible(true);
     _editDir1 = new QLineEdit(this);
     _editDir1->setGeometry(150,140,200,20);
@@ -92,12 +86,12 @@ void Recherche::afficher_ecran()
     _editDir1->setVisible(true);
     _btnBrowse = new QPushButton(this);
     _btnBrowse->setGeometry(380,140,100,20);
-    _btnBrowse->setText("Parcourir");
+    _btnBrowse->setText("Browse");
     _btnBrowse->setVisible(true);
 
     _labelDir2 = new QLabel(this);
     _labelDir2->setGeometry(530,140,100,20);
-    _labelDir2->setText("Répertoire fin");
+    _labelDir2->setText("Folder to");
     _labelDir2->setVisible(true);
     _editDir2 = new QLineEdit(this);
     _editDir2->setGeometry(650,140,200,20);
@@ -105,15 +99,15 @@ void Recherche::afficher_ecran()
     _editDir2->setVisible(true);
     _btnBrowse2 = new QPushButton(this);
     _btnBrowse2->setGeometry(880,140,100,20);
-    _btnBrowse2->setText("Parcourir");
+    _btnBrowse2->setText("Browse");
     _btnBrowse2->setVisible(true);
 
     _btnSearch = new QPushButton(this);
     _btnSearch->setGeometry(30,190,100,20);
-    _btnSearch->setText("Rechercher");
+    _btnSearch->setText("Search");
     _btnSearch->show();
 
-    _cpComp = new QCheckBox(QString("Comparatif"),this);
+    _cpComp = new QCheckBox(QString("Comparison"),this);
     _cpComp->setGeometry(520,190,120,20);
     _cpComp->setChecked(false);
     _cpComp->setVisible(true);
@@ -121,7 +115,7 @@ void Recherche::afficher_ecran()
 
     _labelReplace = new QLabel(this);
     _labelReplace->setGeometry(30,250,110,20);
-    _labelReplace->setText("Texte de remplacement");
+    _labelReplace->setText("Replacement text");
     _labelReplace->setVisible(true);
     _editReplace = new QLineEdit(this);
     _editReplace->setGeometry(150,250,150,20);
@@ -129,13 +123,13 @@ void Recherche::afficher_ecran()
     _editReplace->setVisible(true);
     _btnReplace = new QPushButton(this);
     _btnReplace->setGeometry(370,250,100,20);
-    _btnReplace->setText("Remplacer");
+    _btnReplace->setText("Replace");
     _btnReplace->setVisible(true);
 
-    _columnTitles << "Fichier" << "Occurences";
+    _columnTitles << "File" << "Occurences";
 
     _filesTable = new QTableWidget(10,2,this);
-    _filesTable->move(50,320);
+    _filesTable->move(50,300);
     _filesTable->resize(750,400);
     _filesTable->setHorizontalHeaderLabels(_columnTitles);
     _filesTable->setColumnWidth(0,600);
@@ -149,7 +143,7 @@ void Recherche::afficher_ecran()
 
     _btnOpen = new QPushButton(this);
     _btnOpen->setGeometry(680,250,80,20);
-    _btnOpen->setText("Ouvrir");
+    _btnOpen->setText("Open");
     _btnOpen->setVisible(true);
 
     connect(_btnSearch,SIGNAL(clicked()),this,SLOT(filesFind()));
@@ -159,9 +153,6 @@ void Recherche::afficher_ecran()
 
 
     connect(_btnOpen,SIGNAL(clicked()),this,SLOT(on_btnOpen_clicked()));
-
-    tgui->_logText   << "editdir1 a bien  " << _editDir1->text() << endl;
-
     activateWindow();
     raise();
 }
@@ -183,7 +174,8 @@ void Recherche::treatBrowse(int nb)
     QLineEdit *editDir;
     if(nb==2) editDir = _editDir2; else editDir = _editDir1;
     QString baseDirName  = QFileDialog::getExistingDirectory( this,
-                                                              tr("Sélectionner le répertoire de la base à traiter"),
+                                                              //fr tr("Sélectionner le répertoire de la base à traiter"),
+                                                              "Select the database folder(s) to treat",
                                                               editDir->text(),
                                                               QFileDialog::ShowDirsOnly);
 
@@ -192,15 +184,14 @@ void Recherche::treatBrowse(int nb)
         QString debut = baseDirName.left(baseDirName.lastIndexOf(QString("\\")));
         QString fin  = baseDirName.right(baseDirName.length()-debut.length()-1);
 
-        if(!tgui->getDirectoryType(fin))
+        if(!tgui->GetDirectoryType(fin))
         {
             editDir->setText(QDir::fromNativeSeparators(baseDirName));
         }
         else
         {
-            QMessageBox::warning(this, "pas type voulu",
+            QMessageBox::warning(this, "Not a database folder",
                                  fin,QMessageBox::Ok);
-
         }
     }
 }
@@ -220,23 +211,20 @@ bool Recherche:: findTreat(bool findMode)
     QString searchedText = this->_editSearch->text();
     if(searchedText.isEmpty())
     {
-        QMessageBox::warning(this, "Recherche impossible",
-                             "Texte à rechercher non saisi !",QMessageBox::Ok);
+        QMessageBox::warning(this, "Error",
+                             "Empty searched text !",QMessageBox::Ok);
         return(false);
     }
 
     int nfield = _cbField->currentIndex();
     if(nfield < 0 || nfield >= _nbFields)
     {
-        QMessageBox::warning(this, "Recherche impossible",
-                             "Sélectionner le champ à rechercher !",QMessageBox::Ok);
+        QMessageBox::warning(this, "Error",
+                             "Select the field to search !",QMessageBox::Ok);
         return(false);
     }
     int nc = nfield +1;
     bool isControlled = _withControl[nfield];
-
-// $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-// ajouté le 3/8/2015
     int nfieldB = _cbFieldB->currentIndex();
 	int ncB = 0;
 	bool isControlledB = false;
@@ -247,15 +235,11 @@ bool Recherche:: findTreat(bool findMode)
 		isControlledB = _withControl[nfieldB];
 	}
 
-// ££££££££££££££££££££££££££££££
-    tgui->_logText   << "avant affectation editdir1 a  " << _editDir1->text() << endl;
-
-
     QString dirPath1(_editDir1->text());
     if(dirPath1.isEmpty())
     {
-        QMessageBox::warning(this, "Recherche impossible",
-                             "Répertoire non défini !",QMessageBox::Ok);
+        QMessageBox::warning(this, "Error",
+                             "Required folder !",QMessageBox::Ok);
         return(false);
     }
     QString dirPath2(_editDir2->text());
@@ -267,8 +251,8 @@ bool Recherche:: findTreat(bool findMode)
         QString deb2 = dirPath2.left(dirPath2.lastIndexOf(QString("/")));
         if(deb2 != deb1)
         {
-            QMessageBox::warning(this, "Recherche impossible",
-                                 "Répertoires pas dans la même base !",QMessageBox::Ok);
+            QMessageBox::warning(this, "Error",
+                                 "Folders from different databases !",QMessageBox::Ok);
             return(false);
         }
         if(dirPath2.compare(dirPath1)<0)
@@ -288,8 +272,8 @@ bool Recherche:: findTreat(bool findMode)
         QDir parentDir(deb1);
         if(!parentDir.exists())
         {
-            QMessageBox::warning(this, "Recherche impossible",
-                                 "Répertoire inaccessible !",QMessageBox::Ok);
+            QMessageBox::warning(this, "Error",
+                                 "Folder does not exist !",QMessageBox::Ok);
             return(false);
         }
         QStringList directoriesList1 = parentDir.entryList(QStringList("*"), QDir::Dirs);
@@ -297,7 +281,7 @@ bool Recherche:: findTreat(bool findMode)
         foreach(QString dirName,directoriesList1)
         {
             if(dirName.length()==8)
-                if(!tgui->getDirectoryType(dirName))
+                if(!tgui->GetDirectoryType(dirName))
                 {
                     if(dirName.compare(dp1)>0 && dirName.compare(dp2)<=0)
                         directoriesList << dirName;
@@ -310,7 +294,7 @@ bool Recherche:: findTreat(bool findMode)
 	
 	// ajouté le 27/03/2015
 	_csvTreat = false;	
-    bool fpl;
+    bool fpl=false;
     QString searchedText2 = this->_editSearch2->text();
 	bool s2nn = false;
 	if(!searchedText2.isEmpty()) 
@@ -322,9 +306,6 @@ bool Recherche:: findTreat(bool findMode)
             initCsvTable();
 		}
 	}
-	// fin ajout le 27/03/2015
-// $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-// 03/08/2015
 	bool sB = false;
 	bool sB2 = false;
 	bool sSF = false;
@@ -344,8 +325,6 @@ bool Recherche:: findTreat(bool findMode)
         if(ncB == nc && sB==true) sSF = true;
 	}
 
-// £££££££££££££££££££££££££££££££££££££££££££
-	
     int nl=0;
     int nt=0;
 	// 27/03/2015
@@ -432,7 +411,6 @@ bool Recherche:: findTreat(bool findMode)
 							}
 						}
 						
-						// $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 						if(sB && ((!sSF && fileToSelect) || (sSF && !fileTSB)))
 						{
 							bool condB = false;
@@ -465,7 +443,6 @@ bool Recherche:: findTreat(bool findMode)
 								}
 							}
 						}
-						// ££££££££££££££££££££££££££££££££££££££££££
 						
                         if(fileToSelect)
                         {
@@ -504,15 +481,15 @@ bool Recherche:: findTreat(bool findMode)
     } // next tagFile
     if(findMode)
     {
-        _lblSelectedNumber->setText(QString("Fichiers sélectionnés : ")+QString::number(nl));
-        QString res = QString::number(nl) + " sur "
+        _lblSelectedNumber->setText(QString("Selected files : ")+QString::number(nl));
+        QString res = QString::number(nl) + " out of "
                 +QString::number(nt);
-        QMessageBox::warning(this, "Nombre de fichiers eti sélectionnés",res,QMessageBox::Ok);
+        QMessageBox::warning(this, "Number of selected labelled files",res,QMessageBox::Ok);
     }
     if(nl<1)
     {
         if(!findMode)
-            QMessageBox::warning(this,"Aucun remplacement !","Aucune occurence trouvée !",QMessageBox::Ok);
+            QMessageBox::warning(this,"No replacement !","No occurence !",QMessageBox::Ok);
 
         return(false);
     }
@@ -535,16 +512,16 @@ void Recherche::on_btnReplace_clicked()
     QString searchedText = this->_editSearch->text();
     if(searchedText.isEmpty())
     {
-        QMessageBox::warning(this, "Remplacement impossible",
-                             "Texte à remplacer non saisi !",QMessageBox::Ok);
+        QMessageBox::warning(this, "Error",
+                             "Required searched text !",QMessageBox::Ok);
         return;
     }
     //
     int nfield = _cbField->currentIndex();
     if(nfield < 0 || nfield >= _nbFields)
     {
-        QMessageBox::warning(this, "Remplacement impossible",
-                             "Sélectionner le champ à rechercher !",QMessageBox::Ok);
+        QMessageBox::warning(this, "Error",
+                             "Select file to search !",QMessageBox::Ok);
         return;
     }
     int nc = nfield + 1;
@@ -553,8 +530,8 @@ void Recherche::on_btnReplace_clicked()
     QString replaceText = this->_editReplace->text();
     if(replaceText.isEmpty())
     {
-        QMessageBox::warning(this, "Remplacement impossible",
-                             "Texte de remplacement non saisi !",QMessageBox::Ok);
+        QMessageBox::warning(this, "Error",
+                             "Required replacement text !",QMessageBox::Ok);
         return;
     }
     // controle
@@ -562,8 +539,8 @@ void Recherche::on_btnReplace_clicked()
     {
         if(controle(replaceText,nfield)==false)
         {
-            QMessageBox::warning(this, "Remplacement impossible",
-                                 "Texte de remplacement absent de la table de contrôle !",QMessageBox::Ok);
+            QMessageBox::warning(this, "Error",
+                                 "Replacement text not in the control table !",QMessageBox::Ok);
             return;
         }
     }
@@ -571,16 +548,13 @@ void Recherche::on_btnReplace_clicked()
     QString dirPath1(_editDir1->text()+"/eti");
     if(dirPath1.isEmpty())
     {
-        QMessageBox::warning(this, "Recherche impossible",
-                             "Répertoire non défini !",QMessageBox::Ok);
+        QMessageBox::warning(this, "Error",
+                             "Undefined folder !",QMessageBox::Ok);
         return;
     }
     QString dirPath2(_editDir2->text()+"/eti");
     if(dirPath2.isEmpty()) dirPath2 = dirPath1;
     // --------------------------------
-    //QString               _findSaveText;
-    //QString               _dirSaveText;
-    //QString               _fieldSaveText;
     if(searchedText != _findSaveText || dirPath1 != _dirSaveText1
             || dirPath2 != _dirSaveText2
             || nc != _fieldSaveNumber)
@@ -590,8 +564,8 @@ void Recherche::on_btnReplace_clicked()
     // --------------------------------
     if(_selFileList.isEmpty())
     {
-        QMessageBox::warning(this, "Remplacement impossible",
-                             "Aucun fichier sélectionné !",QMessageBox::Ok);
+        QMessageBox::warning(this, "Error",
+                             "No selected file !",QMessageBox::Ok);
         return;
     }
     //
@@ -674,8 +648,8 @@ void Recherche::on_btnReplace_clicked()
     if(nbr>0)
     {
         QString sp =QString("s").left((int)(nbr>1));
-        QString affi = QString::number(nbr)+" remplacement"+sp+" effectué"+sp;
-        QMessageBox::warning(this, "Remplacement terminé !",affi,QMessageBox::Ok);
+        QString affi = QString::number(nbr)+" replacement"+sp;
+        QMessageBox::warning(this, "End of treatment !",affi,QMessageBox::Ok);
     }
 }
 
@@ -703,7 +677,6 @@ bool Recherche::controle(QString rtext,int nf)
 // --------------------------------------------------------------------
 void Recherche::on_btnOpen_clicked()
 {
-    // QModelIndexList il = _filesTable->    selectedIndexes();
 
     QModelIndexList il = _filesTable->selectionModel()->selectedIndexes();
 
@@ -714,7 +687,7 @@ void Recherche::on_btnOpen_clicked()
         QString tagf = _selFileList.at(n);
         QString wavf = tagf.replace("/eti/","/");
         wavf=wavf.replace(".eti",".wav");
-        tgui->updateTags(wavf);
+        tgui->UpdateTags(wavf);
     }
 }
 // --------------------------------------------------------------------
@@ -734,7 +707,7 @@ void Recherche::initCsvTable()
     _fileStream.setRealNumberPrecision(2);
     _fileStream << "Espece" << '\t' << "Directory" << '\t' << "Filename" << '\t' << "CallNum"
                << '\t' << "Version"<< '\t' << "FileDur"<< '\t' << "SampleRate";
-    for(int j=0;j<_detecTreatment->_vectPar.size();j++) _fileStream << '\t' << _detecTreatment->_vectPar[j].ColumnTitle;
+    for(int j=0;j<_detecTreatment->VectPar.size();j++) _fileStream << '\t' << _detecTreatment->VectPar[j].ColumnTitle;
     _fileStream << endl;
     _nCompLines = 0;
 }
@@ -752,9 +725,7 @@ void Recherche::endCsvTable(QString esp1,QString esp2)
     if(_txtFile.open(QIODevice::ReadWrite | QIODevice::Text)==false) return;
     QString resultLine = "";
     _fileStream.readLine();
-    // traitement pour chaque paramètres
-    //   nt++;
-    int npar = _detecTreatment->_vectPar.size();
+    int npar = _detecTreatment->VectPar.size();
     float **tabPL = new float*[npar];
     int **sortPL = new int*[npar];
     for(int j=0;j<npar;j++)
@@ -780,7 +751,6 @@ void Recherche::endCsvTable(QString esp1,QString esp2)
             if((i & 1)==1) tabPL[j][i] += 0.01f;
         }
     }
-    // tri esp1, esp2 pour nb cris < chez esp1
     if(ns[1]<ns[0])
     {
         QString cesp1 = esp1;
@@ -792,14 +762,12 @@ void Recherche::endCsvTable(QString esp1,QString esp2)
         for(int  i=0;i<_nCompLines;i++) ws[i] = 1-ws[i];
     }
     //
-    // ajouter un tri pour mélanger ne pas avoir à la suite toutes les esp1
-    // ce qui pourrait donner un indicateur 1 sur un paramètre où toutesles valeurs sont égales
     if(ns[0]>0)
     {
         _fileStream << '\t' << '\t'  << '\t' << '\t' << '\t' << '\t';
         for(int j=0;j<npar;j++)
         {
-            _detecTreatment->sortFloatIndArray(tabPL[j],_nCompLines,sortPL[j]);
+            _detecTreatment->SortFloatIndArray(tabPL[j],_nCompLines,sortPL[j]);
             int ncp = 0, ncg = 0;
             for(int k=0;k<ns[0];k++) if(ws[sortPL[j][k]]==0) ncp++;
             if(ncp*2<ns[0])

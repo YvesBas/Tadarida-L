@@ -2,25 +2,25 @@
 
 Etiquette::Etiquette()
 {
-    e_numCri = -1;
+    CallNumber = -1;
     for(int iField=0;iField<NBFIELDS;iField++) DataFields[iField] = "";
     SpecNumber = -1;
 }
 
 Etiquette::Etiquette(int numcri)
 {
-    e_numCri = numcri;
+    CallNumber = numcri;
     for(int iField=0;iField<NBFIELDS;iField++) DataFields[iField] = "";
     SpecNumber = -1;
 }
 
-void Etiquette::vide()
+void Etiquette::EtiquetteClear()
 {
     for(int iField=0;iField<NBFIELDS;iField++) DataFields[iField] = "";
     SpecNumber = -1;
 }
 
-void Etiquette::recopie(Etiquette *etisource)
+void Etiquette::EtiquetteClone(Etiquette *etisource)
 {
     for(int iField=0;iField<NBFIELDS;iField++)
         DataFields[iField] = etisource->DataFields[iField];
