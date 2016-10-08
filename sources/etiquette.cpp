@@ -7,9 +7,9 @@ Etiquette::Etiquette()
     SpecNumber = -1;
 }
 
-Etiquette::Etiquette(int numcri)
+Etiquette::Etiquette(int callNumber)
 {
-    CallNumber = numcri;
+    CallNumber = callNumber;
     for(int iField=0;iField<NBFIELDS;iField++) DataFields[iField] = "";
     SpecNumber = -1;
 }
@@ -20,10 +20,10 @@ void Etiquette::EtiquetteClear()
     SpecNumber = -1;
 }
 
-void Etiquette::EtiquetteClone(Etiquette *etisource)
+void Etiquette::EtiquetteClone(Etiquette *labelSource)
 {
     for(int iField=0;iField<NBFIELDS;iField++)
-        DataFields[iField] = etisource->DataFields[iField];
+        DataFields[iField] = labelSource->DataFields[iField];
 }
 
 

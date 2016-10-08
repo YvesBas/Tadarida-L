@@ -1,16 +1,16 @@
 #include "param.h"
 
 
-Parametre::Parametre(Param *fpa,int indice,void *pvar,int type,int imin,int imax,double dmin,double dmax):_pParam(fpa),_paramIndex(indice),_variablePointer(pvar),_parameterType(type),_intMin(imin),_intMax(imax),_doubleMin(dmin),_doubleMax(dmax)
+Parametre::Parametre(Param *parametreWindow,int index,void *pvar,int type,int imin,int imax,double dmin,double dmax):_pParam(parametreWindow),_paramIndex(index),_variablePointer(pvar),_parameterType(type),_intMin(imin),_intMax(imax),_doubleMin(dmin),_doubleMax(dmax)
 {
     EditNumber=0; CheckBoxNumber=0; ComboNumber=0;
 }
 
-Param::Param(QMainWindow *parent,int nbparam) :
+Param::Param(QMainWindow *parent,int nParam) :
     QMainWindow(parent)
 {
     PMainWindow = (TadaridaMainWindow *)parent;
-    ParamOrderNumber=nbparam;
+    ParamOrderNumber=nParam;
     if(ParamOrderNumber>20) ParamOrderNumber=20;
     ParamsNumber=0;
     _editOrderNumber=0;
@@ -39,13 +39,13 @@ void Param::ShowScreen()
     _saveButton->move(_editX,_windowHeight-_mb);
     _saveButton->setText("Save");
     _saveButton->show();
-    connect(_saveButton,SIGNAL(clicked()),this,SLOT(enregParams()));
+    connect(_saveButton,SIGNAL(clicked()),this,SLOT(storeParams()));
     activateWindow();
     raise();
 }
 
 
-void Param::CreateParameter(QString titre,void *pvar,int type,int intmin,int intmax,
+void Param::CreateParameter(QString title,void *pvar,int type,int intmin,int intmax,
                           double doublemin,double doublemax,QStringList *qsl)
 {
 
@@ -71,7 +71,7 @@ void Param::CreateParameter(QString titre,void *pvar,int type,int intmin,int int
         LabelArray[_editOrderNumber]=new QLabel(this);
         LabelArray[_editOrderNumber]->resize(_labelWidth,20);
         LabelArray[_editOrderNumber]->move(_labelX+aj,hle);
-        LabelArray[_editOrderNumber]->setText(titre);
+        LabelArray[_editOrderNumber]->setText(title);
         LabelArray[_editOrderNumber]->show();
         EditArray[_editOrderNumber]=new QLineEdit(this);
         EditArray[_editOrderNumber]->resize(_editWidth,20);
@@ -96,7 +96,7 @@ void Param::CreateParameter(QString titre,void *pvar,int type,int intmin,int int
         CheckBoxArray[_checkBoxOrderNumber]=new QCheckBox(this);
         CheckBoxArray[_checkBoxOrderNumber]->move(_labelX+aj,hle);
         CheckBoxArray[_checkBoxOrderNumber]->resize(_editX+_editWidth-_labelX,20);
-        CheckBoxArray[_checkBoxOrderNumber]->setText(titre);
+        CheckBoxArray[_checkBoxOrderNumber]->setText(title);
         CheckBoxArray[_checkBoxOrderNumber]->setChecked(bval);
         CheckBoxArray[_checkBoxOrderNumber]->show();
         _parametreArray[ParamsNumber]->CheckBoxNumber=_checkBoxOrderNumber;
@@ -107,7 +107,7 @@ void Param::CreateParameter(QString titre,void *pvar,int type,int intmin,int int
         LabelArray[_editOrderNumber]=new QLabel(this);
         LabelArray[_editOrderNumber]->resize(_labelWidth,20);
         LabelArray[_editOrderNumber]->move(_labelX+aj,hle);
-        LabelArray[_editOrderNumber]->setText(titre);
+        LabelArray[_editOrderNumber]->setText(title);
         LabelArray[_editOrderNumber]->show();
         _editOrderNumber++; // � changer ajout 4�me variable d�di�e labels = plus propre !
         ComboArray[_comboOrderNumber]=new QComboBox(this);
@@ -117,7 +117,6 @@ void Param::CreateParameter(QString titre,void *pvar,int type,int intmin,int int
         QString sval=QString::number(*(int *)pvar);
         ComboArray[_comboOrderNumber]->setCurrentIndex(ComboArray[_comboOrderNumber]->findText(sval));
         ComboArray[_comboOrderNumber]->show();
-        //delete qsl;
         _parametreArray[ParamsNumber]->ComboNumber=_comboOrderNumber;
         _comboOrderNumber++;
     }
@@ -186,14 +185,14 @@ bool Parametre::InputControl()
     return(convid);
 }
 
-void Param::enregParams()
+void Param::storeParams()
 {
 
-    bool testezones=true;
+    bool testInputs=true;
     for(int i=0;i<ParamOrderNumber;i++)
     {
-        testezones=_parametreArray[i]->InputControl();
-        if(testezones==false) break;
+        testInputs=_parametreArray[i]->InputControl();
+        if(testInputs==false) break;
     }
-    if(testezones) close();
+    if(testInputs) close();
 }

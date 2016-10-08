@@ -20,6 +20,8 @@ class RematchClass;
 #include "detectreatment.h"
 #include "TadaridaMainWindow.h"
 
+#define LINWIN 1
+
 class TadaridaMainWindow;
 
 class Detec : public QThread

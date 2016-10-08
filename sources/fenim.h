@@ -106,7 +106,7 @@ private:
     Fenim                           *_pFenim;
 
 public slots:
-    void                            modifie_texte(const QString&);
+    void                            UpdateText(const QString&);
 
 protected:
     void                            keyPressEvent(QKeyEvent* e);
@@ -122,7 +122,7 @@ private:
     Fenim                           *_pFenim;
 
 public slots:
-    void                            modifie_texte(const QString&);
+    void                            UpdateText(const QString&);
 };
 
 
@@ -137,7 +137,7 @@ public:
     EditCombo                       *Ecp;
 
 public slots:
-    void                            SelectionneCode(const QString&);
+    void                            SelectCode(const QString&);
 
 protected:
     void                            keyPressEvent(QKeyEvent* e);
@@ -147,20 +147,19 @@ protected:
 class EditCombo
 {
 public:
-    EditCombo(QWidget *parent,Fenim *fen,QString cod,QString englishCode,bool autaj=true);
-    bool                            autorise_ajout;
-    void                            realim_liste(const QString& codsai);
-    void                            selectionne_code();
-    void                            selectionne_code(const QString& codsai);
-    bool                            controle(QString &s,QString &mess_err,bool obl);
-    bool                            confirme_ajout(QString &s);
-    void                            set_autor(bool);
+    EditCombo(QWidget *parent,Fenim *fen,QString cod,QString englishCode,bool allowAdd=true);
+    bool                            AllowAdd;
+    void                            redoList(const QString&);
+    void                            SelectCode();
+    void                            SelectCode(const QString& codsai);
+    bool                            Control(QString &,QString &,bool);
+    bool                            ConfirmAdd(QString &s);
 
     QString                         CodeFi;
     EC_ComboBoxEdit                 *EcCo;
     EC_LineEdit                     *EcLe;
     QString                         EnglishCode;
-    QMainWindow                     *Fenpar;
+    QMainWindow                     *PFenimWindow;
     QStringList                     *ListCodes;
 };
 
@@ -185,7 +184,7 @@ enum FIELDTYPE {SLE,EC,SLI,CHB};
 class FieldClass
 {
 public :
-    FieldClass(QWidget *parent,Fenim *pf,QString title,int fieldType,bool obl,bool unic,QString fieldCode,bool autaj,int smin,int smax,QString englishCode);
+    FieldClass(QWidget *,Fenim *,QString,int,bool,bool,QString,bool,int,int,QString);
     ~FieldClass();
     void                            Affect(QString text);
     void                            Colour(QString text);
@@ -213,7 +212,7 @@ class FenimWindow : public QMainWindow
 public :
     FenimWindow(Fenim *pf,QMainWindow *parent);
     void                            CreateConnections();
-    void                            CreateFenimWindow(bool modeSaisie);
+    void                            CreateFenimWindow(bool);
     void                            ResizeFenimWindow(bool);
 
     Fenim                           *PFenim;
@@ -243,9 +242,11 @@ public :
     QGraphicsPathItem               *GPlt[MAXCRI];
     QGraphicsSimpleTextItem         *GTe[250];
     float                           HeightRatio;
+    MyQLabel                        *LabelFolder;
     MyQLabel                        *LabelNbLabs;
-    MyQLabel                        *LabelTagSpec;
     QLabel                          *LabelR;
+    MyQLabel                        *LabelTagSpec;
+    QLabel                          *LabelTitleG2;
     QLabel                          *LabelX;
     QLabel                          *LabelY;
     QGraphicsPixmapItem             *PixMap;
@@ -290,11 +291,9 @@ private:
     QGroupBox                       *_gGBoxButtons;
     QGroupBox                       *gBoxGen;
     QLabel                          *_labelCalls;
-    MyQLabel                        *_labelFolder;
     QLabel                          *_labelImage;
     MyQLabel                        *_labelMess;
     MyQLabel                        *_labelNbCalls;
-    QLabel                          *_labelTitleG2;
 
 };
 

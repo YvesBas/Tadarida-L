@@ -151,6 +151,7 @@ TadaridaMainWindow::TadaridaMainWindow(QWidget *parent) : QMainWindow(parent)
         connect(_btnUpdateTags,SIGNAL(clicked()),this,SLOT(on_btnUpdateTags_clicked()));
         connect(_btnOpenBase,SIGNAL(clicked()),this,SLOT(on_btnOpenBase_clicked()));
         connect(_btnFind,SIGNAL(clicked()),this,SLOT(on_btnFind_clicked()));
+        connect(_ledScale,SIGNAL(editingFinished()),this,SLOT(on_ledScale_editingFinished()));
         if(_canTag==true)
         {
             if(!manageBase(false,!_modifyFreqAuthorized)) {exitProgram(); return;}
@@ -529,21 +530,21 @@ void TadaridaMainWindow::on_btnParam_clicked()
     lte << "10" << "1" ;
     param->CreateParameter(QString("Detection threshold"),&_detectionThreshold,1,10,30);
     param->CreateParameter(QString("Stop threshold"),&_stopThreshold,1,5,25);
-    param->CreateParameter(QString("Minimum frequency"),&_minimumFrequency,1,0,20);
+    //param->CreateParameter(QString("Minimum frequency"),&_minimumFrequency,1,0,20);
     param->CreateParameter(QString("p_nbo"),&_overlapsNumber,4,0,0,0,0,&lnbo);
-    param->CreateParameter(QString("coef. x"),&Divrl,1,100,100000);
+    //param->CreateParameter(QString("coef. x"),&Divrl,1,100,100000);
     param->CreateParameter(QString("Treatment of silences"),&_useValflag ,3);
-    param->CreateParameter(QString("Silence threshold"),&_jumpThreshold,1,10,50);
-    param->CreateParameter(QString("Wide vertical band"),&_widthBigControl,1,10,500);
-    param->CreateParameter(QString("Narrow vertical band"),&_widthLittleControl,1,1,20);
-    param->CreateParameter(QString("High threshold"),&_highThresholdJB,1,9,20);
-    param->CreateParameter(QString("Low threshold"),&_lowThresholdJB,1,-20,9);
-    param->CreateParameter(QString("Second low threshold"),&_lowThresholdC,1,-5,10);
-    param->CreateParameter(QString("Second high threshold"),&_highThresholdC,1,1,30);
+    //param->CreateParameter(QString("Silence threshold"),&_jumpThreshold,1,10,50);
+    //param->CreateParameter(QString("Wide vertical band"),&_widthBigControl,1,10,500);
+    //param->CreateParameter(QString("Narrow vertical band"),&_widthLittleControl,1,1,20);
+    //param->CreateParameter(QString("High threshold"),&_highThresholdJB,1,9,20);
+    //param->CreateParameter(QString("Low threshold"),&_lowThresholdJB,1,-20,9);
+    //param->CreateParameter(QString("Second low threshold"),&_lowThresholdC,1,-5,10);
+    //param->CreateParameter(QString("Second high threshold"),&_highThresholdC,1,1,30);
     param->CreateParameter(QString("Percentage q5"),&_qR,1,1,20);
     param->CreateParameter(QString("Minimum pixel number q5"),&_qN,1,2,10);
     param->CreateParameter(QString("Parameters version"),&_paramVersion ,1,0,2);
-    param->CreateParameter(QString("Time.csv"),&_withTimeCsv,3);
+    //param->CreateParameter(QString("Time.csv"),&_withTimeCsv,3);
     param->CreateParameter(QString("Deactivate correctnoise"),&_desactiveCorrectNoise ,3);
     if(param->ParamOrderNumber > param->ParamsNumber) param->ParamOrderNumber = param->ParamsNumber;
     param->show();
@@ -617,6 +618,30 @@ void TadaridaMainWindow::blockUnblock(bool acdesac)
 		_btnFind->setEnabled(condi);
         _btnOpenPreviousWav->setEnabled(condi);
         _btnOpenNextWav->setEnabled(condi);
+    }
+}
+
+void TadaridaMainWindow::on_ledScale_editingFinished()
+{
+    QString txt = _ledScale->text();
+    bool convid=true;
+    QString mess_err="";
+    int n = txt.toInt(&convid);
+    if(convid)
+    {
+        if(n < 100 || n> 100000)
+        {
+            mess_err = txt+": input out of range";
+            convid = false;
+        }
+        else Divrl = n;
+    }
+    else mess_err= "Incorrect entry";
+    if(convid == false)
+    {
+        QMessageBox::warning(this,"Error",mess_err,QMessageBox::Ok);
+        _ledScale->setText(QString::number(Divrl));
+        _ledScale->setFocus();
     }
 }
 
@@ -933,8 +958,8 @@ void TadaridaMainWindow::showPicture(QString wavDir,QString fileName,bool typeA)
 
             //fr if(QMessageBox::question(this, "Type de frequence different !",
             //fr                          "Repondre oui pour modifier type de frequence traite ou non pour renoncer",
-            if(QMessageBox::question(this, "Different frequency type !",
-                                      "Answer yes to change the frequency type or no to cancel",
+            if(QMessageBox::question(this, "Different frequency mode !",
+                                      "Answer yes to change the frequency mode or no to cancel",
                                      QMessageBox::Yes|QMessageBox::No)
                     == QMessageBox::Yes)
             {
@@ -944,7 +969,7 @@ void TadaridaMainWindow::showPicture(QString wavDir,QString fileName,bool typeA)
                 {
                     //fr QMessageBox::warning(this, "Base ne correspondant  pas au type de frequence voulu",
                     //fr                     "Choisir un autre dossier de base !",QMessageBox::Ok);
-                    QMessageBox::warning(this, "Database with other frequency type",
+                    QMessageBox::warning(this, "Database with other frequency mode",
                                          "Select an other database !",QMessageBox::Ok);
                     if(!manageBase(true,true)) {exitProgram(); return;}
                 }
@@ -953,7 +978,7 @@ void TadaridaMainWindow::showPicture(QString wavDir,QString fileName,bool typeA)
         }
         else
         {
-            QMessageBox::warning(this,"Unauthorized !","Different frequency typet",QMessageBox::Ok);
+            QMessageBox::warning(this,"Unauthorized !","Different frequency mode",QMessageBox::Ok);
             return;
         }
     }
@@ -1528,7 +1553,7 @@ void TadaridaMainWindow::createWindow()
          larlb = (_lg1-_margx*4)/3;
         _freqGroup = new QGroupBox(_grpPhase1);
         _freqGroup->setGeometry(_margx+larlb*2+_margx*2,_hab1*2,larlb,(_hbou*3)/2);
-        _freqGroup->setTitle(QString("Frequency type"));
+        _freqGroup->setTitle(QString("Frequency mode"));
         _freqHigh = new QRadioButton(QString("high"),_freqGroup);
         _freqLow = new QRadioButton(QString("low"),_freqGroup);
         _freqHigh->setGeometry(_pmx*2,_hbou/3,larl6,_hbou);
@@ -1639,20 +1664,30 @@ void TadaridaMainWindow::createWindow()
         _btnOpenBase = new QPushButton(_grpPhase2);
         _btnOpenBase->setGeometry(mxw2+larw2/3,(_hab1*8)/3,(larw2*2)/3,_hbou);
         _btnOpenBase->setFont(font2);
+        //
+        _lblScale = new MyQLabel(_grpPhase2);
+        _lblScale->setGeometry(mxw2,(_hab1*23)/6,(larw2*7)/12,_hbou);
+        _lblScale->setFont(font1);
+        _lblScale->SetText("Spectrogram scale default");
+        _ledScale = new QLineEdit(_grpPhase2);
+        _ledScale->setGeometry(mxw2+(larw2*2/3),(_hab1*23)/6,larw2/3,_hbou);
+        _ledScale->setFont(font1);
+        _ledScale->setText(QString::number(Divrl));
+        //
         _btnOpenWav = new QPushButton(_grpPhase2);
-        _btnOpenWav->setGeometry(mxw2,_hab1*4-_hab1/8,larw2,_hbou);
+        _btnOpenWav->setGeometry(mxw2,_hab1*5-_hab1/8,larw2,_hbou);
         _btnOpenWav->setFont(font1);
         _btnOpenPreviousWav = new QPushButton(_grpPhase2);
-        _btnOpenPreviousWav->setGeometry(mxw2,_hab1*5-_hab1/4,larw2/3,_hbou);
+        _btnOpenPreviousWav->setGeometry(mxw2,_hab1*6-_hab1/4,larw2/3,_hbou);
         _btnOpenPreviousWav->setFont(font1);
         _btnOpenNextWav = new QPushButton(_grpPhase2);
-        _btnOpenNextWav->setGeometry(mxw2+larw2*2/3,_hab1*5-_hab1/4,larw2/3,_hbou);
+        _btnOpenNextWav->setGeometry(mxw2+larw2*2/3,_hab1*6-_hab1/4,larw2/3,_hbou);
         _btnOpenNextWav->setFont(font1);
         _btnUpdateTags = new QPushButton(_grpPhase2);
-        _btnUpdateTags->setGeometry(mxw2,_hab1*6,larw2,_hbou);
+        _btnUpdateTags->setGeometry(mxw2,_hab1*7,larw2,_hbou);
         _btnUpdateTags->setFont(font1);
         _btnFind = new QPushButton(_grpPhase2);
-        _btnFind->setGeometry(mxw2,_hab1*7,larw2,_hbou);
+        _btnFind->setGeometry(mxw2,_hab1*8,larw2,_hbou);
         _btnFind->setFont(font1);
     }
     _sliderThreads = new QSlider(_grpPhase1);
@@ -1676,7 +1711,7 @@ void TadaridaMainWindow::updatesTexts()
     //fr _chkSubDirectories->setText("Inclure les sous-dossiers");
     _chkSubDirectories->setText("Include subfolders");
     //fr _lblWavDirectory->setText("Dossier des fichiers WAV");
-    _lblWavDirectory->SetText("Folder containing wav files");
+    _lblWavDirectory->SetText("wav files directory");
     // _btnBrowse->setText("Parcourir");
     _btnBrowse->setText("Browse");
     //_btnPause->setText(QString());
@@ -1685,7 +1720,7 @@ void TadaridaMainWindow::updatesTexts()
     if(_tadaridaMode==ETIQUETAGE)
     {
         //fr _btnParameters->setText(" Modifier les variables");
-         _btnParameters->setText(" Modify variables");
+         _btnParameters->setText(" Advanced settings");
         _chkCreateImage->setText("da2 and jpg files");
         _btnOpenWav->setText("Select a wav file");
         //fr _btnOpenBase->setText("Modifier le dossier de la base");
@@ -1812,7 +1847,7 @@ void TadaridaMainWindow::on_freqLow_toogled(bool checked)
     if(checked) _modeFreq = 2; else _modeFreq = 1;
     if(_modeFreq != precModeFreq && _tadaridaMode==ETIQUETAGE)
     {
-        QMessageBox::warning(this, "Database with an other frequency type",
+        QMessageBox::warning(this, "Database with an other frequency mode",
                              "Select an other database !",QMessageBox::Ok);
         if(!manageBase(true,!_modifyFreqAuthorized)) {exitProgram(); return;}
     }
