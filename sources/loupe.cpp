@@ -15,9 +15,8 @@ Loupe::Loupe(Fenim *pf,QMainWindow *parent,int x,int y) :
     _bUnZoomH = new MyQPushButton(_gboxButtons);
     _bcGrid = new QCheckBox(QString("Grid"),_gboxButtons);
     BcMasterPoints = new QCheckBox(QString("Master points"),_gboxButtons);
-    BcCalls = new QCheckBox(QString("Cries"),_gboxButtons);
+    BcCalls = new QCheckBox(QString("Lines"),_gboxButtons);
     BcSuppl = new QCheckBox(QString("Add."),_gboxButtons);
-
     LabelX = new QLabel(_gboxButtons);
     LabelY = new QLabel(_gboxButtons);
     LabelR = new QLabel(_gboxButtons);
@@ -31,18 +30,17 @@ Loupe::Loupe(Fenim *pf,QMainWindow *parent,int x,int y) :
     {
         _ipmc[i]=false;
         _ilc[i]=false;
-        _coucri[i]=0;
+        _callColour[i]=0;
         _ilcs[i]=0;
         _ilps[i]=0;
     }
-    for(int jcrete=0;jcrete<NCRETES;jcrete++)
+    for(int jcrete=0;jcrete<CRESTSNUMBER;jcrete++)
         _gplt[jcrete] = new QGraphicsPathItem *[MAXCRI];
-
 }
 
 Loupe::~Loupe()
 {
-    for(int jcrete=0;jcrete<NCRETES;jcrete++)
+    for(int jcrete=0;jcrete<CRESTSNUMBER;jcrete++)
         delete _gplt[jcrete];
     PFenim->ShowLoupe = false;
     delete LoupeScene;
@@ -102,61 +100,45 @@ void Loupe::showButtons()
 {
     _gboxButtons->resize(_llf,_hbo);
     _gboxButtons->move(1,_lhf-_hbo);
-
     int margx = 8;
     int lzb = _gboxButtons->width();
     _lbo = (lzb-margx*14)/13;
-
     _bZoom->move(margx,1);
     _bZoom->resize(_lbo,_hbo);
     _bZoom->setText("Z +");
-
     _bUnZoom->move(margx*2+_lbo,1);
     _bUnZoom->resize(_lbo,_hbo);
     _bUnZoom->setText("Z -");
-
     _bZoomH->move(margx*3+_lbo*2,1);
     _bZoomH->resize(_lbo,_hbo);
     _bZoomH->setText("ZH +");
-
     _bUnZoomH->move(margx*4+_lbo*3,1);
     _bUnZoomH->resize(_lbo,_hbo);
     _bUnZoomH->setText("ZH -");
-
-
     _bcGrid->move(margx*5+_lbo*4,1);
     _bcGrid->resize(_lbo,_hbo);
-
     BcMasterPoints->move(margx*6+_lbo*5,1);
     BcMasterPoints->resize(_lbo,_hbo);
-
     BcCalls->move(margx*7+_lbo*6,1);
     BcCalls->resize(_lbo,_hbo);
-
     BcSuppl->move(margx*8+_lbo*7,1);
     BcSuppl->resize(_lbo,_hbo);
-
     LabelEnergy->move(lzb - _lbo*4 - margx*4,1);
-
     LabelR->move(lzb - _lbo*3 - margx*3,1);
     LabelX->move(lzb - _lbo*2 - margx*2,1);
     LabelY->move(lzb - _lbo - margx,1);
-
     LabelEnergy->resize(_lbo,_hbo);
     LabelR->resize(_lbo,_hbo);
     LabelX->resize(_lbo,_hbo);
     LabelY->resize(_lbo,_hbo);
-
-
 }
 
-void Loupe::ShowGrid(bool afficher)
+void Loupe::ShowGrid(bool toShow)
 {
     if(_nliv>0) for(int i=0;i<_nliv;i++) delete _gliv[i];
     if(_nlih>0) for(int i=0;i<_nlih;i++) delete _glih[i];
     _nliv=0; _nlih=0;
-    if(!afficher) return;
-
+    if(!toShow) return;
     int xmax = Fenima->width();
     int ymax = Fenima->height();
     float tmax = PFenim->Getms(xmax-1);
@@ -170,7 +152,6 @@ void Loupe::ShowGrid(bool afficher)
         _gliv[_nliv++] = LoupeScene->addLine(x,0,x,ymax-1,qp);
         igt += incrt;
     }
-    //
     float fmax = PFenim->GetkHz(0);
     float igf=0;
     float incrf = 10;
@@ -190,19 +171,10 @@ void Loupe::resizeEvent(QResizeEvent *re)
     if(!_vaf) return;
     _llf=width();
     _lhf=height();
-
     LoupeView->setFixedSize(_llf,_lhf - _hbo);
     showButtons();
     LoupeView->centerOn(LastCenterX,LastCenterY);
 }
-
-/*
-void Loupe::rafraichit_image()
-{
-    pix->setPixmap(QPixmap::fromImage(*fenima));
-    // reafficherCris();
-}
-*/
 
 void Loupe::ShowCalls()
 {
@@ -228,97 +200,97 @@ void Loupe::ShowOtherPoints()
     for(int i=0;i<PFenim->CallsNumber;i++) ShowOneOtherPoint(i,affichersuppl);
 }
 
-void Loupe::ShowOneCall(int ncri,bool crisel,bool affichercri)
+void Loupe::ShowOneCall(int callNumber,bool selectedCall,bool showCall)
 {
     // if(pfm->m_mode==2) return;
-    if(!(ncri<2000)) return;
-    bool etiquette = !PFenim->EtiquetteArray[ncri]->DataFields[ESPECE].isEmpty();
-    QPen qp[NCRETES];
-    qp[0] = QPen(QColor((255-80*etiquette)*(!crisel)+20*crisel*etiquette,
-                        (255-100*etiquette)*(!crisel),
-                        255*(!crisel)+80*crisel*etiquette),
+    if(!(callNumber<2000)) return;
+    bool etiquette = !PFenim->EtiquetteArray[callNumber]->DataFields[ESPECE].isEmpty();
+    QPen qp[CRESTSNUMBER];
+    qp[0] = QPen(QColor((255-80*etiquette)*(!selectedCall)+20*selectedCall*etiquette,
+                        (255-100*etiquette)*(!selectedCall),
+                        255*(!selectedCall)+80*selectedCall*etiquette),
                        0);
-    if(!affichercri)
+    if(!showCall)
     {
-        if(_ilc[ncri])
+        if(_ilc[callNumber])
         {
             for(int jcrete=0;jcrete<1;jcrete++)
             {
-                delete _gplt[jcrete][ncri];
-                _ilc[ncri]=false;
+                delete _gplt[jcrete][callNumber];
+                _ilc[callNumber]=false;
             }
         }
     }
     else
     {
-        if(!_ilc[ncri])
+        if(!_ilc[callNumber])
         {
             for(int jcrete=0;jcrete<1;jcrete++)
             {
 
                 QPolygonF polygone;
-                for(int j=0;j<PFenim->CallsMatrix[jcrete][ncri].size();j++)
+                for(int j=0;j<PFenim->CallsMatrix[jcrete][callNumber].size();j++)
                 {
-                    float x=0.5f+(float)(PFenim->CallsMatrix[jcrete][ncri][j].x()/(1+PFenim->XHalf));
-                    float y=0.5f+(float)(PFenim->ImageHeight-PFenim->CallsMatrix[jcrete][ncri][j].y()-1);
+                    float x=0.5f+(float)(PFenim->CallsMatrix[jcrete][callNumber][j].x()/(1+PFenim->XHalf));
+                    float y=0.5f+(float)(PFenim->ImageHeight-PFenim->CallsMatrix[jcrete][callNumber][j].y()-1);
                     polygone << QPointF(x,y);
                 }
                 QPainterPath path = QPainterPath();
                 path.addPolygon(polygone);
-                _gplt[jcrete][ncri] = new QGraphicsPathItem(path);
-                _gplt[jcrete][ncri]->setPen(qp[jcrete]);
-                LoupeScene->addItem(_gplt[jcrete][ncri]);
+                _gplt[jcrete][callNumber] = new QGraphicsPathItem(path);
+                _gplt[jcrete][callNumber]->setPen(qp[jcrete]);
+                LoupeScene->addItem(_gplt[jcrete][callNumber]);
             }
-            _ilc[ncri]=true;
-            _coucri[ncri]=(int)etiquette*2+(int)crisel;
+            _ilc[callNumber]=true;
+            _callColour[callNumber]=(int)etiquette*2+(int)selectedCall;
         }
         else
         {
-            int counou=(int)etiquette*2+(int)crisel;
-            if(counou!=_coucri[ncri])
+            int newColour=(int)etiquette*2+(int)selectedCall;
+            if(newColour!=_callColour[callNumber])
             {
-                _gplt[0][ncri]->setPen(qp[0]);
-                _coucri[ncri]=counou;
+                _gplt[0][callNumber]->setPen(qp[0]);
+                _callColour[callNumber]=newColour;
             }
         }
     }
 }
 
-void Loupe::ShowOneOtherCrestl(int ncri,bool affichersuppl)
+void Loupe::ShowOneOtherCrestl(int callNumber,bool showSuppl)
 {
     QColor qc2,qc1;
     QPen qp2;
     QBrush qb2;
-    if(!(ncri<2000)) return;
-    QPen qp[NCRETES];
+    if(!(callNumber<2000)) return;
+    QPen qp[CRESTSNUMBER];
     qp[1] = QPen(QColor(192,192,64));
     qp[2] = QPen(QColor(220,220,80));
     qp[3] = QPen(QColor(60,90,255));
     qp[4] = QPen(QColor(150,90,30));
     //
-    if(!affichersuppl)
+    if(!showSuppl)
     {
-        if(_ilcs[ncri])
+        if(_ilcs[callNumber])
         {
-            for(int jcrete=1;jcrete<NCRETES;jcrete++)
+            for(int jcrete=1;jcrete<CRESTSNUMBER;jcrete++)
             {
-                delete _gplt[jcrete][ncri];
+                delete _gplt[jcrete][callNumber];
             }
-            _ilcs[ncri]=false;
+            _ilcs[callNumber]=false;
         }
     }
     else
     {
-        if(!_ilcs[ncri])
+        if(!_ilcs[callNumber])
         {
-            for(int jcrete=1;jcrete<NCRETES;jcrete++)
+            for(int jcrete=1;jcrete<CRESTSNUMBER;jcrete++)
             {
 
                 QPolygonF polygone;
-                for(int j=0;j<PFenim->CallsMatrix[jcrete][ncri].size();j++)
+                for(int j=0;j<PFenim->CallsMatrix[jcrete][callNumber].size();j++)
                 {
-                    float x=(float)(PFenim->CallsMatrix[jcrete][ncri][j].x()/(1+PFenim->XHalf));
-                    float y=(float)(PFenim->ImageHeight-PFenim->CallsMatrix[jcrete][ncri][j].y()-1);
+                    float x=(float)(PFenim->CallsMatrix[jcrete][callNumber][j].x()/(1+PFenim->XHalf));
+                    float y=(float)(PFenim->ImageHeight-PFenim->CallsMatrix[jcrete][callNumber][j].y()-1);
                     if(jcrete!=3) x+=0.5f; else x+=0.05f;
                     if(jcrete==1) y+=1.0f;
                     if(jcrete ==0 || jcrete>2) y+=0.5f;
@@ -326,12 +298,12 @@ void Loupe::ShowOneOtherCrestl(int ncri,bool affichersuppl)
                 }
                 QPainterPath path = QPainterPath();
                 path.addPolygon(polygone);
-                _gplt[jcrete][ncri] = new QGraphicsPathItem(path);
-                _gplt[jcrete][ncri]->setPen(qp[jcrete]);
-                LoupeScene->addItem(_gplt[jcrete][ncri]);
+                _gplt[jcrete][callNumber] = new QGraphicsPathItem(path);
+                _gplt[jcrete][callNumber]->setPen(qp[jcrete]);
+                LoupeScene->addItem(_gplt[jcrete][callNumber]);
                 //
             } // next jcrete
-            _ilcs[ncri]=true;
+            _ilcs[callNumber]=true;
         } // fin du ilcs[ncri]==false
     } // fin du else affichersuppl
 }
@@ -342,7 +314,7 @@ void Loupe::ShowOneOtherPoint(int ncri,bool affichersuppl)
     QPen qp2;
     QBrush qb2;
     if(!(ncri<2000)) return;
-    QPen qp[NCRETES];
+    QPen qp[CRESTSNUMBER];
     qp[1] = QPen(QColor(192,192,64));
     qp[2] = QPen(QColor(220,220,80));
     qp[3] = QPen(QColor(60,90,255));
@@ -351,7 +323,7 @@ void Loupe::ShowOneOtherPoint(int ncri,bool affichersuppl)
     //
     if(_ilps[ncri])
     {
-        for(int jcrete=0;jcrete<NCRETES;jcrete++)
+        for(int jcrete=0;jcrete<CRESTSNUMBER;jcrete++)
         {
             for(int k=0;k<NSUPPL;k++) delete _gepsu[jcrete][k][ncri];
             _ilps[ncri]=false;
@@ -362,7 +334,7 @@ void Loupe::ShowOneOtherPoint(int ncri,bool affichersuppl)
         if(!_ilps[ncri])
         {
 
-            for(int jcrete=0;jcrete<NCRETES;jcrete++)
+            for(int jcrete=0;jcrete<CRESTSNUMBER;jcrete++)
             {
                 for(int kos=NSUPPL-1;kos>=0;kos--)
                 {
@@ -393,16 +365,16 @@ void Loupe::ShowOneOtherPoint(int ncri,bool affichersuppl)
 }
 
 
-void Loupe::ShowOneMasterPoint(int ncri,bool crisel,bool afficherpm)
+void Loupe::ShowOneMasterPoint(int callNumber,bool selectedCall,bool showMasterPoints)
 {
-    if(!(ncri<2000)) return;
-    float x = 0.5f+(PFenim->MasterPointsVector[ncri].x()/(1+PFenim->XHalf));
-    float y = 0.5f+(PFenim->ImageHeight - PFenim->MasterPointsVector[ncri].y()-1.0f);
-    bool etiquette = !PFenim->EtiquetteArray[ncri]->DataFields[ESPECE].isEmpty();
-    int nspec= PFenim->EtiquetteArray[ncri]->SpecNumber+1;
+    if(!(callNumber<2000)) return;
+    float x = 0.5f+(PFenim->MasterPointsVector[callNumber].x()/(1+PFenim->XHalf));
+    float y = 0.5f+(PFenim->ImageHeight - PFenim->MasterPointsVector[callNumber].y()-1.0f);
+    bool etiquette = !PFenim->EtiquetteArray[callNumber]->DataFields[ESPECE].isEmpty();
+    int nspec= PFenim->EtiquetteArray[callNumber]->SpecNumber+1;
     int rouge,vert,bleu;
     bleu=0;
-    if(crisel)
+    if(selectedCall)
     {
         rouge=0;vert=0;
         if(etiquette && nspec>0 && nspec<8) {vert=8*nspec;rouge=4*nspec;}
@@ -415,30 +387,30 @@ void Loupe::ShowOneMasterPoint(int ncri,bool crisel,bool afficherpm)
     QPen qpm = QPen(QColor(rouge,vert,bleu),0);
     QBrush qb = QBrush(QColor(rouge,vert,bleu),Qt::SolidPattern);
     //
-    if(ncri<2000)
+    if(callNumber<2000)
     {
-        if(_ipmc[ncri]==true)
+        if(_ipmc[callNumber]==true)
         {
-            delete _gepm[ncri];
-            _ipmc[ncri]=false;
+            delete _gepm[callNumber];
+            _ipmc[callNumber]=false;
         }
-        if(afficherpm)
+        if(showMasterPoints)
         {
-            if(_ipmc[ncri]==false)
+            if(_ipmc[callNumber]==false)
             {
                 float w=(10.0f+_liaj)/_lWl;
                 float h=(10.0f+_liaj)/_lWh;
-                _gepm[ncri]=LoupeScene->addEllipse(x-w/2,y-h/2,w,h,qpm,qb);
-                _ipmc[ncri]=true;
+                _gepm[callNumber]=LoupeScene->addEllipse(x-w/2,y-h/2,w,h,qpm,qb);
+                _ipmc[callNumber]=true;
             }
-            else _gepm[ncri]->setPen(qpm);
+            else _gepm[callNumber]->setPen(qpm);
         }
     }
 }
 
-void Loupe::ShowBubble(QString sbulle)
+void Loupe::ShowBubble(QString bubbleString)
 {
-        QToolTip::showText(QCursor::pos(),sbulle);
+        QToolTip::showText(QCursor::pos(),bubbleString);
 }
 
 void Loupe::Zoom()

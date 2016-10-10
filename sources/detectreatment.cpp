@@ -3,28 +3,28 @@
 class Detec;
 
 
-ParamToSave::ParamToSave(int numTableau,int numPar,QString columnTitle)
+ParamToSave::ParamToSave(int arrayNumber,int paramaterNumber,QString columnTitle)
 {
-    ArrayNumber=numTableau;
-    ParameterNumber=numPar;
+    ArrayNumber=arrayNumber;
+    ParameterNumber=paramaterNumber;
     ColumnTitle=columnTitle;
     FromVersion = 0;
 	ToVersion = -1;
 }
 
-ParamToSave::ParamToSave(int numTableau,int numPar,QString columnTitle,int needVer)
+ParamToSave::ParamToSave(int arrayNumber,int parameterNumber,QString columnTitle,int needVer)
 {
-    ArrayNumber=numTableau;
-    ParameterNumber=numPar;
+    ArrayNumber=arrayNumber;
+    ParameterNumber=parameterNumber;
     ColumnTitle=columnTitle;
     FromVersion = needVer;
 	ToVersion = -1;
 }
 
-ParamToSave::ParamToSave(int numTableau,int numPar,QString columnTitle,int needVer,int limVer)
+ParamToSave::ParamToSave(int arrayNumber,int parameterNumber,QString columnTitle,int needVer,int limVer)
 {
-    ArrayNumber=numTableau;
-    ParameterNumber=numPar;
+    ArrayNumber=arrayNumber;
+    ParameterNumber=parameterNumber;
     ColumnTitle=columnTitle;
     FromVersion = needVer;
 	ToVersion = limVer;
@@ -45,14 +45,15 @@ DetecTreatment::DetecTreatment(Detec *pDet)
     _complexInput = _detec->PMainWindow->ComplexInput[_detec->IThread];
     _fftRes = _detec->PMainWindow->FftRes[_detec->IThread];
     _resultSuffix = QString("ta");
-    _resultCompressedSuffix = QString("tac");
-    _paramVersion = 2;
+    if(LINWIN==1) _resultCompressedSuffix = QString("tac");
+    else _resultCompressedSuffix = QString("ta.gz");
+    _paramVersion = 1;
     initVectorParams();
 }
 
 DetecTreatment::DetecTreatment()
 {
-    _paramVersion = 2; // TODO : ï¿½ revoir
+    _paramVersion = 1;
     initVectorParams();
 }
 
@@ -182,7 +183,7 @@ void DetecTreatment::SetDirParameters(QString wavPath,QString txtPath,bool image
     _datPath = datPath;
 }
 
-void DetecTreatment::SetGlobalParameters(int modeFreq,int timeExpansionLeft,int timeExpansionRight,int seuilDetect,int seuilStop,
+void DetecTreatment::SetGlobalParameters(int modeFreq,int timeExpansionLeft,int timeExpansionRight,int detectionThreshold,int stopThreshold,
                                  int freqMin,int nbo,bool useValflag,
                                 int jumpThreshold,int widthBigControl,int widthLittleControl,
                                 int highThresholdJB,int lowThresholdJB,int lowThresholdC,int highThresholdC,int qR,int qN,int parVer,bool desactiveCorrectNoise)
@@ -191,8 +192,8 @@ void DetecTreatment::SetGlobalParameters(int modeFreq,int timeExpansionLeft,int 
     _modeFreq = modeFreq;
     _timeExpansionLeft = timeExpansionLeft;
     _timeExpansionRight = timeExpansionRight;
-    _detectionThreshold = seuilDetect;
-    _stopThreshold = seuilStop;
+    _detectionThreshold = detectionThreshold;
+    _stopThreshold = stopThreshold;
     _freqMin = freqMin;
     _nbo = nbo;
     _useValflag = useValflag;
@@ -219,17 +220,17 @@ void DetecTreatment::initVectorParams()
     VectPar.push_back(ParamToSave(SH,StTime,"StTime"));
     VectPar.push_back(ParamToSave(SH,Dur,"Dur"));
     VectPar.push_back(ParamToSave(SH,PrevSt,"PrevSt"));
-    VectPar.push_back(ParamToSave(SH,Fmax,"Fmax",0,1));  // suppr
+    VectPar.push_back(ParamToSave(SH,Fmax,"Fmax",0,1));
     VectPar.push_back(ParamToSave(SH,Fmin,"Fmin"));
     VectPar.push_back(ParamToSave(SH,BW,"BW"));
-    VectPar.push_back(ParamToSave(SH,FreqMP,"FreqMP",0,1));  // suppr
+    VectPar.push_back(ParamToSave(SH,FreqMP,"FreqMP",0,1));
     VectPar.push_back(ParamToSave(SH,PosMP,"PosMP"));
-    VectPar.push_back(ParamToSave(SH,FreqPkS,"FreqPkS",0,1)); // suppr
-    VectPar.push_back(ParamToSave(SH,FreqPkM,"FreqPkM",0,1)); // suppr
-    VectPar.push_back(ParamToSave(SH,PosPkS,"PosPkS",0,1)); // suppr
-    VectPar.push_back(ParamToSave(SH,PosPkM,"PosPkM",0,1)); // suppr
-    VectPar.push_back(ParamToSave(SH,FreqPkS2,"FreqPkS2",0,1));  // suppr
-    VectPar.push_back(ParamToSave(SH,FreqPkM2,"FreqPkM2",0,1));  // suppr
+    VectPar.push_back(ParamToSave(SH,FreqPkS,"FreqPkS",0,1));
+    VectPar.push_back(ParamToSave(SH,FreqPkM,"FreqPkM",0,1));
+    VectPar.push_back(ParamToSave(SH,PosPkS,"PosPkS",0,1));
+    VectPar.push_back(ParamToSave(SH,PosPkM,"PosPkM",0,1));
+    VectPar.push_back(ParamToSave(SH,FreqPkS2,"FreqPkS2",0,1));
+    VectPar.push_back(ParamToSave(SH,FreqPkM2,"FreqPkM2",0,1));
     VectPar.push_back(ParamToSave(SH,PrevMP1,"PrevMP1"));
     VectPar.push_back(ParamToSave(SH,PrevMP2,"PrevMP2"));
     VectPar.push_back(ParamToSave(SH,NextMP1,"NextMP1"));
@@ -243,74 +244,74 @@ void DetecTreatment::initVectorParams()
     VectPar.push_back(ParamToSave(SH,NoiseDown,"NoiseDown"));
     VectPar.push_back(ParamToSave(SH,NoiseUp,"NoiseUp"));
     VectPar.push_back(ParamToSave(SH,CVAmp,"CVAmp"));
-    VectPar.push_back(ParamToSave(CO,Dur,"CO_Dur",0,1));  // suppr
-    VectPar.push_back(ParamToSave(CO2,Dur,"CO2_Dur",0,1));  // suppr
-    VectPar.push_back(ParamToSave(CM,Fmax,"CM_Fmax",0,1));  // suppr
-    VectPar.push_back(ParamToSave(CS,Fmax,"CS_Fmax",0,1));  // suppr
+    VectPar.push_back(ParamToSave(CO,Dur,"CO_Dur",0,1));
+    VectPar.push_back(ParamToSave(CO2,Dur,"CO2_Dur",0,1));
+    VectPar.push_back(ParamToSave(CM,Fmax,"CM_Fmax",0,1));
+    VectPar.push_back(ParamToSave(CS,Fmax,"CS_Fmax",0,1));
     //_vectPar.push_back(ParamToSave(CN,Fmax,"CN_Fmax"));
-    VectPar.push_back(ParamToSave(CM,Fmin,"CM_Fmin",0,1));  // suppr
-    VectPar.push_back(ParamToSave(CN,Fmin,"CN_Fmin",0,1));  // suppr
-    VectPar.push_back(ParamToSave(CM,BW,"CM_BW",0,1));   // suppr
-    VectPar.push_back(ParamToSave(CS,BW,"CS_BW",0,1));   // suppr
-    VectPar.push_back(ParamToSave(CN,BW,"CN_BW",0,1));   // suppr
-    VectPar.push_back(ParamToSave(CO2,FPk,"CO2_FPk",0,1)); // suppr
+    VectPar.push_back(ParamToSave(CM,Fmin,"CM_Fmin",0,1));
+    VectPar.push_back(ParamToSave(CN,Fmin,"CN_Fmin",0,1));
+    VectPar.push_back(ParamToSave(CM,BW,"CM_BW",0,1));
+    VectPar.push_back(ParamToSave(CS,BW,"CS_BW",0,1));
+    VectPar.push_back(ParamToSave(CN,BW,"CN_BW",0,1));
+    VectPar.push_back(ParamToSave(CO2,FPk,"CO2_FPk",0,1));
     VectPar.push_back(ParamToSave(CO2,FPkD,"CO2_FPkD"));
     //_vectPar.push_back(ParamToSave(CM,TPk,"CM_Ldom"));
     VectPar.push_back(ParamToSave(CO2,TPk,"CO2_TPk"));
     for(int i=CM;i<=CO2;i++) VectPar.push_back(ParamToSave(i,Slope,prefix[i]+"Slope"));
     for(int i=CO;i<=CO2;i++)
-        if(i==CO) VectPar.push_back(ParamToSave(i,ISlope,prefix[i]+"ISlope",1,1)); // suppr
+        if(i==CO) VectPar.push_back(ParamToSave(i,ISlope,prefix[i]+"ISlope",1,1));
        else VectPar.push_back(ParamToSave(i,ISlope,prefix[i]+"ISlope",1));
 
-    for(int i=CM;i<=CO2;i++) VectPar.push_back(ParamToSave(i,HCF,prefix[i]+"HCF",0,1)); // suppr (5)
+    for(int i=CM;i<=CO2;i++) VectPar.push_back(ParamToSave(i,HCF,prefix[i]+"HCF",0,1));
     for(int i=CM;i<=CO2;i++) VectPar.push_back(ParamToSave(i,THCF,prefix[i]+"THCF"));
     for(int i=CM;i<=CO2;i++)
-        if(i>=CO) VectPar.push_back(ParamToSave(i,FIF,prefix[i]+"FIF",0,1)); // suppr (2)
+        if(i>=CO) VectPar.push_back(ParamToSave(i,FIF,prefix[i]+"FIF",0,1));
         else VectPar.push_back(ParamToSave(i,FIF,prefix[i]+"FIF"));
 
-    for(int i=CM;i<=CO2;i++) VectPar.push_back(ParamToSave(i,LCF,prefix[i]+"LCF",0,1)); // suppr (5)
+    for(int i=CM;i<=CO2;i++) VectPar.push_back(ParamToSave(i,LCF,prefix[i]+"LCF",0,1));
     for(int i=CM;i<=CO2;i++) VectPar.push_back(ParamToSave(i,UpSl,prefix[i]+"UpSl"));
     for(int i=CM;i<=CO2;i++) VectPar.push_back(ParamToSave(i,LoSl,prefix[i]+"LoSl"));
-    VectPar.push_back(ParamToSave(CM,StF,"CM_StF",0,1)); // suppr
-    VectPar.push_back(ParamToSave(CM,EnF,"CM_EnF",0,1)); // suppr
+    VectPar.push_back(ParamToSave(CM,StF,"CM_StF",0,1));
+    VectPar.push_back(ParamToSave(CM,EnF,"CM_EnF",0,1));
     for(int i=CM;i<=CO2;i++) VectPar.push_back(ParamToSave(i,StSl,prefix[i]+"StSl"));
     for(int i=CM;i<=CO2;i++) VectPar.push_back(ParamToSave(i,EnSl,prefix[i]+"EnSl"));
 
     for(int i=CM;i<=CO2;i++)
-        if(i==CM || i==CO2) VectPar.push_back(ParamToSave(i,FISl,prefix[i]+"FPSl",0,1)); // suppr (2)
+        if(i==CM || i==CO2) VectPar.push_back(ParamToSave(i,FISl,prefix[i]+"FPSl",0,1));
         else VectPar.push_back(ParamToSave(i,FISl,prefix[i]+"FPSl"));
 
     VectPar.push_back(ParamToSave(CM,FISl,"CM_FISl"));
     VectPar.push_back(ParamToSave(CO2,FISl,"CO2_FISl"));
-    for(int i=CM;i<=CN;i++) VectPar.push_back(ParamToSave(i,CeF,prefix[i]+"CeF",0,1)); // suppr (3)
-    VectPar.push_back(ParamToSave(CM,B5dBBF,"CM_5dBBF",0,1)); // suppr
-    VectPar.push_back(ParamToSave(CM,B5dBAF,"CM_5dBAF",0,1)); // suppr
+    for(int i=CM;i<=CN;i++) VectPar.push_back(ParamToSave(i,CeF,prefix[i]+"CeF",0,1));
+    VectPar.push_back(ParamToSave(CM,B5dBBF,"CM_5dBBF",0,1));
+    VectPar.push_back(ParamToSave(CM,B5dBAF,"CM_5dBAF",0,1));
     VectPar.push_back(ParamToSave(CM,B5dBBW,"CM_5dBBW"));
     VectPar.push_back(ParamToSave(CM,B5dBDur,"CM_5dBDur"));
 
-    VectPar.push_back(ParamToSave(CO2,B5dBBF,"CO2_5dBBF",0,1)); // suppr
-    VectPar.push_back(ParamToSave(CO2,B5dBAF,"CO2_5dBAF",0,1)); // suppr
+    VectPar.push_back(ParamToSave(CO2,B5dBBF,"CO2_5dBBF",0,1));
+    VectPar.push_back(ParamToSave(CO2,B5dBAF,"CO2_5dBAF",0,1));
     VectPar.push_back(ParamToSave(CO2,B5dBBW,"CO2_5dBBW"));
     VectPar.push_back(ParamToSave(CO2,B5dBDur,"CO2_5dBDur"));
 
     VectPar.push_back(ParamToSave(SH,Hup_RFMP,"Hup_RFMP"));
-    VectPar.push_back(ParamToSave(SH,Hup_PosMP,"Hup_PosMP",0,1)); // suppr
-    VectPar.push_back(ParamToSave(SH,Hup_PosSt,"Hup_PosSt",0,1));  // suppr
-    VectPar.push_back(ParamToSave(SH,Hup_PosEn,"Hup_PosEn",0,1));  // suppr
+    VectPar.push_back(ParamToSave(SH,Hup_PosMP,"Hup_PosMP",0,1));
+    VectPar.push_back(ParamToSave(SH,Hup_PosSt,"Hup_PosSt",0,1));
+    VectPar.push_back(ParamToSave(SH,Hup_PosEn,"Hup_PosEn",0,1));
     VectPar.push_back(ParamToSave(SH,Hup_AmpDif,"Hup_AmpDif"));
-    VectPar.push_back(ParamToSave(SH,Hup_RSlope,"Hup_RSlope",0,1)); // suppr
-    VectPar.push_back(ParamToSave(SH,Hlo_RFMP,"Hlo_RFMP",0,1)); // suppr
-    VectPar.push_back(ParamToSave(SH,Hlo_PosMP,"Hlo_PosMP",0,1));  // suppr
-    VectPar.push_back(ParamToSave(SH,Hlo_PosSt,"Hlo_PosSt",0,1));  // suppr
+    VectPar.push_back(ParamToSave(SH,Hup_RSlope,"Hup_RSlope",0,1));
+    VectPar.push_back(ParamToSave(SH,Hlo_RFMP,"Hlo_RFMP",0,1));
+    VectPar.push_back(ParamToSave(SH,Hlo_PosMP,"Hlo_PosMP",0,1));
+    VectPar.push_back(ParamToSave(SH,Hlo_PosSt,"Hlo_PosSt",0,1));
     VectPar.push_back(ParamToSave(SH,Hlo_PosEn,"Hlo_PosEn"));
     VectPar.push_back(ParamToSave(SH,Hlo_AmpDif,"Hlo_AmpDif"));
-    VectPar.push_back(ParamToSave(SH,Hlo_RSlope,"Hlo_RSlope",0,1)); // suppr
+    VectPar.push_back(ParamToSave(SH,Hlo_RSlope,"Hlo_RSlope",0,1));
 
     VectPar.push_back(ParamToSave(SH,Ramp_2_1,"Ramp_2_1"));
     VectPar.push_back(ParamToSave(SH,Ramp_3_1,"Ramp_3_1"));
     VectPar.push_back(ParamToSave(SH,Ramp_3_2,"Ramp_3_2"));
     VectPar.push_back(ParamToSave(SH,Ramp_1_2,"Ramp_1_2"));
-    VectPar.push_back(ParamToSave(SH,Ramp_4_3,"Ramp_4_3",0,1)); // suppr
+    VectPar.push_back(ParamToSave(SH,Ramp_4_3,"Ramp_4_3",0,1));
     VectPar.push_back(ParamToSave(SH,Ramp_2_3,"Ramp_2_3"));
     VectPar.push_back(ParamToSave(SH,RAN_2_1,"RAN_2_1"));
     VectPar.push_back(ParamToSave(SH,RAN_3_1,"RAN_3_1"));
@@ -320,7 +321,7 @@ void DetecTreatment::initVectorParams()
     VectPar.push_back(ParamToSave(SH,RAN_2_3,"RAN_2_3"));
 
     VectPar.push_back(ParamToSave(SH,HetX,"HetX"));
-    VectPar.push_back(ParamToSave(SH,HetY,"HetY",0,1)); // suppr
+    VectPar.push_back(ParamToSave(SH,HetY,"HetY",0,1));
     VectPar.push_back(ParamToSave(SH,Dbl8,"Dbl8"));
     VectPar.push_back(ParamToSave(SH,Stab,"Stab"));
 
@@ -328,15 +329,15 @@ void DetecTreatment::initVectorParams()
     VectPar.push_back(ParamToSave(SH,HeiEM,"HeiEM"));
     VectPar.push_back(ParamToSave(SH,HeiRT,"HeiRT"));
     VectPar.push_back(ParamToSave(SH,HeiRM,"HeiRM"));
-    VectPar.push_back(ParamToSave(SH,HeiETT,"HeiETT",0,1)); // suppr
+    VectPar.push_back(ParamToSave(SH,HeiETT,"HeiETT",0,1));
     VectPar.push_back(ParamToSave(SH,HeiEMT,"HeiEMT"));
     VectPar.push_back(ParamToSave(SH,HeiRTT,"HeiRTT"));
     VectPar.push_back(ParamToSave(SH,HeiRMT,"HeiRMT"));
-    VectPar.push_back(ParamToSave(SH,MedInt,"MedInt",0,1)); // suppr
+    VectPar.push_back(ParamToSave(SH,MedInt,"MedInt",0,1));
     VectPar.push_back(ParamToSave(SH,Int25,"Int25"));
     VectPar.push_back(ParamToSave(SH,Int75,"Int75"));
     VectPar.push_back(ParamToSave(SH,RInt1,"RInt1"));
-    VectPar.push_back(ParamToSave(SH,IntDev,"IntDev",0,1)); // suppr
+    VectPar.push_back(ParamToSave(SH,IntDev,"IntDev",0,1));
     VectPar.push_back(ParamToSave(SH,SmIntDev,"SmIntDev"));
     VectPar.push_back(ParamToSave(SH,LgIntDev,"LgIntDev"));
     VectPar.push_back(ParamToSave(SH,VarInt,"VarInt"));
@@ -345,99 +346,99 @@ void DetecTreatment::initVectorParams()
     VectPar.push_back(ParamToSave(SH,RIntDev1,"RIntDev1"));
     VectPar.push_back(ParamToSave(SH,EnStabSm,"EnStabSm"));
     VectPar.push_back(ParamToSave(SH,EnStabLg,"EnStabLg"));
-    VectPar.push_back(ParamToSave(SH,HetXr,"HetXr",0,1)); // suppr
+    VectPar.push_back(ParamToSave(SH,HetXr,"HetXr",0,1));
     VectPar.push_back(ParamToSave(SH,HetYr,"HetYr"));
-    VectPar.push_back(ParamToSave(SH,HetYr2,"HetYr2",0,1)); // suppr
+    VectPar.push_back(ParamToSave(SH,HetYr2,"HetYr2",0,1));
     VectPar.push_back(ParamToSave(SH,HetCMC,"HetCMC"));
     VectPar.push_back(ParamToSave(SH,HetCMD,"HetCMD"));
     VectPar.push_back(ParamToSave(SH,HetCTC,"HetCTC"));
     VectPar.push_back(ParamToSave(SH,HetCTD,"HetCTD"));
-    VectPar.push_back(ParamToSave(SH,HetCMnP,"HetCMnP",0,1)); // suppr
+    VectPar.push_back(ParamToSave(SH,HetCMnP,"HetCMnP",0,1));
     VectPar.push_back(ParamToSave(SH,HetCMfP,"HetCMfP"));
-    VectPar.push_back(ParamToSave(SH,HetCTnP,"HetCTnP",0,1)); // suppr
+    VectPar.push_back(ParamToSave(SH,HetCTnP,"HetCTnP",0,1));
     VectPar.push_back(ParamToSave(SH,HetCTfP,"HetCTfP"));
 
-    VectPar.push_back(ParamToSave(SH,HetPicsMAD,"HetPicsMAD",0,1)); // suppr
+    VectPar.push_back(ParamToSave(SH,HetPicsMAD,"HetPicsMAD",0,1));
     VectPar.push_back(ParamToSave(SH,HetPicsMALD,"HetPicsMALD"));
     VectPar.push_back(ParamToSave(SH,HetPicsMABD,"HetPicsMABD"));
     VectPar.push_back(ParamToSave(SH,HetPicsMRBLD,"HetPicsMRLBD"));
-    VectPar.push_back(ParamToSave(SH,HetPicsTAD,"HetPicsTAD",0,1)); // suppr
-    VectPar.push_back(ParamToSave(SH,HetPicsTALD,"HetPicsTALD",0,1)); // suppr
+    VectPar.push_back(ParamToSave(SH,HetPicsTAD,"HetPicsTAD",0,1));
+    VectPar.push_back(ParamToSave(SH,HetPicsTALD,"HetPicsTALD",0,1));
     VectPar.push_back(ParamToSave(SH,HetPicsTABD,"HetPicsTABD"));
     VectPar.push_back(ParamToSave(SH,HetPicsTRBLD,"HetPicsTRLBD"));
-    VectPar.push_back(ParamToSave(SH,VDPicsM,"VDPicsM",0,1)); // suppr
-    VectPar.push_back(ParamToSave(SH,VLDPicsM,"VLDPicsM",0,1)); // suppr
-    VectPar.push_back(ParamToSave(SH,VBDPicsM,"VBDPicsM",0,1));  // suppr
-    VectPar.push_back(ParamToSave(SH,VDPPicsM,"VDPPicsM",0,1)); // suppr
+    VectPar.push_back(ParamToSave(SH,VDPicsM,"VDPicsM",0,1));
+    VectPar.push_back(ParamToSave(SH,VLDPicsM,"VLDPicsM",0,1));
+    VectPar.push_back(ParamToSave(SH,VBDPicsM,"VBDPicsM",0,1));
+    VectPar.push_back(ParamToSave(SH,VDPPicsM,"VDPPicsM",0,1));
     VectPar.push_back(ParamToSave(SH,VLDPPicsM,"VLDPPicsM"));
     VectPar.push_back(ParamToSave(SH,VBDPPicsM,"VBDPPicsM"));
-    VectPar.push_back(ParamToSave(SH,VDPicsT,"VDPicsT",0,1));  // suppr
-    VectPar.push_back(ParamToSave(SH,VLDPicsT,"VLDPicsT",0,1)); // suppr
-    VectPar.push_back(ParamToSave(SH,VBDPicsT,"VBDPicsT",0,1)); // suppr
-    VectPar.push_back(ParamToSave(SH,VDPPicsT,"VDPPicsT",0,1)); // suppr
+    VectPar.push_back(ParamToSave(SH,VDPicsT,"VDPicsT",0,1));
+    VectPar.push_back(ParamToSave(SH,VLDPicsT,"VLDPicsT",0,1));
+    VectPar.push_back(ParamToSave(SH,VBDPicsT,"VBDPicsT",0,1));
+    VectPar.push_back(ParamToSave(SH,VDPPicsT,"VDPPicsT",0,1));
     VectPar.push_back(ParamToSave(SH,VLDPPicsT,"VLDPPicsT"));
     VectPar.push_back(ParamToSave(SH,VBDPPicsT,"VBDPPicsT"));
     {
         // bloc des nouveaux paramï¿½tres
         for(int i=CM;i<=CO2;i++)
         {
-            VectPar.push_back(ParamToSave(i,SDC,prefix[i]+"SDC",1,1)); // suppr (5)
+            VectPar.push_back(ParamToSave(i,SDC,prefix[i]+"SDC",1,1));
             VectPar.push_back(ParamToSave(i,SDCR,prefix[i]+"SDCR",1));
         }
-        VectPar.push_back(ParamToSave(CM,SDCRY,"CM_SDCRY",1,1)); // suppr
-        VectPar.push_back(ParamToSave(CS,SDCRY,"CS_SDCRY",1,1)); // suppr
+        VectPar.push_back(ParamToSave(CM,SDCRY,"CM_SDCRY",1,1));
+        VectPar.push_back(ParamToSave(CS,SDCRY,"CS_SDCRY",1,1));
         VectPar.push_back(ParamToSave(CM,SDCRXY,"CM_SDCRXY",1));
         VectPar.push_back(ParamToSave(CS,SDCRXY,"CS_SDCRXY",1));
         //
 
         for(int i=CM;i<=CS;i++)
         {
-            if(i==CS) VectPar.push_back(ParamToSave(i,SDCL,prefix[i]+"SDCL",1,1)); // suppr
+            if(i==CS) VectPar.push_back(ParamToSave(i,SDCL,prefix[i]+"SDCL",1,1));
             else VectPar.push_back(ParamToSave(i,SDCL,prefix[i]+"SDCL",1));
-            VectPar.push_back(ParamToSave(i,SDCLR,prefix[i]+"SDCLR",1,1)); // suppr (2)
-            VectPar.push_back(ParamToSave(i,SDCLRY,prefix[i]+"SDCLRY",1,1)); // suppr (2)
+            VectPar.push_back(ParamToSave(i,SDCLR,prefix[i]+"SDCLR",1,1));
+            VectPar.push_back(ParamToSave(i,SDCLRY,prefix[i]+"SDCLRY",1,1));
 
-            VectPar.push_back(ParamToSave(i,SDCLRXY,prefix[i]+"SDCLRXY",1,1));  // suppr (2)
+            VectPar.push_back(ParamToSave(i,SDCLRXY,prefix[i]+"SDCLRXY",1,1));
 
-            VectPar.push_back(ParamToSave(i,SDCLRXY2,prefix[i]+"SDCLRXY2",1,1)); // suppr (2)
+            VectPar.push_back(ParamToSave(i,SDCLRXY2,prefix[i]+"SDCLRXY2",1,1));
             //
             VectPar.push_back(ParamToSave(i,SDCLOP,prefix[i]+"SDCLOP",1));
             VectPar.push_back(ParamToSave(i,SDCLROP,prefix[i]+"SDCLROP",1));
 
-            if(i==CM) VectPar.push_back(ParamToSave(i,SDCLRYOP,prefix[i]+"SDCLRYOP",1,1)); // suppr
+            if(i==CM) VectPar.push_back(ParamToSave(i,SDCLRYOP,prefix[i]+"SDCLRYOP",1,1));
             else VectPar.push_back(ParamToSave(i,SDCLRYOP,prefix[i]+"SDCLRYOP",1));
 
-            VectPar.push_back(ParamToSave(i,SDCLRXYOP,prefix[i]+"SDCLRXYOP",1,1)); // suppr (2)
+            VectPar.push_back(ParamToSave(i,SDCLRXYOP,prefix[i]+"SDCLRXYOP",1,1));
             //
-            if(i==CM) VectPar.push_back(ParamToSave(i,SDCLWB,prefix[i]+"SDCLWB",1,1));//suppr
+            if(i==CM) VectPar.push_back(ParamToSave(i,SDCLWB,prefix[i]+"SDCLWB",1,1));
             else VectPar.push_back(ParamToSave(i,SDCLWB,prefix[i]+"SDCLWB",1));
 
-            if(i==CS) VectPar.push_back(ParamToSave(i,SDCLRWB,prefix[i]+"SDCLRWB",1,1));//suppr
+            if(i==CS) VectPar.push_back(ParamToSave(i,SDCLRWB,prefix[i]+"SDCLRWB",1,1));
             else VectPar.push_back(ParamToSave(i,SDCLRWB,prefix[i]+"SDCLRWB",1));
 
-            VectPar.push_back(ParamToSave(i,SDCLRYWB,prefix[i]+"SDCLRYWB",1,1)); // suppr (2)
+            VectPar.push_back(ParamToSave(i,SDCLRYWB,prefix[i]+"SDCLRYWB",1,1));
 
-            VectPar.push_back(ParamToSave(i,SDCLRXYWB,prefix[i]+"SDCLRXYWB",1,1)); // suppr (2)
+            VectPar.push_back(ParamToSave(i,SDCLRXYWB,prefix[i]+"SDCLRXYWB",1,1));
             //
-            VectPar.push_back(ParamToSave(i,SDCLOPWB,prefix[i]+"SDCLOPWB",1,1)); // suppr (2)
+            VectPar.push_back(ParamToSave(i,SDCLOPWB,prefix[i]+"SDCLOPWB",1,1));
 
-            VectPar.push_back(ParamToSave(i,SDCLROPWB,prefix[i]+"SDCLROPWB",1,1)); // suppr (2)
+            VectPar.push_back(ParamToSave(i,SDCLROPWB,prefix[i]+"SDCLROPWB",1,1));
 
-            VectPar.push_back(ParamToSave(i,SDCLRYOPWB,prefix[i]+"SDCLRYOPWB",1,1)); // suppr (2)
+            VectPar.push_back(ParamToSave(i,SDCLRYOPWB,prefix[i]+"SDCLRYOPWB",1,1));
 
-            if(i==CS) VectPar.push_back(ParamToSave(i,SDCLRXYOPWB,prefix[i]+"SDCLRXYOPWB",1,1)); // suppr
+            if(i==CS) VectPar.push_back(ParamToSave(i,SDCLRXYOPWB,prefix[i]+"SDCLRXYOPWB",1,1));
             else VectPar.push_back(ParamToSave(i,SDCLRXYOPWB,prefix[i]+"SDCLRXYOPWB",1));
             //
-            VectPar.push_back(ParamToSave(i,SDCL_DNP,prefix[i]+"SDCL_DNP",1,1)); // suppr (2)
+            VectPar.push_back(ParamToSave(i,SDCL_DNP,prefix[i]+"SDCL_DNP",1,1));
 
             VectPar.push_back(ParamToSave(i,SDCLR_DNP,prefix[i]+"SDCLR_DNP",1));
 
-            if(i==CM) VectPar.push_back(ParamToSave(i,SDCLRY_DNP,prefix[i]+"SDCLRY_DNP",1,1)); // suppr
+            if(i==CM) VectPar.push_back(ParamToSave(i,SDCLRY_DNP,prefix[i]+"SDCLRY_DNP",1,1));
             else VectPar.push_back(ParamToSave(i,SDCLRY_DNP,prefix[i]+"SDCLRY_DNP",1));
 
-            VectPar.push_back(ParamToSave(i,SDCLRXY_DNP,prefix[i]+"SDCLRXY_DNP",1,1)); // suppr (2)
+            VectPar.push_back(ParamToSave(i,SDCLRXY_DNP,prefix[i]+"SDCLRXY_DNP",1,1));
 
-            VectPar.push_back(ParamToSave(i,SDCLRXY2_DNP,prefix[i]+"SDCLRXY2_DNP",1,1)); // suppr (2)
+            VectPar.push_back(ParamToSave(i,SDCLRXY2_DNP,prefix[i]+"SDCLRXY2_DNP",1,1));
         }
         VectPar.push_back(ParamToSave(CM,ELBPOS,"CM_ELBPOS",1));
         VectPar.push_back(ParamToSave(CS,ELBPOS,"CS_ELBPOS",1));
@@ -449,25 +450,25 @@ void DetecTreatment::initVectorParams()
         VectPar.push_back(ParamToSave(CM,ELB2SB,"CM_ELB2SB",1));
         VectPar.push_back(ParamToSave(CS,ELB2SB,"CS_ELB2SB",1));
         //
-        VectPar.push_back(ParamToSave(CM,RAF,"CM_RAF",1,1)); // suppr
-        VectPar.push_back(ParamToSave(CM,RAE,"CM_RAE",1,1)); // suppr
+        VectPar.push_back(ParamToSave(CM,RAF,"CM_RAF",1,1));
+        VectPar.push_back(ParamToSave(CM,RAE,"CM_RAE",1,1));
         VectPar.push_back(ParamToSave(CM,RAFE,"CM_RAFE",1));
-        VectPar.push_back(ParamToSave(CM,RAFP,"CM_RAFP",1,1)); // suppr
-        VectPar.push_back(ParamToSave(CM,RAFP2,"CM_RAFP2",1,1)); // suppr
+        VectPar.push_back(ParamToSave(CM,RAFP,"CM_RAFP",1,1));
+        VectPar.push_back(ParamToSave(CM,RAFP2,"CM_RAFP2",1,1));
         VectPar.push_back(ParamToSave(CM,RAFP3,"CM_RAFP3",1));
         //
         VectPar.push_back(ParamToSave(CM,SBMP,"CM_SBMP",1));
         VectPar.push_back(ParamToSave(CM,SAMP,"CM_SAMP",1));
         VectPar.push_back(ParamToSave(CM,SBAR,"CM_SBAR",1));
         //
-        VectPar.push_back(ParamToSave(CM,RAHP2,"RAHP2",1,1)); // suppr
-        VectPar.push_back(ParamToSave(CM,RAHP4,"RAHP4",1,1)); // suppr
-        VectPar.push_back(ParamToSave(CM,RAHP8,"RAHP8",1,1)); // suppr
-        VectPar.push_back(ParamToSave(CM,RAHP16,"RAHP16",1,1)); // suppr
-        VectPar.push_back(ParamToSave(CM,RAHE2,"RAHE2",1,1)); // suppr
+        VectPar.push_back(ParamToSave(CM,RAHP2,"RAHP2",1,1));
+        VectPar.push_back(ParamToSave(CM,RAHP4,"RAHP4",1,1));
+        VectPar.push_back(ParamToSave(CM,RAHP8,"RAHP8",1,1));
+        VectPar.push_back(ParamToSave(CM,RAHP16,"RAHP16",1,1));
+        VectPar.push_back(ParamToSave(CM,RAHE2,"RAHE2",1,1));
         VectPar.push_back(ParamToSave(CM,RAHE4,"RAHE4",1));
-        VectPar.push_back(ParamToSave(CM,RAHE8,"RAHE8",1,1)); // suppr
-        VectPar.push_back(ParamToSave(CM,RAHE16,"RAHE16",1,1)); // suppr
+        VectPar.push_back(ParamToSave(CM,RAHE8,"RAHE8",1,1));
+        VectPar.push_back(ParamToSave(CM,RAHE16,"RAHE16",1,1));
     } // fin bloc des nouveaux paramï¿½tres
 }
 
@@ -599,6 +600,7 @@ bool DetecTreatment::CallTreatmentsForOneFile(QString& wavFile,QString &pathFile
             //_detec->_logText <<   "A.dP:"<< QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
             _detec->LogStream <<   "dP" << endl;
             saveParameters(wavFile);
+            if(_detec->MustCompress) saveCompressedParameters(wavFile);
             d[4]=(int)(QDateTime::currentDateTime().toMSecsSinceEpoch()-d0);
             //_detec->_logText <<   "A.sP:"<< QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
             _detec->LogStream <<   "sP" << endl;
@@ -609,18 +611,16 @@ bool DetecTreatment::CallTreatmentsForOneFile(QString& wavFile,QString &pathFile
                 _detec->TimeStream  << d[4] << endl;
             }
 
-            if(_detec->MustCompress) saveCompressedParameters(wavFile);
-            // expandParameters(wavFile);
+
+			
         }
         else
         {
-            // erreur dans computefft
             return(false);
         }
     }
     else
     {
-        // erreur dans openwavfile
         return(false);
     }
     return(true);
@@ -628,7 +628,6 @@ bool DetecTreatment::CallTreatmentsForOneFile(QString& wavFile,QString &pathFile
 
 void DetecTreatment::clearVars()
 {
-    //if(_detec->IDebug) _detec->_logText << "cv1" << endl;
     CallsArray.clear();
     _vectorXMin.clear();
     _vectorXMax.clear();
@@ -641,7 +640,6 @@ void DetecTreatment::clearVars()
         CallWestRidgeArray.clear();
         CallSecondWestRidgeArray.clear();
     }
-    //if(_detec->IDebug) _detec->_logText << "cv2" << endl;
 }
 
 void DetecTreatment::aff(QString name,qint64 address,int size)
@@ -685,7 +683,6 @@ bool DetecTreatment::openWavFile(QString& pathFile)
         NError=MCNT;
         return  false;
     }
-    // 27/05/2015
     if(_detec->ReprocessingMode)
     {
         if(_detec->NumVer > 19)
@@ -723,8 +720,7 @@ bool DetecTreatment::openWavFile(QString& pathFile)
         NError=TNT;
         return(false);
     }
-    // fin 27/05/2015
-    // edit yves - prise en compte tx ech Vigie Chiro
+    // edit yves
     _detec->LogStream << "sfte=" << _soundFileInfo.samplerate*TimeExpansion << endl;
     if(_modeFreq==2)
     {
@@ -750,7 +746,6 @@ bool DetecTreatment::openWavFile(QString& pathFile)
     }
     else
     {
-
         if (_soundFileInfo.samplerate*TimeExpansion >= 2400000 ) {_fftHeight = 4096; _iH =5;}
         else {
             if (_soundFileInfo.samplerate*TimeExpansion >= 1200000 ) {_fftHeight = 2048;  _iH =4;}
@@ -785,7 +780,6 @@ bool DetecTreatment::computeFFT(QString &wavFile)
     SonogramWidth		= (int)ceil(_nbo*2*(float)_soundFileInfo.frames/(float)_fftHeight)+1;
     MsPerX =(float)(FftHeightHalf*1000)/(_nbo*_soundFileInfo.samplerate*TimeExpansion); //Time: msec
     KhzPerY =(float)(_soundFileInfo.samplerate*TimeExpansion)/(float)(_fftHeight*1000); //Freq:khz
-    if(_detec->IDebug) _detec->LogStream << "_sw=" << SonogramWidth << "_fH=" << _fftHeight << endl;
     if(SonogramWidth*MsPerX < 10.0f)
     {
         if(_detec->ErrorFileOpen) _detec->ErrorStream << wavFile << ": too short duration" << endl;
@@ -800,22 +794,25 @@ bool DetecTreatment::computeFFT(QString &wavFile)
         NError=DTG;
         return  false;
     }
-    else
-    {
-        this->_detec->LogStream << "MsPerX : " << MsPerX << endl;
-        this->_detec->LogStream << "FftHeightHalf : " << FftHeightHalf << endl;
-        this->_detec->LogStream << "MsPerX : " << MsPerX << endl;
-        this->_detec->LogStream << "soundFileInfo.frames : " << _soundFileInfo.frames << endl;
-        this->_detec->LogStream << "SonogramWidth  : " << SonogramWidth << endl;
-        this->_detec->LogStream << "durée max : " << SONOGRAM_WIDTH_MAX * MsPerX << endl;
-        this->_detec->LogStream << "durée  : " << SonogramWidth * MsPerX << endl;
-    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     sf_seek(_soundFile, 0, SEEK_END);
     _pPlan = &(_detec->PMainWindow->Plan[_detec->IThread][_iH]);
     float fact1=2.0f*PI;
     float fact2=4.0f*PI;
     float quot1=FftHeightHalf-1;
-    if(_detec->IDebug) _detec->LogStream << "_fHH=" << FftHeightHalf << endl;
     LimY = qMin(FftHeightHalf,MAXHEIGHT);
     for (int i = 0 ; i < FftHeightHalf ; i++)
     {
@@ -880,13 +877,13 @@ void DetecTreatment::correctNoise()
     if(_maxY>LimY-1) _maxY = LimY-1;
     if(_detec->IDebug)
 	{
-    _detec->LogStream << "_minY = " << _minY << endl;
-    _detec->LogStream << "_maxY = " << _maxY << endl;
-    _detec->LogStream << "_freqMin = " << _freqMin << endl;
-    _detec->LogStream << "FREQ_MAX = " << FREQ_MAX << endl;
+        _detec->LogStream << "_minY = " << _minY << endl;
+        _detec->LogStream << "_maxY = " << _maxY << endl;
+        _detec->LogStream << "_freqMin = " << _freqMin << endl;
+        _detec->LogStream << "FREQ_MAX = " << FREQ_MAX << endl;
 	}
     // -------------------------------------------------------------------------------------
-    // desactivation de correctnoise a la demande :
+    // desactivation correctNoise
     if(_desactiveCorrectNoise)
     {
         qint16 *fc;
@@ -902,7 +899,7 @@ void DetecTreatment::correctNoise()
     int son_min = EMIN,son_max = EMIN+199;
     int minEmc = qMax((int)(20.0f/KhzPerY),_minY);
     int maxEmc = qMin((int)(80.0f/KhzPerY),_maxY);
-    // 1) neutralisation des colonnes de silence
+    // 1) neutralizes silent columns
     for (int x = 0 ; x < SonogramWidth ; x++) EnergyColumAverage[x] = 0.0f;
     //for(int y = _minY; y < _maxY ; y++)
     int decalThreshold = 0;
@@ -918,19 +915,14 @@ void DetecTreatment::correctNoise()
         float *pemc = EnergyColumAverage;
         for (int x = 0 ; x < SonogramWidth ; x++) {*pemc /= diviseur; totEmc += (*pemc++);}
         decalThreshold = (int)( ((totEmc/SonogramWidth) - ((float)(_lowThresholdJB+_highThresholdJB)/2.0f))/4      );
-
     }
     if(_detec->IDebug) _detec->LogStream << "gap=" <<decalThreshold << endl;
     bool unSaut = false;
     WithSilence = false;
-
-    //decalThreshold = 0;
-
     int highThresholdJB = _highThresholdJB+decalThreshold;
     int lowThresholdJB = _lowThresholdJB+decalThreshold;
     int lowThresholdC = _lowThresholdC+decalThreshold;
     int highThresholdC = _highThresholdC+decalThreshold;
-
     if(SonogramWidth>10 && _useValflag)
     {
         bool valFlag = true;
@@ -979,7 +971,7 @@ void DetecTreatment::correctNoise()
                     if(valFlag==false)
                     {
                         //fr _detec->_logText << "saut montant en (ms)" << x * _msPerX << " (x=" << x << ")"
-                        _detec->LogStream << "jumping up (ms)" << x * MsPerX << " (x=" << x << ")"
+                        if(_detec->IDebug) _detec->LogStream << "jumping up (ms)" << x * MsPerX << " (x=" << x << ")"
                                          << "  before : " << averageLittleBefore << ", " << averageBigBefore
                                          << "  after : " << averageLittleNext << ", " << averageBigNext
                                          << endl;
@@ -991,11 +983,11 @@ void DetecTreatment::correctNoise()
                             && averageLittleBefore < lowThresholdJB
                             && averageBigBefore < lowThresholdJB)
                     {
-                        _detec->LogStream << "jumping up (ms)" << x * MsPerX << " (x=" << x << ")"
+                        if(_detec->IDebug) _detec->LogStream << "jumping up (ms)" << x * MsPerX << " (x=" << x << ")"
                                          << "  before : " << averageLittleBefore << ", " << averageBigBefore
                                          << "  after : " << averageLittleNext << ", " << averageBigNext
                                          << endl;
-                        _detec->LogStream << "what precedes becomes false " << endl;
+                        if(_detec->IDebug) _detec->LogStream << "what precedes becomes false " << endl;
 
                         for(int j=x-1;j>=0;j--)
                         {
@@ -1026,12 +1018,11 @@ void DetecTreatment::correctNoise()
                 {
                     unSaut = true;
                     patience = 0;
-                    _detec->LogStream << "jumping down (ms)" <<  x * MsPerX << " (x=" << x << ")"
+                    if(_detec->IDebug) _detec->LogStream << "jumping down (ms)" <<  x * MsPerX << " (x=" << x << ")"
                                      << "  before : " << averageLittleBefore << ", " << averageBigBefore
                                      << "  after : " << averageLittleNext << ", " << averageBigNext
                                      << endl;
-                    if(valFlag==false)
-                        _detec->LogStream << "already false" << endl;
+                    if(_detec->IDebug && !valFlag) _detec->LogStream << "already false" << endl;
                     valFlag=false;
                     notYet =false;
                 }
@@ -1041,7 +1032,6 @@ void DetecTreatment::correctNoise()
         }
         for (int x = SonogramWidth-widthBigControl;x < SonogramWidth;x++) FlagGoodColInitial[x]=valFlag;
     }
-
     int nff = 0;
     if(unSaut)
     {
@@ -1059,9 +1049,6 @@ void DetecTreatment::correctNoise()
             }
         }
         WithSilence = true;
-        // verification de la somme des largeurs des colonnes en true
-        // si insuffisante : on rabaisse la barre de repassage en true
-        // si tj insuffisante : on annule...
         if(nff*2 >SonogramWidth)
         {
             // calcul des variables
@@ -1084,8 +1071,6 @@ void DetecTreatment::correctNoise()
                     }
                     else actualWidth = 0;
                 }
-                // test
-                //if(maxTrue*10>_sonogramWidth || totTrue*5>_sonogramWidth)
                 if(maxTrue*10>SonogramWidth)
                 {
                     if(jpha==1)
@@ -1106,10 +1091,8 @@ void DetecTreatment::correctNoise()
                         WithSilence = false;
                     }
                 }
-            } // next jpha
+            }
         }
-
-
     }
     else
     {
@@ -1125,7 +1108,6 @@ void DetecTreatment::correctNoise()
     // -----------------------------------------------------------------------------------
     // 2)
     int tval[200];
-    //ï¿½ float *fc;
     qint16 *fc;
     int largeurRectifiee;
     for(int y = _minY; y <= _maxY ; y++)
@@ -1136,16 +1118,12 @@ void DetecTreatment::correctNoise()
         largeurRectifiee = 0;
         for (int x = 0 ; x < SonogramWidth ; x++)
         {
-            //ï¿½ int son = (int)fc[x];
-            // int son = qRound((float)fc[x]/100.0f);
             int son = (fc[x]+50)/100;
             if(son>=son_min && son<=son_max && FlagGoodCol[x])
             {
                 tval[son-son_min]++;
                 largeurRectifiee++;
             }
-            //ï¿½ if(son < son_min) fc[x] = son_min;
-            //ï¿½ if(son > son_max) fc[x] = son_max;
             if(son < son_min) fc[x] = son_min*100;
             if(son > son_max) fc[x] = son_max*100;
         }
@@ -1157,27 +1135,19 @@ void DetecTreatment::correctNoise()
             cumul += tval[j];
             if(cumul>=q5)
             {
-                //ï¿½ ajoutï¿½ :
                 int retrait = (j + son_min + _stopThreshold) * 100;
-                //ï¿½ for (int x = 0 ; x < _sonogramWidth ; x++) fc[x] = fc[x] - j - son_min - _stopThreshold;
                 for (int x = 0 ; x < SonogramWidth ; x++) fc[x] -= retrait;
                 break;
             }
         }
     }
-
 }
 
 void DetecTreatment::shapesDetects()
 {
-    //! :
-    //int ld8 = (SONOGRAM_WIDTH_MAX+15)/8;
-    //ï¿½ for(int j=0;j<FFT_HEIGHT_HALF_MAX;j++) memset(_pointFlagsArray[j],0,SONOGRAM_WIDTH_MAX);
-    //ï¿½ for(int j=0;j<FFT_HEIGHT_HALF_MAX;j++) memset(_pointFlagsArray[j],0,ld8);
     for(int j=0;j<MAXHEIGHT;j++) memset(PointFlagsArray[j],0,LD8);
     _maxCallWidth = 0;
     _maxCallHeight = 0;
-    //
     QPoint Point;
     int ix,iy;
     int curseur;
@@ -1185,20 +1155,16 @@ void DetecTreatment::shapesDetects()
     EnergyShapeThreshold = (double)_detectionThreshold-_stopThreshold;
     EnergyStopThreshold = 0.0f;
     int nbcont=0;
-    //ï¿½ float *smy;
     qint16 *smy;
-    //ï¿½ char *zcy;
     bool onsarrete = false;
     for(int y = (_maxY-1); y >= _minY ; y--)
     {
         smy = SonogramArray[y];
         int digitPos = 0;
         char *pBoolChar = PointFlagsArray[y];
-        //char boolChar = *pBoolChar;
         for (int x = 0 ; x < SonogramWidth ; x++)
         {
             if(((*pBoolChar) & (1 << digitPos))==0)
-                // ï¿½if (smy[x] > _energyShapeThreshold)
                 if (smy[x] > EnergyShapeThreshold*100)
                 {
                     nbcont++;
@@ -1206,7 +1172,6 @@ void DetecTreatment::shapesDetects()
                     _vectorCallPoints.clear();
                     Point.setX(x);
                     Point.setY(y);
-                    //ï¿½ _callEnergyMax = smy[x];
                     _callEnergyMax = (float)smy[x] / 100.0f;
                     _callEnergyMaxIndex = 0;
                     _vectorCallPoints.push_back(Point);
@@ -1220,7 +1185,7 @@ void DetecTreatment::shapesDetects()
                         ix=Point.x();
                         iy=Point.y();
                         for(int jy=iy-1;jy<=iy+1;jy++)
-                            // edit yves - elargir spectre
+                            // edit yves - broadening spectrum
                         {
                             if(jy>=_minY && jy <= _maxY)
                             {
@@ -1254,29 +1219,27 @@ void DetecTreatment::shapesDetects()
                                                         _callEnergyMax = val;
                                                         _callEnergyMaxIndex = _vectorCallPoints.size()-1;
                                                     }
-                                                } // fin if val
-                                            } // fin if bc db...
+                                                }
+                                            }
 
-                                        } // fin 2ï¿½me condition sur jx
+                                        }
 
-                                    } // fin 1ï¿½re condition sur jx
-                                    //ï¿½ :
+                                    }
                                     if(jx<SonogramWidth-1)
                                     {
                                         dP++;
                                         if(dP==8) {pBC++; bC = *pBC; dP=0;}
                                     }
-                                } // next jx
+                                }
                             }
-
-                        } // next jy
+                        }
                         curseur++;
                         if(curseur > 300000)
                         {
                             _detec->LogStream << "limited to 300000 pixels" << endl;
                             break;
                         }
-                    } // next jy
+                    }
 
                     float freqpm=((float)_vectorCallPoints.at(_callEnergyMaxIndex).y())*KhzPerY;
 
@@ -1304,7 +1267,7 @@ void DetecTreatment::shapesDetects()
                 digitPos++;
                 if(digitPos==8) {pBoolChar++; digitPos=0;}
             }
-        } // next x
+        }
         if(onsarrete) break;
     }
     if(CallsArray.size() > MAXCRI)
@@ -1357,18 +1320,10 @@ void DetecTreatment::detectsParameter2()
     if(nbcris< 1 || _maxCallWidth < 1 || _maxCallHeight < 1) return;
     int maxlarhau = _maxCallWidth;
     if(_maxCallHeight>maxlarhau) maxlarhau=_maxCallHeight;
-    //if(_detec->IDebug) _detec->_logText << "-2" << endl;
-    //
-    // 23/3/2015 :
-    //int *sortMp = new int[nbcris];
-    //int *invMp = new int[nbcris];
-    //int *xMp = new int[nbcris];
     for(int i=0;i<nbcris;i++) {_sortMp[i]=i; _xMp[i]=MasterPoints.at(i).x();}
      sortIntArrays(_sortMp,nbcris,_xMp);
      for(int i=0;i<nbcris;i++)  _invMp[_sortMp[i]]=i;
-     //
      //if(_detec->IDebug) _detec->_logText << "-3" << "nbCries="<< nbcris << endl;
-
     for (int icri = 0 ; icri < nbcris ; icri++) //Execute for each call
     {
         //if(_detec->IDebug) _detec->_logText << endl << "-3-icri=" << icri << endl ; //+++
@@ -1416,7 +1371,6 @@ void DetecTreatment::detectsParameter2()
         {
             int x=unemat.at(j).x();
             int y=unemat.at(j).y();
-            //ï¿½ float e = _sonogramArray[y][x];
             float e = (float)SonogramArray[y][x]/100.0f;
             _tabY[y-ymin]+=e;
             eTot += e;
@@ -1436,7 +1390,7 @@ void DetecTreatment::detectsParameter2()
             _tabYX[y-ymin][x-xmin]=e;
 
         }
-        //if(_detec->IDebug) _detec->_logText << "ymin=" << ymin << " ymax=" << ymax << endl;  //+++
+        //if(_detec->IDebug) _detec->_logText << "ymin=" << ymin << " ymax=" << ymax << endl;
         eMoy = eTot / tailleforme;
         float erec; int xc;
         for(int k=0;k<=ymax-ymin;k++)
@@ -1588,7 +1542,6 @@ void DetecTreatment::detectsParameter2()
                 namp[j]+=prorata;
             }
         }
-        // modifiï¿½ le 23/3/2015
         if(namp[0]>0) oParam[Amp1] = famp[0]*KhzPerY/namp[0];
         else oParam[Amp1] = 0.0f;
         if(namp[1]>0) oParam[Amp2] = famp[1]*KhzPerY/namp[1];
@@ -1750,7 +1703,6 @@ void DetecTreatment::detectsParameter2()
             oParam[Ramp_1_2] = 0.0f;
             oParam[Ramp_4_3] = 0.0f;
             oParam[Ramp_2_3] = 0.0f;
-
         }
         //
         if(ranmoy[1]>0) oParam[RAN_2_1] =  ampmoy[1]/ranmoy[1];
@@ -1765,12 +1717,8 @@ void DetecTreatment::detectsParameter2()
         else oParam[RAN_4_3] =  0.0f;
         if(ranmoy[6]>0) oParam[RAN_2_3] =  ampmoy[6]/ranmoy[6];
         else oParam[RAN_2_3] =  0.0f;
-        //
         int xmaitr = MasterPoints.at(icri).x();
         int ymaitr = MasterPoints.at(icri).y();
-
-        // ---------------------------------------------------
-        //_detec->_logText << "Avant calcul des hetx, hety"  << endl;  //+++
         int npar,ntr,nen,xdeb,xfin,ydeb,yfin;
         float e1,e2,e3;
         for(int r=0;r<2;r++)
@@ -1810,7 +1758,6 @@ void DetecTreatment::detectsParameter2()
             }
             if(ntr>0) oParam[npar] = ((float) nen)/ ((float) ntr);
         }
-        //
         for(int r=0;r<3;r++)
         {
             float dift = 0.0f;
@@ -1857,9 +1804,7 @@ void DetecTreatment::detectsParameter2()
                         if(e2>0.0f && y>1 && y<_maxY)
                         {
                             ntr++;
-                            //ï¿½ e1=_sonogramArray[y-1][x];
                             e1=(float)SonogramArray[y-1][x]/100.0f;
-                            //ï¿½ e3=_sonogramArray[y+1][x];
                             e3=(float)SonogramArray[y+1][x]/100.0f;
                             dift+=qAbs(e3-e2);
                             if((e2>e1 && e2>e3) || (e2<e1 && e2<e3)) nen++;
@@ -1897,7 +1842,6 @@ void DetecTreatment::detectsParameter2()
             float moytot= 0.0f,dermoytot = 0.0f;
             float difC=0.0f,totDifC=0.0f,derDifC=0.0f;
             nbpics[mt]=0;
-            //nbcreux[mt]=0;
             modepc=0;
             memopr=0;
             valpr=0.0f;
@@ -1909,7 +1853,6 @@ void DetecTreatment::detectsParameter2()
                     if(x==xmin) valpr = moytot;
                 }
                 else moytot = 0.0f;
-                //
                 difppr=moytot-valpr;
                 if(difppr>0)
                 {
@@ -1917,7 +1860,6 @@ void DetecTreatment::detectsParameter2()
                     {
                         if(modepc==0 || modepc==2)
                         {
-                            //creux[mt][nbcreux[mt]++]=memopr;
                             modepc=1;
                         }
                         memopr=x-xmin;
@@ -1950,10 +1892,7 @@ void DetecTreatment::detectsParameter2()
                 if(x==xmax)
                 {
                     if(modepc==1) pics[mt][nbpics[mt]++] = memopr;
-                    //if(modepc==2) creux[mt][nbcreux[mt]++] = memopr;
-
                 }
-                // ---
                 difC = moytot - dermoytot;
                 if(difC>0.0f) sensd = 1;
                 else
@@ -2023,8 +1962,7 @@ void DetecTreatment::detectsParameter2()
                         medianPicsBigDistance = (interc[nbi-1-quartnbi] + interc[nbi-quartnbi])/2;
                     }
                 }
-                //
-            } // fin if nbi>1
+            }
             if(mt==0)
             {
                 _paramsArray[icri][SH][HetPicsMAD]   = medianPicsDistance;
@@ -2040,7 +1978,6 @@ void DetecTreatment::detectsParameter2()
                 _paramsArray[icri][SH][HetPicsTRBLD] = medianPicsBigDistance / medianPicsLittleDistance;
             }
             float medianPicsDistanceVariation = 0;
-            // a) ï¿½cart mï¿½dian
             for(int j=0;j<nbi;j++) variationPicsInter[j] = qAbs(interc[j]-medianPicsDistance);
             float medianPicsLittleDistanceVariation = variationPicsInter[0];
             float medianPicsBigDistanceVariation = variationPicsInter[nbi-1];
@@ -2049,7 +1986,6 @@ void DetecTreatment::detectsParameter2()
                 sortFloatArray(variationPicsInter,nbi);
                 if(halfnbi*2<nbi) medianPicsDistanceVariation = variationPicsInter[halfnbi];
                 else medianPicsDistanceVariation = (variationPicsInter[halfnbi-1] + variationPicsInter[halfnbi])/2;
-                // b) ï¿½carts sur petits intervalles et sur grands intervalles
                 for(int j=0;j<nbi;j++)
                 {
                     if(j<halfnbi) variationPicsInter[j] = qAbs(interc[j]-medianPicsLittleDistance);
@@ -2074,8 +2010,8 @@ void DetecTreatment::detectsParameter2()
                         medianPicsLittleDistanceVariation = (variationPicsInter[quartnbi-1] + variationPicsInter[quartnbi])/2;
                         medianPicsBigDistanceVariation = (variationPicsInter[nbi-1-quartnbi] + variationPicsInter[nbi-quartnbi])/2;
                     }
-                } // fin nbi>=4
-            } // fin if nbi>1
+                }
+            }
             if(mt==0)
             {
                 _paramsArray[icri][SH][VDPicsM]   = medianPicsDistanceVariation;
@@ -2094,7 +2030,7 @@ void DetecTreatment::detectsParameter2()
                 _paramsArray[icri][SH][VLDPPicsT]  = medianPicsLittleDistanceVariation/medianPicsLittleDistance;
                 _paramsArray[icri][SH][VBDPPicsT]  = medianPicsBigDistanceVariation/medianPicsBigDistance;
             }
-        } // next mt
+        }
         // -----------------------------------------------------------------------------------
         //if(_detec->IDebug) _detec->_logText << "-8" << endl ;  //+++
         oParam[Dbl8] = 0.0f;
@@ -2106,7 +2042,6 @@ void DetecTreatment::detectsParameter2()
             qint16 *fc=SonogramArray[y];
             for(int x=xmin;x<=xmax;x++)
             {
-                //ï¿½ e8 =+ _sonogramArray[y][x];
                 e8 =+ (float)(*fc++);
                 n8++;
             }
@@ -2144,8 +2079,6 @@ void DetecTreatment::detectsParameter2()
                     {
                         if(y>=_minY && y<_maxY-1)
                         {
-                            //ï¿½ dif = qAbs(_sonogramArray[y+1][x]-_sonogramArray[y][x]);
-                            //dif = (float)(qAbs(_sonogramArray[y+1][x]-_sonogramArray[y][x]))/100.0f;
                             dif = (float)(qAbs(SonogramArray[y+1][x]-SonogramArray[y][x]));
                             p = 1.0f - (((    pow(   ((float)(x-xmaitr))*MsPerX , 2)
                                               +pow(   ((float)(y-ymaitr))*KhzPerY,2))/distLim) * 0.75f);
@@ -2155,10 +2088,8 @@ void DetecTreatment::detectsParameter2()
                     }
                 }
             }
-            //if(ponderTot!=0) oParam[Stab] = difTot / ponderTot;
             if(ponderTot!=0) oParam[Stab] = difTot / (ponderTot*100.0f);
         }
-        //_detec->_logText << "Avant calcul stablr et stabbr"  << endl; //+++
         oParam[EnStabSm] = 0.0f;
         oParam[EnStabLg] = 0.0f;
         int radius,nbp;
@@ -2191,7 +2122,6 @@ void DetecTreatment::detectsParameter2()
                 }
             }
             if(lbr==0) npar = EnStabSm; else npar = EnStabLg;
-            //if(nbp>0) oParam[npar] = difTot/nbp;
             if(nbp>0) oParam[npar] = difTot/((float)nbp*100.0f);
         }
         float enerMaster[2];
@@ -2234,7 +2164,6 @@ void DetecTreatment::detectsParameter2()
         int lowfc,hifc,fc3;
         float yCmax=0.0f;
         float yCmin=9999.0f;
-        //
         for(int jcrete=0;jcrete<NCRETES;jcrete++)
         {
             if(jcrete==0)  pc=_yEmaxPerX[icri];
@@ -2294,11 +2223,10 @@ void DetecTreatment::detectsParameter2()
                         xmcmax[jcrete]=x;
                         ymcmax[jcrete] = pc[x-xmin];
                     }
-                } // fin boucle sur x
+                }
                 oParamCrete[jcrete][Fmax] = yCmax * KhzPerY;
                 oParamCrete[jcrete][Fmin]  = yCmin  * KhzPerY;
                 oParamCrete[jcrete][BW]  = oParamCrete[jcrete][Fmax]-oParamCrete[jcrete][Fmin];
-                //
                 if(xmax>xmin) oParamCrete[jcrete][Slope] = (float)(pc[xmax-xmin]-pc[0])*KhzPerY/((float)(xmax-xmin)*MsPerX);
                 if(meilleurepente ==0 && meilleuresuite>1)
                 {
@@ -2307,7 +2235,6 @@ void DetecTreatment::detectsParameter2()
                         if(pc[meilleur-k-xmin]>0) bonmeilleur = meilleur-k;
                     meilleur = bonmeilleur;
                 }
-
                 lowfc = meilleur-xmin;
                 LowSlope[(icri*NCRETES+jcrete)*2] = meilleur; // (xmin+lowfc)
                 LowSlope[(icri*NCRETES+jcrete)*2+1] = pc[lowfc];
@@ -2409,35 +2336,28 @@ void DetecTreatment::detectsParameter2()
                 {
                     oParamCrete[jcrete][SDC]  = 0;
                     oParamCrete[jcrete][SDCR]  = 0;
-                    //
                     oParamCrete[jcrete][SDCL]  = 0;
                     oParamCrete[jcrete][SDCLR]  = 0;
                     oParamCrete[jcrete][SDCLRY]  = 0;
                     oParamCrete[jcrete][SDCLRXY]  = 0;
                     oParamCrete[jcrete][SDCLRXY2]  = 0;
-                    //
                     oParamCrete[jcrete][SDCLOP]  = 0;
                     oParamCrete[jcrete][SDCLROP]  = 0;
                     oParamCrete[jcrete][SDCLRYOP]  = 0;
                     oParamCrete[jcrete][SDCLRXYOP]  = 0;
-                    //
                     oParamCrete[jcrete][SDCLWB]  = 0;
                     oParamCrete[jcrete][SDCLRWB]  = 0;
                     oParamCrete[jcrete][SDCLRYWB]  = 0;
                     oParamCrete[jcrete][SDCLRXYWB]  = 0;
-                    //
                     oParamCrete[jcrete][SDCLOPWB]  = 0;
                     oParamCrete[jcrete][SDCLROPWB]  = 0;
                     oParamCrete[jcrete][SDCLRYOPWB]  = 0;
                     oParamCrete[jcrete][SDCLRXYOPWB]  = 0;
-                    //
-                    //
                     oParamCrete[jcrete][SDCL_DNP]  = 0;
                     oParamCrete[jcrete][SDCLR_DNP]  = 0;
                     oParamCrete[jcrete][SDCLRY_DNP]  = 0;
                     oParamCrete[jcrete][SDCLRXY_DNP]  = 0;
                     oParamCrete[jcrete][SDCLRXY2_DNP]  = 0;
-                    //
                     float derdif1=0.0f;
                     float dif1,dif2;
                     float totdif2 = 0.0f;
@@ -2445,7 +2365,6 @@ void DetecTreatment::detectsParameter2()
                     float totdif2wb = 0.0f;
                     float totdif2opwb = 0.0f;
                     // -----------------------------------------------------------------------------------------
-                    // Parametres de la serie SDC
                     bool findSdcl = false;
                     bool findSdclOp = false;
                     bool seenMasterPoint = false;
@@ -2523,7 +2442,6 @@ void DetecTreatment::detectsParameter2()
                     oParamCrete[jcrete][SDCLRXY_DNP]  = oParamCrete[jcrete][SDCLRXY]/fncs;
                     oParamCrete[jcrete][SDCLRXY2_DNP]  = oParamCrete[jcrete][SDCLRXY2]/fncs;
                     // -----------------------------------------------------------------------------------------
-                    // Parametres de la serie Coudes
                     int em=3;
                     oParamCrete[jcrete][ELBPOS]  = 9999;
                     oParamCrete[jcrete][ELBSB]  = 0;
@@ -2720,7 +2638,7 @@ void DetecTreatment::detectsParameter2()
                                     }
                                 }
                             }
-                        } // next x
+                        }
                         if(np[0]>0 && np[1]>0)
                         {
                             ratioF = (totF[0]*100.0f/np[0]) / (totF[1]/np[1]);
@@ -2734,19 +2652,15 @@ void DetecTreatment::detectsParameter2()
                             oParamCrete[jcrete][RAFP]  = ratioFP*KhzPerY;
                             oParamCrete[jcrete][RAFP2]  = ratioFP2*KhzPerY;
                             oParamCrete[jcrete][RAFP3]  = ratioFP3*KhzPerY;
-                            //
                             if(xmaitr!=xdep)
                             oParamCrete[jcrete][SBMP]  = ( ((float)  (pc[xmaitr-xmin] - pc[xdep-xmin] ))*KhzPerY)  / (((float)(xmaitr-xdep))*MsPerX);
                             if(xmaitr!=xfin)
                             oParamCrete[jcrete][SAMP]  = ( ((float)  (pc[xfin-xmin] - pc[xmaitr-xmin]))*KhzPerY)   / (((float)(xfin-xmaitr))*MsPerX);
                             oParamCrete[jcrete][SBAR]  = oParamCrete[jcrete][SAMP]  - oParamCrete[jcrete][SBMP];
-                            //
                             if(nra2[0]>0 && nra2[1]>0 )
                             {
                                 if(hx2[1]>0)
                                     oParamCrete[jcrete][RAHP2]  = ((((float)hx2[0]*10.0f)/((float)nra2[0]))  / (((float)hx2[1])/((float)nra2[1]))) * KhzPerY;
-                                                                                               ;
-                                //
                                 if(totE2[1] >0)
                                     oParamCrete[jcrete][RAHE2]  = (((totE2[0]*10.0f)/((float)nra2[0])) / ((totE2[1])/((float)nra2[1]))) * KhzPerY;
                             }
@@ -2772,11 +2686,9 @@ void DetecTreatment::detectsParameter2()
                                 if(totE16[1] >0)
                                     oParamCrete[jcrete][RAHE16]  = (((totE16[0]*10.0f)/((float)nra16[0])) / (totE16[1]/((float)nra16[1])))*KhzPerY;
                             }
-                            //
                         }
                     }
                 }
-                //
                 // -----------------------------------------------------------------------------------------
                 int milieu = (xmin+xmax)/2;
                 for(int k=milieu;k<=xmax;k++)
@@ -2785,13 +2697,11 @@ void DetecTreatment::detectsParameter2()
                         milieu=k;
                         break;
                     }
-
                 oParamCrete[jcrete][CeF] = (float)pc[milieu-xmin]*KhzPerY;
                 if(jcrete==0)
                 {
                     int pos1=xmcmax[jcrete];
                     int pos2=xmax;
-                    //ï¿½ float borne = emcmax - 5;
                     int borne = ((int)emcmax - 5)*100;
                     if(xmin<xmcmax[jcrete])
                     {
@@ -2867,8 +2777,6 @@ void DetecTreatment::detectsParameter2()
                     }
 
                 }
-                //
-                //
                 if(pc[ymax-ymin]!=pc[0])
                 {
                     oParamCrete[jcrete][Slope] = ((float)(ymax-ymin)*KhzPerY)/((float)(pc[ymax-ymin]-pc[0])*MsPerX);
@@ -2974,8 +2882,6 @@ void DetecTreatment::detectsParameter2()
                 if(pc[lowfc-ymin]-pc[meilleurk[0]-ymin]!=0)
                     oParamCrete[jcrete][LoSl] = ((float)(lowfc-meilleurk[0])*KhzPerY)
                             /( ( (float)(pc[lowfc-ymin]-pc[meilleurk[0]-ymin]) ) * MsPerX);
-
-                //
                 int debp,finp,ecart;
                 float pj[4];
                 for(int j2=0;j2<4;j2++)
@@ -3032,13 +2938,10 @@ void DetecTreatment::detectsParameter2()
                     float labs = qAbs(pc[ymax-ymin]-pc[0])+1;
                     oParamCrete[jcrete][SDCR]  = ((float)totdif2/labs)*(MsPerX/KhzPerY);
                 }
-                //
-                // calcul des paramï¿½tres ...5db pour crï¿½te ouest 2
                 if(jcrete==4)
                 {
                     int pos1=ymcmax[jcrete];
                     int pos2=ymax;
-                    //ï¿½ float borne = emcmax - 5;
                     int borne = ((int)emcmax - 5)*100;
                     if(ymin<ymcmax[jcrete])
                     {
@@ -3078,10 +2981,8 @@ void DetecTreatment::detectsParameter2()
                     oParamCrete[jcrete][B5dBAF]  = pos2*KhzPerY;
                     oParamCrete[jcrete][B5dBBW]  = oParamCrete[jcrete][B5dBAF]-oParamCrete[jcrete][B5dBBF];
                     oParamCrete[jcrete][B5dBDur] = (pc[pos2-ymin]-pc[pos1-ymin])*MsPerX;
-                } // fin if(jcrete==4)
-                //
-
-            } // fin else jcrete....
+                }
+            }
             oParamCrete[jcrete][FPk]=(float)ymcmax[jcrete]*(float)KhzPerY;
             oParamCrete[jcrete][FPkD] = 0.0f;
             if(criprec<icri) oParamCrete[jcrete][FPkD] = oParamCrete[jcrete][FPk] - _paramsArray[criprec][jcrete+1][FPk];
@@ -3089,7 +2990,7 @@ void DetecTreatment::detectsParameter2()
             if(jcrete<3) intervTemps = xmax-xmin+1;
             else intervTemps = tempsOuest[jcrete-3];
             oParamCrete[jcrete][TPk] = (float)(xmcmax[jcrete]-xmin+0.5f)/(float)intervTemps;
-        } // fin boucle jcrete
+        } // end of loop "jcrete"
         oParamCrete[0][StF] = (float)_yEmaxPerX[icri][0]*KhzPerY;
         oParamCrete[0][EnF] = (float)_yEmaxPerX[icri][xmax-xmin]*KhzPerY;
         if(_imageData)
@@ -3172,11 +3073,10 @@ void DetecTreatment::detectsParameter2()
                         }
                     }
                 }
-                if(xmin2>xmax1) break; // puisque les cris sont classï¿½s par xmin
+                if(xmin2>xmax1) break;
             }
         }
     }
-
     //if(_detec->IDebug) _detec->_logText << "-10" << endl;
     int nhsup,nhinf;
     for(int icri=0;icri<nbcris;icri++)
@@ -3310,11 +3210,9 @@ void DetecTreatment::detectsParameter2()
             _paramsArray[icri][SH][IntDev]   = 0.0f;
             _paramsArray[icri][SH][SmIntDev]  = 0.0f;
             _paramsArray[icri][SH][LgIntDev]  = 0.0f;
-            //
             _paramsArray[icri][SH][VarInt]  = 0.0f;
             _paramsArray[icri][SH][VarSmInt] = 0.0f;
             _paramsArray[icri][SH][VarLgInt] = 0.0f;
-            // 1) alimentation de rband
             nbb=0;
             float freqmp = _paramsArray[icri][SH][FreqMP];
             for(int k=0;k<nbcris;k++)
@@ -3322,14 +3220,12 @@ void DetecTreatment::detectsParameter2()
                 float freqmp2 = _paramsArray[k][SH][FreqMP];
                 if(qAbs(freqmp2-freqmp) < proxiFreq) rband[nbb++]=k;
             }
-            // 2) On retrie la suite de cris de la bande dans l'ordre des PM
             if(nbb>1)
             {
                 int rbandx[MAXCRI];
                 for(int j=0;j<nbb;j++)  rbandx[j] = MasterPoints.at(rband[j]).x();
                 sortIntArrays(rband,nbb,rbandx);
             }
-            // 3) tri des intervalles de distance
             float medianDistance = tsono/2;
             float medianLittleDistance = tsono/2;
             float medianBigDistance = tsono/2;
@@ -3345,7 +3241,6 @@ void DetecTreatment::detectsParameter2()
                     interv[j] = (MasterPoints.at(rband[j]).x()-MasterPoints.at(rband[j-1]).x()) * MsPerX;
                 }
                 sortFloatArray(interv,nbi);
-                // 4) calcul de la moyenne des petits et des grands intervalles
                 if(halfnbi*2<nbi) medianDistance = interv[halfnbi];
                 else medianDistance= (interv[halfnbi-1] + interv[halfnbi])/2;
                 if(nbi<4)
@@ -3410,20 +3305,16 @@ void DetecTreatment::detectsParameter2()
                         medianLittleDistanceVariation = (variation[quartnbi-1] + variation[quartnbi])/2;
                         medianBigDistanceVariation = (variation[nbi-1-quartnbi] + variation[nbi-quartnbi])/2;
                     }
-                } // fin nbi>=4
-            } // fin if nbi>1
+                }
+            }
             _paramsArray[icri][SH][IntDev]   = medianDistanceVariation;
             _paramsArray[icri][SH][SmIntDev]  = medianLittleDistanceVariation;
             _paramsArray[icri][SH][LgIntDev]  = medianBigDistanceVariation;
-            //
             _paramsArray[icri][SH][VarInt]  = medianDistanceVariation/medianDistance;
             if(medianLittleDistance>0.0f) _paramsArray[icri][SH][VarSmInt]  = medianLittleDistanceVariation/medianLittleDistance;
             _paramsArray[icri][SH][VarLgInt]  = medianBigDistanceVariation/medianBigDistance;
-            //
             if(medianLittleDistanceVariation==0) _paramsArray[icri][SH][RIntDev1] = 0.0f;
             else _paramsArray[icri][SH][RIntDev1] = medianBigDistanceVariation / medianLittleDistanceVariation;
-            // affecter les paramï¿½tres liï¿½s ï¿½ la bande rband
-            // sur le mï¿½me axe y
             int ymaitr = MasterPoints.at(icri).y();
             for(int jb =0;jb<nbb;jb++)
             {
@@ -3443,11 +3334,9 @@ void DetecTreatment::detectsParameter2()
                     _paramsArray[jcri][SH][RIntDev1]  = _paramsArray[icri][SH][RIntDev1];
                     alreadyTreated[jcri] = true;
                 }
-
             }
-        } // fin if alreadytreated = false
-    } // next icri
-    //if(_detec->IDebug) _detec->_logText << "-dp2 fin" << endl;
+        }
+    }
 }
 
 void DetecTreatment::sortFloatArray(float *pf,int nbf)
@@ -3567,10 +3456,25 @@ void DetecTreatment::saveCompressedParameters(const QString& wavFile)
 {
     QString txtFilePath = _txtPath+"/"+wavFile.left(wavFile.length()-3)+ _resultSuffix;
     QString compressedParametersPath = _txtPath+"/"+wavFile.left(wavFile.length()-3) + _resultCompressedSuffix;
-    QString program = "7z";
-    QStringList  arguments;
-    arguments << "a" << "-tgzip" << compressedParametersPath <<  txtFilePath;
-    QProcess::execute(program,arguments);
+    if(_detec->IDebug) _detec->LogStream << "compressedParametersPath = " << compressedParametersPath << endl;
+    if(QFile::exists(compressedParametersPath)) QFile::remove(compressedParametersPath);
+    int resu;
+    if(LINWIN==1)
+    {
+        QString program = "7za";
+        QStringList  arguments;
+        arguments << "a" << "-tgzip" << compressedParametersPath <<  txtFilePath;
+        resu = QProcess::execute(program,arguments);
+        if(resu==0) QFile::remove(txtFilePath);
+    }
+    else
+    {
+        QString program = "gzip";
+        QStringList  arguments;
+        arguments << txtFilePath;
+        resu = QProcess::execute(program,arguments);
+    }
+    if(_detec->IDebug) _detec->LogStream << "resu = " << resu << endl;
 }
 
 

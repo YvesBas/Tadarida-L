@@ -6,7 +6,7 @@
 #include "fenim.h"
 class Fenim;
 
-#define NCRETES 5
+#define CRESTSNUMBER 5
 
 class Loupe : public QMainWindow
 {
@@ -66,11 +66,11 @@ private:
     MyQPushButton                      *_bZoomH;
     MyQPushButton                      *_bUnZoom;
     MyQPushButton                      *_bUnZoomH;
-    int                                _coucri[MAXCRI];
+    int                                _callColour[MAXCRI];
     QGroupBox                          *_gboxButtons;
     QGraphicsEllipseItem               *_gepm[MAXCRI];
-    QGraphicsPathItem                  **_gplt[NCRETES];
-    QGraphicsEllipseItem               *_gepsu[NCRETES][NSUPPL][MAXCRI];
+    QGraphicsPathItem                  **_gplt[CRESTSNUMBER];
+    QGraphicsEllipseItem               *_gepsu[CRESTSNUMBER][NSUPPL][MAXCRI];
     QGraphicsLineItem                  *_gliv[500];
     QGraphicsLineItem                  *_glih[500];
     bool                               _ilc[MAXCRI];

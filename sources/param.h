@@ -61,7 +61,7 @@ public:
     TadaridaMainWindow      *PMainWindow;
 
 public slots:
-    void enregParams();
+    void storeParams();
 
 private:
     int                     _checkBoxOrderNumber;
