@@ -1,6 +1,6 @@
 numver,m_verLog=22,22
 numveruser,m_verUser=0,0
- nb calls = 41
+ nb calls = 79
  _imaHeight = 256
 m_xmoitie = 0
 m_factory=0.75
@@ -8,7 +8,7 @@ m_factorx=0.166667
 withSilence=false
 CreatFenimWindow : création de PFenimWindow
 fin CreateFenimWindow
-loadLabels 1 - nbcris=41
+loadLabels 1 - nbcris=79
 _fWl = 1366 et __fWh=705
 _ WidthRatio = 0.235 et HeightRatio=2.6625
 PFenim->ImageHeight = 256 et Fenima->height()=256
