@@ -28,7 +28,7 @@ class Recherche : public QMainWindow
 public:
     Recherche(QMainWindow *parent);
     ~Recherche();
-    void afficher_ecran();
+    void showScreen();
 
 private:
     bool findTreat(bool);

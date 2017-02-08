@@ -5,6 +5,21 @@
 
 const QString _baseIniFile = "/version.ini";
 
+// Fenim.cpp contains the code for two "associated" classes
+// Fenim class handles the treatments used to show the picture corresponding to
+// a treated file and allows an expert user to enter labels for its sound events...
+// fenim class doesn't contain graphical objects
+
+// FenimWindow object is created by CreatFenimWindow method of Fenim class
+// which is called by ShowFenim method of Fenim class
+// which is called by showPicture method of main class (TadaridaMainWindow)
+// in both cases of labelling or updating labellings
+// (the two treatments proposed by the interface)
+// FenimWindow object contains graphical objects of IHM
+
+// Fenim objects can also be used without FenimWindow objects in order to use
+// methods useful for general reprocessing
+
 FenimWindow::FenimWindow(Fenim *pf,QMainWindow *parent) : QMainWindow(parent)
 {
     PFenim = pf;
@@ -13,7 +28,8 @@ FenimWindow::FenimWindow(Fenim *pf,QMainWindow *parent) : QMainWindow(parent)
     GBoxInput = new QGroupBox(this);
 }
 
-
+// these are methods triggered by HMI events of then FenimWindow class
+// which launch methods of processing belonging to the Fenim class
 void FenimWindow::ValidateLabel() { PFenim->ValidateLabel(); }
 void FenimWindow::SaveLabels() { PFenim->SaveLabels(); }
 void FenimWindow::CloseFenim() { PFenim->CloseFenim(); }
@@ -36,6 +52,7 @@ void FenimWindow::SpecTagPrevious() { PFenim->SpecTagPrevious(); }
 void FenimWindow::SpecTagLast() { PFenim->SpecTagLast(); }
 void FenimWindow::SpecTagFirst() { PFenim->SpecTagFirst(); }
 
+// this method connects the signals (event handlers) to methods
 void FenimWindow::CreateConnections()
 {
     connect(BClose,SIGNAL(clicked()),this,SLOT(close()));
@@ -61,6 +78,7 @@ void FenimWindow::CreateConnections()
     connect(BStartArrowSpec,SIGNAL(clicked()),this,SLOT(SpecTagFirst()));
 }
 
+// FieldClass : this class is used to set the input objects of the window
 FieldClass::FieldClass(QWidget *parent,Fenim *pf,QString title,int fieldType,bool obl,bool unic,QString fieldCode,bool allowAdd,int smin,int smax,QString englishLabel)
 {
   PFenim = pf;
@@ -96,7 +114,6 @@ FieldClass::FieldClass(QWidget *parent,Fenim *pf,QString title,int fieldType,boo
      LE->setEnabled(true);
 
   }
-  //enum FIELDTYPE {SLE,EC,SLI,CHB};
   if(FieldType==SLI)
   {
     SLid = new QSlider(parent);
@@ -112,6 +129,7 @@ FieldClass::FieldClass(QWidget *parent,Fenim *pf,QString title,int fieldType,boo
   
 }
 
+// method to feed a widget
 void FieldClass::Affect(QString text)
 {
     if(FieldType==CHB)
@@ -127,6 +145,7 @@ void FieldClass::Affect(QString text)
     }
 }
 
+// method to read an entry
 QString FieldClass::GetText()
 {
     QString resu = "";
@@ -138,12 +157,16 @@ QString FieldClass::GetText()
     return(resu);
 }
 
+// method to update colour of an entry according to conventions
+// this method colors an input area according to rules intended
+// to alert users of the origin of the displayed information
 void FieldClass::Colour(QString colorText)
 {
     if(FieldType==CHB) TitleLabel->setStyleSheet(colorText);
     else LE->setStyleSheet(colorText);
 }
 
+// constructor of fenim class - initializations
 Fenim::Fenim(QMainWindow *parent,QString repwav,QString nomfi,QDir basejour,bool casa,bool casretr,int typeretraitement,QString suffixe,int vl,int vu,int mf)
 {
     _windowCreated = false;
@@ -192,11 +215,11 @@ Fenim::~Fenim()
     delete[] FlagGoodCol;
     delete[] FlagGoodColInitial;
     delete[] EnergyAverageCol;
-
     ClearFenim();
     if(_windowCreated) delete PFenimWindow;
 }
 
+// this method draws the window
 void FenimWindow::CreateFenimWindow(bool modeSaisie)
 {
     setWindowTitle("Tadarida  -  Labelling");
@@ -222,9 +245,7 @@ void FenimWindow::CreateFenimWindow(bool modeSaisie)
     BClose = new MyQPushButton(GBoxInput);
     BZoom = new MyQPushButton(_gGBoxButtons);
     BUnZoom = new MyQPushButton(_gGBoxButtons);
-    //fr bcGrille = new QCheckBox(QString("Grille"),gbox_boutons);
     BCGrid = new QCheckBox(QString("Grid"),_gGBoxButtons);
-    //fr bcPMaitres = new QCheckBox(QString("Pts maitres"),gbox_boutons);
     BCMasterPoints = new QCheckBox(QString("Master pts"),_gGBoxButtons);
     BCCalls = new QCheckBox(QString("Lines"),_gGBoxButtons);
     LabelX = new QLabel(_gGBoxButtons);
@@ -296,14 +317,16 @@ void FenimWindow::CreateFenimWindow(bool modeSaisie)
     //
     Fenima = new QImage;
     Fenima->load(PFenim->ImageFullName);
-    Scene = new MyQGraphicsScene(PFenim,this,false); // création de la scene
-    View = new MyQGraphicsView(this); // création de la view
-    View->setScene(Scene);  // ajout de la scene dans la view
-    PixMap=(Scene->addPixmap(QPixmap::fromImage(*Fenima))); // ajout du pixmap dans la scene
+    Scene = new MyQGraphicsScene(PFenim,this,false); 
+    View = new MyQGraphicsView(this); 
+    View->setScene(Scene);  
+    PixMap=(Scene->addPixmap(QPixmap::fromImage(*Fenima))); 
     View->setMouseTracking(true);
-    PFenim->LogStream  << "fin CreateFenimWindow" << endl;
+    PFenim->LogStream  << "end of CreateFenimWindow" << endl;
 }
 
+// this method creates a FenimWindow object and calls PFenimWindow::CreateFenimWindow
+// which draws the window
 void Fenim::CreatFenimWindow(bool inputMode)
 {
     LogStream << "CreatFenimWindow : création de PFenimWindow" << endl;
@@ -328,6 +351,7 @@ void Fenim::CreatFenimWindow(bool inputMode)
     _windowCreated = true;
 }
 
+// this method positions and sizes the graphic objects of the window
 void FenimWindow::ResizeFenimWindow(bool firstCall)
 {
     _countResize ++;
@@ -481,6 +505,8 @@ void FenimWindow::ResizeFenimWindow(bool firstCall)
     LabelR->resize(larpw,_fWbh);
 }
 
+// this method displays the information offered in each field and colors them
+// according to rules described in the manual
 void Fenim::initInputs()
 {
     for(int i=0;i<NBFIELDS;i++)
@@ -509,21 +535,19 @@ void Fenim::initInputs()
     }
 }
 
+// method used by the Loupe class to know location and dimensions of fenim window
 QRect Fenim::GetWindowRect()
 {
     return(PFenimWindow->WinRect);
 }
 
-MyQGraphicsView* Fenim::GetView()
-{
-    return(PFenimWindow->View);
-}
-
+// method used to give information to Loupe class object
 QImage * Fenim::GetImage()
 {
     return(PFenimWindow->Fenima);
 }
 
+// this method selects a sound events which number is entered in EditLabel widget
 void Fenim::SelectEditedCalls()
 {
     if(NoMore) return;
@@ -551,65 +575,16 @@ void Fenim::SelectEditedCalls()
     }
 }
 
-void EditCombo::redoList(const QString& enteredText)
-{
-    EcCo->clear();
-    if(enteredText.isEmpty()) EcCo->insertItems(0,*ListCodes);
-    else
-    {
 
-        QStringList liste2;
-        for(int i=0;i<ListCodes->size();i++)
-        {
-            if(ListCodes->at(i).contains(enteredText))
-                liste2.append(ListCodes->at(i));
-        }
-        if(liste2.size()<1) EcCo->insertItems(0,*ListCodes);
-        else EcCo->insertItems(0,liste2);
-    }
-}
-
-void EditCombo::SelectCode()
-{
-    if(EcCo->count()>0) SelectCode(EcCo->itemText(0));
-}
-
-void EditCombo::SelectCode(const QString& selectedText)
-{
-    if(EcCo->count()<1) EcCo->insertItems(0,*ListCodes);
-    EcLe->setText(selectedText);
-    EcLe->setFocus(); // en attendant d'avoir le paramètre pour passer au champ suivant ZZZ
-}
-
-
-bool EditCombo::ConfirmAdd(QString& s)
-{
-    if(QMessageBox::question((QWidget *)PFenimWindow, (const QString &)QString("Question"),
-                             //fr (const QString &)QString("Code ")+s+QString(" absent de la table : accepter ce code ?"),
-                             (const QString &)QString("Code ")+s+QString(" code missing from the table : accept it ?"),
-                             QMessageBox::Yes|QMessageBox::No)
-            == QMessageBox::No) return(false);
-    ListCodes->insert(0,s);
-    ListCodes->sort();
-    redoList(s);
-    QFile fichier;
-    QTextStream textefi;
-    fichier.setFileName(CodeFi+".txt");
-    if(fichier.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate))
-    {
-        textefi.setDevice(&fichier);
-        for(int i=0;i<ListCodes->size();i++) textefi << ListCodes->at(i) << endl;
-        fichier.close();
-    }
-    return(true);
-}
-
+// this method updates LineEdit object associated with a SlideBox object according
+// to the value transmitted
 void Fenim::SelectIndex(int n)
 {
     PFC[INDICE]->LE->setText(QString::number(n));
     PFC[INDICE]->LE->setStyleSheet(InputColors[4]);
 }
 
+// this method updates the SlideBox object according to value transmitted
 void Fenim::UpdateIndex(const QString& selectedIndex)
 {
     bool convint;
@@ -626,7 +601,7 @@ void Fenim::ClickConfi()
     PFC[CONFIDENTIEL]->Colour(InputColors[4]);
 }
 
-
+// this method controls a text entered in the QLineEdit object of an EditCombo object
 bool EditCombo::Control(QString &s,QString &errorMessage,bool obl)
 {
     bool bon = true; errorMessage="";
@@ -668,6 +643,9 @@ bool EditCombo::Control(QString &s,QString &errorMessage,bool obl)
     return(bon);
 }
 
+// this method saves in memory labels (created or updated)
+// for the sound event(s) selected
+// when the button "Validate the label(s)" is pressed
 void Fenim::ValidateLabel()
 {
     QString s,mess_err="";
@@ -676,7 +654,6 @@ void Fenim::ValidateLabel()
         s=PFC[i]->GetText();
         if(s.isEmpty() && PFC[i]->Obl==true)
         {
-            //fr QMessageBox::warning(wfenim,"Saisie obligatoire",mess_err, QMessageBox::Ok);
             QMessageBox::warning(PFenimWindow,"Required entry",mess_err, QMessageBox::Ok);
             PFC[i]->LE->setFocus();
             return;
@@ -701,7 +678,6 @@ void Fenim::ValidateLabel()
 
             if(!convint)
             {
-                //fr QMessageBox::warning(wfenim,"Incorrect entry","Saisir un nombre entre 1 et 5 !", QMessageBox::Ok);
                 QMessageBox::warning(PFenimWindow,"Incorrect entry","Enter a number between 1 and 5 !", QMessageBox::Ok);
                 PFC[i]->LE->setFocus();
                 return;
@@ -725,7 +701,6 @@ void Fenim::ValidateLabel()
         }
         if(!convdate)
         {
-            //j QMessageBox::warning(wfenim,"Saisir une date jj/mm/aaaa",mess_err, QMessageBox::Ok);
             QMessageBox::warning(PFenimWindow,"Enter a date dd/mm/yyyy",mess_err, QMessageBox::Ok);
             PFC[DATENREG]->LE->setFocus();
             return;
@@ -754,15 +729,19 @@ void Fenim::ValidateLabel()
         showNbLabels();
         updateChbTagSpec();
     }
-    InputToSave = true; // on peut faire mieux
+    InputToSave = true;
 }
 
+// this method saves last entered text to offer them for the next entries
 void Fenim::inputsSave(Etiquette *pLabel)
 {
     for(int i=0;i<NBFIELDS;i++)
         PMainWindow->LastFields[i] = pLabel->DataFields[i];
 }
 
+// this method affects the values entered for one (or more) sound events
+// to all the sound events, for the fields which must have the same value
+// for the whole file
 void Fenim::treatUniqueFields()
 {
     bool toExtend = false;
@@ -791,16 +770,20 @@ void Fenim::treatUniqueFields()
     }
 }
 
+// colors in green colour inputs which have already been saved
 void Fenim::greenPaint()
 {
     for(int j=0;j<NBFIELDS;j++) PFC[j]->Colour(InputColors[2]);
 }
 
+// this method loads useful informations (.da2 file)
+// and shows the window, created by the call of CreatFenimWindow method
+// this is the entry point of the fenim class
+// it is called by the showPicture method of the main class
 bool Fenim::ShowFenim(bool inputMode)
 {
     if(FolderLogVersion <LogVersion || FolderUserVersion < UserVersion)
     {
-        //QMessageBox::warning(fparent,"Fichier inaccessible","Version en retard : retraiter d'abord le dossier !", QMessageBox::Ok);
         QMessageBox::warning(ParentWindow,"File is unreacheable","Version is late : reprocess first the folder !", QMessageBox::Ok);
         return(false);
     }
@@ -817,7 +800,6 @@ bool Fenim::ShowFenim(bool inputMode)
         if(_windowCreated) PFenimWindow->close();
         return(true);
     }
-
     showNbLabels();
     initInputs();
     initMasterPoints();
@@ -829,6 +811,8 @@ bool Fenim::ShowFenim(bool inputMode)
     return(true);
 }
 
+// this method is used by methods of the RematchClass class
+// to get informations useful for general reprocessing
 bool Fenim::LoadCallsLabels()
 {
     if(!_reprocessingCase) initCalls();
@@ -842,6 +826,7 @@ bool Fenim::LoadCallsLabels()
     return(true);
 }
 
+// these methods manage the zoom of the picture
 void Fenim::Zoom()
 {
     ZoomF(1.414f);
@@ -859,6 +844,8 @@ void Fenim::ZoomF(float iz)
     ShowRatio();
 }
 
+// this method initializes vectors which get informations about sound events
+// used to manage the display of sound events in the picture
 void Fenim::initCalls()
 {
     for(int i=0;i<CRESTSNUMBER;i++)
@@ -871,6 +858,8 @@ void Fenim::initCalls()
 
 }
 
+// this method draws a sound event
+// it calls ShowOneCall for each sound event
 void Fenim::ShowCalls()
 {
     bool affichercri = PFenimWindow->BCCalls->isChecked();
@@ -880,6 +869,8 @@ void Fenim::ShowCalls()
     }
 }
 
+// this method displays the representation of "master points"
+// (peaks of energy of sound events)
 void Fenim::ShowMasterPoints()
 {
     bool afficherpm = PFenimWindow->BCMasterPoints->isChecked();
@@ -901,6 +892,7 @@ void Fenim::ActivateCrests()
     ShowCalls();
 }
 
+// this method displays or hides the grids (graduations)
 void Fenim::ShowGrid(bool toShow)
 {
     if(_nliv>0) for(int i=0;i<_nliv;i++) delete PFenimWindow->GLiv[i];
@@ -931,7 +923,6 @@ void Fenim::ShowGrid(bool toShow)
             else affi = QString::number(nigt)+" ms";
             PFenimWindow->GTe[_nte] = PFenimWindow->Scene->addSimpleText(affi,qf);
             PFenimWindow->GTe[_nte]->setPos(x+invsx*2,ImageHeight-((float)30/PFenimWindow->HeightRatio));
-            //gte[nte]->scale(invsx,invsy);
             PFenimWindow->GTe[_nte]->SCALE(invsx,invsy);
             _nte++;
         }
@@ -956,6 +947,7 @@ void Fenim::ShowGrid(bool toShow)
     }
 }
 
+// this method draws the representation of one sound event
 void Fenim::ShowOneCall(int callNumber,bool selectedCall,bool showCall)
 {
     if(!(callNumber<MAXCRI)) return;
@@ -1003,6 +995,7 @@ void Fenim::ShowOneCall(int callNumber,bool selectedCall,bool showCall)
     }
 }
 
+// this method draws the representation of one master point
 void Fenim::ShowOneMasterPoint(int callNumber,bool selectedCall,bool showMasterPoint)
 {
     if(!(callNumber<MAXCRI)) return;
@@ -1049,7 +1042,7 @@ void Fenim::ShowOneMasterPoint(int callNumber,bool selectedCall,bool showMasterP
     }
 }
 
-
+// this method loads .da2 file, associated and loads informations from this file in matrices
 bool Fenim::loadCallsMatrices(QString da2File)
 {
     _da2File.setFileName(da2File);
@@ -1188,13 +1181,14 @@ bool Fenim::loadCallsMatrices(QString da2File)
     return(true);
 }
 
+// this method searches for labels which can be recovered
+// if considers that the sound event is the same if the master point has the same
+// localization or is very close
 int Fenim::MatchLabels(Fenim * fenim1,bool initial,QString recupVersion,int *cpma)
 {
-    // apriori : rien à changer pour la version contour !
     LogStream << "MatchLabels - m_nbcris = " << CallsNumber << endl;
     LogStream << "master points Number = " << MasterPointsVector.size() << endl;
     LogStream << "rematcheEtiquettes - fenim1 master points Number = " << fenim1->MasterPointsVector.size() << endl;
-    // ajoutr le nombre d'étiquettes !
     int nrecup=0;
     QStringList listSpecrecup;
     for(int i=0;i<CallsNumber;i++)
@@ -1237,6 +1231,8 @@ int Fenim::MatchLabels(Fenim * fenim1,bool initial,QString recupVersion,int *cpm
     return(nrecup);
 }
 
+// these methods initialize arrays which are used to know if graphic objects
+// are already created
 void Fenim::initMasterPoints()
 {
     for(int i=0;i<CallsNumber && i<MAXCRI;i++)
@@ -1252,6 +1248,8 @@ void Fenim::initLines()
     }
 }
 
+// this method feeds the list of species that are associated with at least one
+// sound event
 void Fenim::updateTagNSpec(int i)
 {
     int pos = _listTaggedSpecies.size();
@@ -1261,15 +1259,20 @@ void Fenim::updateTagNSpec(int i)
     EtiquetteArray[i]->SpecNumber = pos;
 }
 
+// this method loads the combobox which allows to select all the sound events
+// associated with a species
 void Fenim::updateChbTagSpec()
 {
     PFenimWindow->ChbTagSpec->clear();
     PFenimWindow->ChbTagSpec->insertItems(0,_listTaggedSpecies);
 }
 
+// this method loads the informations of the ".eti file"
+// if the number of sound events of the last treatment and the one
+// of the ".eti file" are not identical : the labels are reinitialized
 bool Fenim::loadLabels()
 {
-    LogStream << "loadLabels 1 - nbcris=" << CallsNumber << endl;
+    LogStream << "loadLabels - CallsNumber = " << CallsNumber << endl;
     SelectedCalls = new bool[CallsNumber];
     _oldSelectedCalls = new bool[CallsNumber];
     EtiquetteArray = new Etiquette*[CallsNumber];
@@ -1366,6 +1369,7 @@ void Fenim::showNbLabels()
     else PFenimWindow->LabelNbLabs->SetText(QString::number(LabelsNumber)+" labels");
 }
 
+// reinitialization of labels
 void Fenim::reinitLabels()
 {
     LabelsNumber=0;
@@ -1373,6 +1377,7 @@ void Fenim::reinitLabels()
         EtiquetteArray[i]->EtiquetteClear();
 }
 
+// this method saves the .eti file
 void Fenim::SaveLabels()
 {
     LogStream << "SaveLabels" << endl;
@@ -1396,11 +1401,13 @@ void Fenim::SaveLabels()
     _overwriteFile = false;
 }
 
+// the array:oldSelecteCalls to compare new and old selections to optimize redisplay
 void Fenim::StockSelectedCalls()
 {
     for(int i=0;i<CallsNumber;i++) _oldSelectedCalls[i]=SelectedCalls[i];
 }
 
+// this method manages the redisplay according to the modified selections
 void Fenim::ShowSelections(bool specSelect)
 {
     QString lsai[NBFIELDS];
@@ -1480,6 +1487,7 @@ void Fenim::ShowSelections(bool specSelect)
     }
 }
 
+// this method is called when a sound event is selected
 void Fenim::SelectCall(int n,bool specSelect)
 {
     StockSelectedCalls();
@@ -1496,6 +1504,7 @@ void Fenim::SelectCall(int n,bool specSelect)
     }
 }
 
+// these methods select the next, previous, first or last sound event
 void Fenim::NextCall()
 {
     if(_lastCallSelected<CallsNumber-1)
@@ -1524,6 +1533,7 @@ void Fenim::StartCall()
     SelectCall(0,false);
 }
 
+// these methods select the next, previous, first or last species
 void Fenim::SpecTagNext()
 {
     if(SpecTagNumber>0)
@@ -1568,7 +1578,7 @@ void Fenim::SpecTagFirst()
     }
 }
 
-
+// this method searches for a sound event whose master point is close to the mouse clic
 void Fenim::SelectCall(int x,int y,bool isCTRL)
 {
     float distmax = 3000;
@@ -1601,6 +1611,8 @@ void Fenim::SelectCall(int x,int y,bool isCTRL)
     }
 }
 
+// this method sets the text of a bubble when the mouse cursor is close to the master point
+// of a sound event
 QString Fenim::CalculateBubble(int x,int y)
 {
     QString retour("");
@@ -1624,9 +1636,9 @@ QString Fenim::CalculateBubble(int x,int y)
         QString typ = EtiquetteArray[ntrouve]->DataFields[TYPE];
         QString ind = EtiquetteArray[ntrouve]->DataFields[INDICE];
         if(!esp.isEmpty() || !typ.isEmpty())
-            retour=QString("Cry ")+QString::number(ntrouve+1)+" : "+esp+" - "+typ+ "    ("+ind+")";
+            retour=QString("Sound event ")+QString::number(ntrouve+1)+" : "+esp+" - "+typ+ "    ("+ind+")";
         else
-            retour=QString("Cry ")+QString::number(ntrouve+1)+" : without label";
+            retour=QString("Sound event ")+QString::number(ntrouve+1)+" : without label";
         retour += " - ";
     }
     if(WithSilence && y<6)
@@ -1644,7 +1656,8 @@ void Fenim::ShowBubble(QString bubbleString)
         QToolTip::showText(QCursor::pos(),bubbleString);
 }
 
-
+// this method selects the sound events whose master point is inside
+// a rectangle selected with the mouse
 void Fenim::SelectCallsRect(int x1,int y1,int x2,int y2,bool isCTRL)
 {
     y1 = ImageHeight-y1-1;
@@ -1667,6 +1680,7 @@ void Fenim::SelectCallsRect(int x1,int y1,int x2,int y2,bool isCTRL)
     ShowSelections(false);
 }
 
+// selection of all sound events (Ctrl A)
 void Fenim::SelectAllCalls()
 {
     StockSelectedCalls();
@@ -1675,7 +1689,7 @@ void Fenim::SelectAllCalls()
     ShowSelections(false);
 }
 
-
+// selection of sound events corresponding to a species
 void Fenim::SelectSpecTags(const QString& selectedCode)
 {
     PFenimWindow->LabelTagSpec->SetText(selectedCode);
@@ -1704,6 +1718,7 @@ void Fenim::enableMoreArrows()
     PFenimWindow->BLeftArrowSpec->setEnabled(true);
 }
 
+// this method deletes some objects and arrays of Fenim and FenimWindow objects
 void Fenim::ClearFenim()
 {
     LogStream << "ClearFenim" << endl;
@@ -1731,6 +1746,9 @@ void Fenim::CloseFenim()
     PFenimWindow->close();
 }
 
+// if labelling has been saved (in case of initial labelling), this method
+// moves the wav file and output files (treatment and labelling files)
+// in the day folder of the reference database
 void Fenim::SessionFinish()
 {
     if(_reprocessingCase) return;
@@ -1773,6 +1791,7 @@ void FenimWindow::resizeEvent(QResizeEvent *re)
     show();
 }
 
+// this method handles closing event
 void FenimWindow::closeEvent(QCloseEvent *event)
  {
     if(PFenim->InputToSave)
@@ -1791,6 +1810,8 @@ void FenimWindow::closeEvent(QCloseEvent *event)
 
  }
 
+// this method creates a Loupe object, which is a zoom window, triggered by doucbleclic
+// useful for visualization and/or selection of sound events
 void Fenim::CreateLoupe(int x,int y)
 {
     if(ShowLoupe) delete PLoupe;
@@ -1811,26 +1832,31 @@ void Fenim::ShowRatio()
     PFenimWindow->LabelR->setText(QString("r=")+ratio);
 }
 
+// this method converts an x value in a time value (ms)
 float Fenim::Getms(int x)
 {
     return((FactorX * x) * (1+XHalf));
 }
 
+// this method converts a time value in an x value
 float Fenim::GetX(float t)
 {
     return(t/(FactorX * (1+XHalf)));
 }
 
+// this method converts an y value in a frequency value
 float Fenim::GetkHz(int y)
 {
     return(FactorY * (ImageHeight - y -1));
 }
 
+// this method converts a frequency value in an y value
 float Fenim::GetY(float f)
 {
     return((float)ImageHeight - 1 - f/FactorY );
 }
 
+// this method manages displays (of Fenim and Loupe windows) when the mouse moves
 void MyQGraphicsScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * mouseEvent )
 {
     QPointF pos = mouseEvent->lastScenePos();
@@ -1925,7 +1951,8 @@ void MyQGraphicsScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * mouseEvent )
     }
 }
 
-
+// the MyQGraphicsScene is a class heriting from QGraphicsScene
+// used to enable dynamic display of graphic objects offered by Qt classes
 MyQGraphicsScene::MyQGraphicsScene(Fenim *pf,QMainWindow *parent,bool il):QGraphicsScene(parent)
 {
     Qmaitre = parent;
@@ -1945,9 +1972,9 @@ MyQGraphicsScene::MyQGraphicsScene(Fenim *pf,QMainWindow *parent,bool il):QGraph
     algri = false;
 }
 
+// mouse event handlers managed by MyQGraphicsScene class
 void MyQGraphicsScene::mousePressEvent ( QGraphicsSceneMouseEvent * mouseEvent )
 {
-//    if(iloupe) return;
     QPointF pos = mouseEvent->lastScenePos();
     derx = pos.x();
     dery = pos.y();
@@ -1996,7 +2023,28 @@ void MyQGraphicsScene::keyPressEvent(QKeyEvent* e)
     if(keyMod.testFlag(Qt::ControlModifier) && e->key() == 'A') PFenim->SelectAllCalls();
 }
 
+// subclass of QLabel
+MyQLabel::MyQLabel(QWidget *parent):QLabel(parent)
+{
+    QMaster = parent;
+    setFont(QFont("Arial",10,QFont::Normal));
+    setStyleSheet("background-color: #F8F8FE");
+}
 
+void MyQLabel::SetText(QString message)
+{
+    if(message.isEmpty())
+    {
+        if(isVisible()) setVisible(false);
+    }
+    else
+    {
+        if(!isVisible()) setVisible(true);
+    }
+    QLabel::setText(message);
+}
+
+// MyQLineEdit is a subclass used in this application
 MyQLineEdit::MyQLineEdit(QWidget *parent,Fenim *fen,QString cod):QLineEdit(parent)
 {
     Qmaitre = parent;
@@ -2004,101 +2052,6 @@ MyQLineEdit::MyQLineEdit(QWidget *parent,Fenim *fen,QString cod):QLineEdit(paren
     Codeedit=cod;
     setFont(QFont("Arial",10,QFont::Normal));
 }
-
-EC_LineEdit::EC_LineEdit(QWidget *parent,Fenim *fen,QString cod):MyQLineEdit(parent,fen,cod)
-{
-    _pFenim=fen;
-    connect(this,SIGNAL(textEdited(const QString&)),this,SLOT(UpdateText(const QString&)));
-}
-
-Simple_LineEdit::Simple_LineEdit(QWidget *parent,Fenim *fen,QString cod):MyQLineEdit(parent,fen,cod)
-{
-    _pFenim=fen;
-    connect(this,SIGNAL(textEdited(const QString&)),this,SLOT(UpdateText(const QString&)));
-}
-
-void EC_LineEdit::SetEcp(EditCombo *pec)
-{
-    Ecp=pec;
-}
-
-EC_ComboBoxEdit::EC_ComboBoxEdit(QWidget *parent,Fenim *fen,QString cod):MyQComboBox(parent,fen,cod)
-{
-    connect(this, SIGNAL(activated(const QString&)), this, SLOT(SelectCode(const QString&)));
-}
-
-void EC_ComboBoxEdit::SetEcp(EditCombo *pec)
-{
-    Ecp=pec;
-}
-
-EditCombo::EditCombo(QWidget *parent,Fenim *fen,QString cod,QString englishCode,bool autaj)
-{
-    PFenimWindow = fen->PFenimWindow;
-    EcLe=new EC_LineEdit(parent,fen,cod);
-    EcCo=new EC_ComboBoxEdit(parent,fen,cod);
-    EcLe->SetEcp(this);
-    EcCo->SetEcp(this);
-    CodeFi = cod;
-    EnglishCode = englishCode;
-    AllowAdd=autaj;
-    ListCodes = new QStringList();
-    QFile fichier;
-    fichier.setFileName(cod+".txt");
-    QTextStream textefi;
-    if(fichier.open(QIODevice::ReadOnly)==true)
-    {
-        textefi.setDevice(&fichier);
-        QString lte;
-        bool trcod =  true;
-        while(trcod)
-        {
-            if(textefi.atEnd()) trcod=false;
-            else
-            {
-                lte = (textefi.readLine());
-                if(lte.isNull()) trcod = false;
-                else
-                {
-                    if(lte.isEmpty()) trcod = false;
-                    else ListCodes->append(lte);
-                }
-            }
-        }
-
-    }
-    redoList("");
-}
-
-void EC_LineEdit::UpdateText(const QString& s)
-{
-    Ecp->redoList(s);
-    Ecp->EcLe->setStyleSheet(_pFenim->InputColors[4]);
-}
-
-void EC_ComboBoxEdit::SelectCode(const QString& s)
-{
-    Ecp->SelectCode(s);
-    Ecp->EcLe->setStyleSheet(PFenim->InputColors[4]);
-}
-
-void EC_LineEdit::keyPressEvent(QKeyEvent* e)
-{
-    if(e->key()==Qt::Key_Return)
-    {
-        QString sc = Ecp->EcCo->currentText();
-        QString se = text();
-        if(se.length()>0 && sc.length()>0 && sc.contains(se))
-            Ecp->SelectCode(sc);
-    }
-    MyQLineEdit::keyPressEvent(e);
-}
-
-void Simple_LineEdit::UpdateText(const QString& s)
-{
-    this->setStyleSheet(_pFenim->InputColors[4]);
-}
-
 
 void MyQLineEdit::keyPressEvent(QKeyEvent* e)
 {
@@ -2153,33 +2106,81 @@ void MyQLineEdit::keyPressEvent(QKeyEvent* e)
     QLineEdit::keyPressEvent(e);
 }
 
-MyQLabel::MyQLabel(QWidget *parent):QLabel(parent)
-{
-    QMaster = parent;
-    setFont(QFont("Arial",10,QFont::Normal));
-    setStyleSheet("background-color: #F8F8FE");
-}
-
-void MyQLabel::SetText(QString message)
-{
-    if(message.isEmpty())
-    {
-        if(isVisible()) setVisible(false);
-    }
-    else
-    {
-        if(!isVisible()) setVisible(true);
-    }
-    QLabel::setText(message);
-}
-
-
+// subclass of QComboBox
 MyQComboBox::MyQComboBox(QWidget *parent,Fenim *fen,QString esp):QComboBox(parent)
 {
     Qmaitre = parent;
     PFenim = fen;
     Codecombo=esp;
     setFont(QFont("Arial",10,QFont::Normal));
+}
+
+void MyQComboBox::keyPressEvent(QKeyEvent* e)
+{
+    if(PFenim!=0)
+    {
+        Qt::KeyboardModifiers keyMod = QApplication::keyboardModifiers ();
+        if(keyMod.testFlag(Qt::ControlModifier) && e->key() == 'A') PFenim->SelectAllCalls();
+    }
+    QComboBox::keyPressEvent(e);
+}
+
+// Simple_LineEdit is an other subclass of MyQLineEdit which is not used by EditCombo class
+Simple_LineEdit::Simple_LineEdit(QWidget *parent,Fenim *fen,QString cod):MyQLineEdit(parent,fen,cod)
+{
+    _pFenim=fen;
+    connect(this,SIGNAL(textEdited(const QString&)),this,SLOT(UpdateText(const QString&)));
+}
+
+void Simple_LineEdit::UpdateText(const QString& s)
+{
+    this->setStyleSheet(_pFenim->InputColors[4]);
+}
+
+// EC_LineEdit is a subclass of MyQLineEdit used by EditCombo class
+EC_LineEdit::EC_LineEdit(QWidget *parent,Fenim *fen,QString cod):MyQLineEdit(parent,fen,cod)
+{
+    _pFenim=fen;
+    connect(this,SIGNAL(textEdited(const QString&)),this,SLOT(UpdateText(const QString&)));
+}
+
+void EC_LineEdit::SetEcp(EditCombo *pec)
+{
+    Ecp=pec;
+}
+
+// this method updates the QComboBox object when the text of the QLineEdit
+// object is updated
+void EC_LineEdit::UpdateText(const QString& s)
+{
+    Ecp->redoList(s);
+    Ecp->EcLe->setStyleSheet(_pFenim->InputColors[4]);
+}
+
+void EC_LineEdit::keyPressEvent(QKeyEvent* e)
+{
+    if(e->key()==Qt::Key_Return)
+    {
+        QString sc = Ecp->EcCo->currentText();
+        QString se = text();
+        if(se.length()>0 && sc.length()>0 && sc.contains(se))
+            Ecp->SelectCode(sc);
+    }
+    MyQLineEdit::keyPressEvent(e);
+}
+
+// EC_ComboBoxEdit is a subclass of MyQComboBoxEdit used by EditCombo class
+EC_ComboBoxEdit::EC_ComboBoxEdit(QWidget *parent,Fenim *fen,QString cod):MyQComboBox(parent,fen,cod)
+{
+    connect(this, SIGNAL(activated(const QString&)), this, SLOT(SelectCode(const QString&)));
+}
+
+// this method updates the QLineEdit object when the text of the QComboBox
+// object is updated
+void EC_ComboBoxEdit::SelectCode(const QString& s)
+{
+    Ecp->SelectCode(s);
+    Ecp->EcLe->setStyleSheet(PFenim->InputColors[4]);
 }
 
 void EC_ComboBoxEdit::keyPressEvent(QKeyEvent* e)
@@ -2201,30 +2202,127 @@ void EC_ComboBoxEdit::keyPressEvent(QKeyEvent* e)
     MyQComboBox::keyPressEvent(e);
 }
 
-void MyQComboBox::keyPressEvent(QKeyEvent* e)
+void EC_ComboBoxEdit::SetEcp(EditCombo *pec)
 {
-    if(PFenim!=0)
+    Ecp=pec;
+}
+
+// EditCombo class is a class which associates a QComboBox object and a QLineEdit object
+// and updates one when the other is modified
+EditCombo::EditCombo(QWidget *parent,Fenim *fen,QString cod,QString englishCode,bool autaj)
+{
+    PFenimWindow = fen->PFenimWindow;
+    EcLe=new EC_LineEdit(parent,fen,cod);
+    EcCo=new EC_ComboBoxEdit(parent,fen,cod);
+    EcLe->SetEcp(this);
+    EcCo->SetEcp(this);
+    CodeFi = cod;
+    EnglishCode = englishCode;
+    AllowAdd=autaj;
+    ListCodes = new QStringList();
+    QFile fichier;
+    fichier.setFileName(cod+".txt");
+    QTextStream textefi;
+    if(fichier.open(QIODevice::ReadOnly)==true)
     {
-        Qt::KeyboardModifiers keyMod = QApplication::keyboardModifiers ();
-        if(keyMod.testFlag(Qt::ControlModifier) && e->key() == 'A') PFenim->SelectAllCalls();
+        textefi.setDevice(&fichier);
+        QString lte;
+        bool trcod =  true;
+        while(trcod)
+        {
+            if(textefi.atEnd()) trcod=false;
+            else
+            {
+                lte = (textefi.readLine());
+                if(lte.isNull()) trcod = false;
+                else
+                {
+                    if(lte.isEmpty()) trcod = false;
+                    else ListCodes->append(lte);
+                }
+            }
+        }
+
     }
-    QComboBox::keyPressEvent(e);
+    redoList("");
+}
+
+// this method manages the list of choices according to entered text
+void EditCombo::redoList(const QString& enteredText)
+{
+    EcCo->clear();
+    if(enteredText.isEmpty()) EcCo->insertItems(0,*ListCodes);
+    else
+    {
+
+        QStringList liste2;
+        for(int i=0;i<ListCodes->size();i++)
+        {
+            if(ListCodes->at(i).contains(enteredText))
+                liste2.append(ListCodes->at(i));
+        }
+        if(liste2.size()<1) EcCo->insertItems(0,*ListCodes);
+        else EcCo->insertItems(0,liste2);
+    }
+}
+
+// these methods manage the selection of a code in the QComboBox object
+void EditCombo::SelectCode()
+{
+    if(EcCo->count()>0) SelectCode(EcCo->itemText(0));
+}
+
+void EditCombo::SelectCode(const QString& selectedText)
+{
+    if(EcCo->count()<1) EcCo->insertItems(0,*ListCodes);
+    EcLe->setText(selectedText);
+    EcLe->setFocus();
+}
+
+// this method processes the addition of a new code in a referential table
+bool EditCombo::ConfirmAdd(QString& s)
+{
+    if(QMessageBox::question((QWidget *)PFenimWindow, (const QString &)QString("Question"),
+                             //fr (const QString &)QString("Code ")+s+QString(" absent de la table : accepter ce code ?"),
+                             (const QString &)QString("Code ")+s+QString(" code missing from the table : accept it ?"),
+                             QMessageBox::Yes|QMessageBox::No)
+            == QMessageBox::No) return(false);
+    ListCodes->insert(0,s);
+    ListCodes->sort();
+    redoList(s);
+    QFile fichier;
+    QTextStream textefi;
+    fichier.setFileName(CodeFi+".txt");
+    if(fichier.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate))
+    {
+        textefi.setDevice(&fichier);
+        for(int i=0;i<ListCodes->size();i++) textefi << ListCodes->at(i) << endl;
+        fichier.close();
+    }
+    return(true);
 }
 
 
+// subclass of QPushButton
 MyQPushButton::MyQPushButton(QWidget *parent):QPushButton(parent)
 {
     QMaster = parent;
     setFont(QFont("Arial",10,QFont::Normal));
 }
 
-
+// subclass of QGraphicsView
 MyQGraphicsView::MyQGraphicsView(QMainWindow *parent):QGraphicsView(parent)
 {
     qmaitre = parent;
 }
 
+// method used to give information to the Loupe class object
+MyQGraphicsView* Fenim::GetView()
+{
+    return(PFenimWindow->View);
+}
 
+// this method reads the version of the treated folder containing the treated file
 bool Fenim::ReadFolderVersion()
 {
     QString cbase = _wavFolder + _baseIniFile;
@@ -2239,6 +2337,8 @@ bool Fenim::ReadFolderVersion()
     return(true);
 }
 
+// this method writes the version in the today folder of the reference database
+// if it is new
 void Fenim::WriteFolderVersion()
 {
     QSettings settings(_dayBaseFolder.path() + _baseIniFile, QSettings::IniFormat);

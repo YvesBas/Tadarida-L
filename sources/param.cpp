@@ -1,11 +1,14 @@
 #include "param.h"
 
 
+// Parametre class: this class manages each setting managed by the Param class
 Parametre::Parametre(Param *parametreWindow,int index,void *pvar,int type,int imin,int imax,double dmin,double dmax):_pParam(parametreWindow),_paramIndex(index),_variablePointer(pvar),_parameterType(type),_intMin(imin),_intMax(imax),_doubleMin(dmin),_doubleMax(dmax)
 {
     EditNumber=0; CheckBoxNumber=0; ComboNumber=0;
 }
 
+// Param class: this is the class of the window opened whene the user presses the button:
+// "advanced settings"
 Param::Param(QMainWindow *parent,int nParam) :
     QMainWindow(parent)
 {
@@ -22,6 +25,8 @@ Param::~Param()
 {
 }
 
+// this method shows the Param window
+// the input areas for the settings are managed by CreateParameter
 void Param::ShowScreen()
 {
     showMaximized();
@@ -44,7 +49,9 @@ void Param::ShowScreen()
     raise();
 }
 
-
+// this method creates and shows the widgets managing one setting
+// the method "on_btnParam_clicked()" of the main class calls this method
+// for each "global" variable which may be updated
 void Param::CreateParameter(QString title,void *pvar,int type,int intmin,int intmax,
                           double doublemin,double doublemax,QStringList *qsl)
 {
@@ -109,7 +116,7 @@ void Param::CreateParameter(QString title,void *pvar,int type,int intmin,int int
         LabelArray[_editOrderNumber]->move(_labelX+aj,hle);
         LabelArray[_editOrderNumber]->setText(title);
         LabelArray[_editOrderNumber]->show();
-        _editOrderNumber++; // � changer ajout 4�me variable d�di�e labels = plus propre !
+        _editOrderNumber++;
         ComboArray[_comboOrderNumber]=new QComboBox(this);
         ComboArray[_comboOrderNumber]->move(_editX,hle);
         ComboArray[_comboOrderNumber]->resize(_editWidth,20);
@@ -123,6 +130,8 @@ void Param::CreateParameter(QString title,void *pvar,int type,int intmin,int int
     ParamsNumber++;
 }
 
+// this method checks validity of an entry for one setting
+// if it is good, the "global" variable is directly updated
 bool Parametre::InputControl()
 {
     bool convid=true;
@@ -185,6 +194,7 @@ bool Parametre::InputControl()
     return(convid);
 }
 
+// this method saves the updated settings
 void Param::storeParams()
 {
 

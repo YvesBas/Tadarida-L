@@ -1,5 +1,7 @@
 #include "etiquette.h"
 
+// Etiquette class: an object of this class corresponds to a record of the file ".eti",
+// thus to the labeling of a sound event
 Etiquette::Etiquette()
 {
     CallNumber = -1;

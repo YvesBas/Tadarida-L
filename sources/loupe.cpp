@@ -1,6 +1,8 @@
 #include "loupe.h"
 #include "math.h"
 
+// Loupe class : this class is a graphic class used by Fenim class to create
+// a second window zooming the picture
 Loupe::Loupe(Fenim *pf,QMainWindow *parent,int x,int y) :
     QMainWindow(parent)
 {
@@ -47,7 +49,8 @@ Loupe::~Loupe()
     delete LoupeView;
 }
 
-
+// this is the entry point of the Loupe class
+// it is called by the doubleclic event handler of the QGraphicsScene object of FenimWindow class
 void Loupe::ShowLoupe()
 {
     QRect rfm=PFenim->GetWindowRect();
@@ -58,7 +61,7 @@ void Loupe::ShowLoupe()
     LoupeScene = new MyQGraphicsScene(PFenim,this,true);
     LoupeView = new MyQGraphicsView(this);
     LoupeView->setScene(LoupeScene);
-    _pix=(LoupeScene->addPixmap(QPixmap::fromImage(*Fenima))); // ajout du pixmap dans la scene
+    _pix=(LoupeScene->addPixmap(QPixmap::fromImage(*Fenima)));
     activateWindow();
     raise();
     show();
@@ -92,10 +95,9 @@ void Loupe::ShowLoupe()
     connect(BcMasterPoints,SIGNAL(stateChanged(int)),this,SLOT(ActivateMasterPoints()));
     connect(BcCalls,SIGNAL(stateChanged(int)),this,SLOT(ActivateCalls()));
     connect(BcSuppl,SIGNAL(stateChanged(int)),this,SLOT(ActivateOtherCrests()));
-
-    //
 }
 
+// this method locates and sizes buttons, labels, checkboxes of the Loupe window
 void Loupe::showButtons()
 {
     _gboxButtons->resize(_llf,_hbo);
@@ -133,6 +135,7 @@ void Loupe::showButtons()
     LabelY->resize(_lbo,_hbo);
 }
 
+// this method creates the grid of graduations
 void Loupe::ShowGrid(bool toShow)
 {
     if(_nliv>0) for(int i=0;i<_nliv;i++) delete _gliv[i];
@@ -163,7 +166,6 @@ void Loupe::ShowGrid(bool toShow)
     }
 }
 
-
 void Loupe::resizeEvent(QResizeEvent *re)
 {
     QPointF pv = LoupeView->mapToScene(1,1);
@@ -176,33 +178,15 @@ void Loupe::resizeEvent(QResizeEvent *re)
     LoupeView->centerOn(LastCenterX,LastCenterY);
 }
 
+// these methods manage the visualization of all the sound events
 void Loupe::ShowCalls()
 {
     bool affichercri = BcCalls->isChecked();
     for(int i=0;i<PFenim->CallsNumber;i++) ShowOneCall(i,PFenim->SelectedCalls[i],affichercri);
 }
 
-void Loupe::ShowMasterPoints()
-{
-    bool afficherpm = BcMasterPoints->isChecked();
-    for(int i=0;i<PFenim->CallsNumber;i++) ShowOneMasterPoint(i,PFenim->SelectedCalls[i],afficherpm);
-}
-
-void Loupe::ShowOtherCrests()
-{
-    bool affichersuppl = BcSuppl->isChecked();
-    for(int i=0;i<PFenim->CallsNumber;i++) ShowOneOtherCrestl(i,affichersuppl);
-}
-
-void Loupe::ShowOtherPoints()
-{
-    bool affichersuppl = BcSuppl->isChecked();
-    for(int i=0;i<PFenim->CallsNumber;i++) ShowOneOtherPoint(i,affichersuppl);
-}
-
 void Loupe::ShowOneCall(int callNumber,bool selectedCall,bool showCall)
 {
-    // if(pfm->m_mode==2) return;
     if(!(callNumber<2000)) return;
     bool etiquette = !PFenim->EtiquetteArray[callNumber]->DataFields[ESPECE].isEmpty();
     QPen qp[CRESTSNUMBER];
@@ -254,6 +238,64 @@ void Loupe::ShowOneCall(int callNumber,bool selectedCall,bool showCall)
             }
         }
     }
+}
+
+// these methods manage the visualization of all the master points
+void Loupe::ShowMasterPoints()
+{
+    bool afficherpm = BcMasterPoints->isChecked();
+    for(int i=0;i<PFenim->CallsNumber;i++) ShowOneMasterPoint(i,PFenim->SelectedCalls[i],afficherpm);
+}
+
+void Loupe::ShowOneMasterPoint(int callNumber,bool selectedCall,bool showMasterPoints)
+{
+    if(!(callNumber<2000)) return;
+    float x = 0.5f+(PFenim->MasterPointsVector[callNumber].x()/(1+PFenim->XHalf));
+    float y = 0.5f+(PFenim->ImageHeight - PFenim->MasterPointsVector[callNumber].y()-1.0f);
+    bool etiquette = !PFenim->EtiquetteArray[callNumber]->DataFields[ESPECE].isEmpty();
+    int nspec= PFenim->EtiquetteArray[callNumber]->SpecNumber+1;
+    int rouge,vert,bleu;
+    bleu=0;
+    if(selectedCall)
+    {
+        rouge=0;vert=0;
+        if(etiquette && nspec>0 && nspec<8) {vert=8*nspec;rouge=4*nspec;}
+    }
+    else
+    {
+        rouge=255;vert=0;
+        if(etiquette && nspec>0 && nspec<8) {vert=255-16*nspec;rouge=16*nspec;}
+    }
+    QPen qpm = QPen(QColor(rouge,vert,bleu),0);
+    QBrush qb = QBrush(QColor(rouge,vert,bleu),Qt::SolidPattern);
+    //
+    if(callNumber<2000)
+    {
+        if(_ipmc[callNumber]==true)
+        {
+            delete _gepm[callNumber];
+            _ipmc[callNumber]=false;
+        }
+        if(showMasterPoints)
+        {
+            if(_ipmc[callNumber]==false)
+            {
+                float w=(10.0f+_liaj)/_lWl;
+                float h=(10.0f+_liaj)/_lWh;
+                _gepm[callNumber]=LoupeScene->addEllipse(x-w/2,y-h/2,w,h,qpm,qb);
+                _ipmc[callNumber]=true;
+            }
+            else _gepm[callNumber]->setPen(qpm);
+        }
+    }
+}
+
+// these methods manage the visualization of the other crests
+// (in addition to the main ridge: see description of settings in the manual)
+void Loupe::ShowOtherCrests()
+{
+    bool affichersuppl = BcSuppl->isChecked();
+    for(int i=0;i<PFenim->CallsNumber;i++) ShowOneOtherCrestl(i,affichersuppl);
 }
 
 void Loupe::ShowOneOtherCrestl(int callNumber,bool showSuppl)
@@ -308,6 +350,15 @@ void Loupe::ShowOneOtherCrestl(int callNumber,bool showSuppl)
     } // fin du else affichersuppl
 }
 
+
+// these methods manages the visualization of the other points
+// (in addition to the master point: see description of settings in the manual)
+void Loupe::ShowOtherPoints()
+{
+    bool affichersuppl = BcSuppl->isChecked();
+    for(int i=0;i<PFenim->CallsNumber;i++) ShowOneOtherPoint(i,affichersuppl);
+}
+
 void Loupe::ShowOneOtherPoint(int ncri,bool affichersuppl)
 {
     QColor qc2,qc1;
@@ -357,62 +408,20 @@ void Loupe::ShowOneOtherPoint(int ncri,bool affichersuppl)
                     qp2 = QPen(qc1,0);
                     qb2 = QBrush(qc2,Qt::SolidPattern);
                     _gepsu[jcrete][k][ncri]=LoupeScene->addEllipse(x2-w2/2,y2-h2/2,w2,h2,qp2,qb2);;
-                } // next kos
-            } // next jcrete
-            _ilps[ncri]=true;
-        } // fin du ilcs[ncri]==false
-    } // fin du else affichersuppl
-}
-
-
-void Loupe::ShowOneMasterPoint(int callNumber,bool selectedCall,bool showMasterPoints)
-{
-    if(!(callNumber<2000)) return;
-    float x = 0.5f+(PFenim->MasterPointsVector[callNumber].x()/(1+PFenim->XHalf));
-    float y = 0.5f+(PFenim->ImageHeight - PFenim->MasterPointsVector[callNumber].y()-1.0f);
-    bool etiquette = !PFenim->EtiquetteArray[callNumber]->DataFields[ESPECE].isEmpty();
-    int nspec= PFenim->EtiquetteArray[callNumber]->SpecNumber+1;
-    int rouge,vert,bleu;
-    bleu=0;
-    if(selectedCall)
-    {
-        rouge=0;vert=0;
-        if(etiquette && nspec>0 && nspec<8) {vert=8*nspec;rouge=4*nspec;}
-    }
-    else
-    {
-        rouge=255;vert=0;
-        if(etiquette && nspec>0 && nspec<8) {vert=255-16*nspec;rouge=16*nspec;}
-    }
-    QPen qpm = QPen(QColor(rouge,vert,bleu),0);
-    QBrush qb = QBrush(QColor(rouge,vert,bleu),Qt::SolidPattern);
-    //
-    if(callNumber<2000)
-    {
-        if(_ipmc[callNumber]==true)
-        {
-            delete _gepm[callNumber];
-            _ipmc[callNumber]=false;
-        }
-        if(showMasterPoints)
-        {
-            if(_ipmc[callNumber]==false)
-            {
-                float w=(10.0f+_liaj)/_lWl;
-                float h=(10.0f+_liaj)/_lWh;
-                _gepm[callNumber]=LoupeScene->addEllipse(x-w/2,y-h/2,w,h,qpm,qb);
-                _ipmc[callNumber]=true;
+                }
             }
-            else _gepm[callNumber]->setPen(qpm);
+            _ilps[ncri]=true;
         }
     }
 }
 
+// this method shows a bubble when mouse is moved over the representation of a sound event
 void Loupe::ShowBubble(QString bubbleString)
 {
         QToolTip::showText(QCursor::pos(),bubbleString);
 }
 
+// these methods zoom (or unzoom) the picture
 void Loupe::Zoom()
 {
     ZoomeF(1.414f,1.414f);
@@ -456,6 +465,8 @@ float Loupe::getRatio()
     return((_lWh * PFenim->FactorX * (1+PFenim->XHalf)) / (_lWl * PFenim->FactorY));
 }
 
+// this method shows ratio time/frequency, useful to analyse the meaning of the shape
+// of the representation of sound events
 void Loupe::showRatio()
 {
     QString ratio;
@@ -463,7 +474,7 @@ void Loupe::showRatio()
     LabelR->setText(QString("r=")+ratio);
 }
 
-
+// these methods are connected to signals (event handlers)
 void Loupe::ActivateGrid(int state)
 {
     ShowGrid(state==Qt::Checked);

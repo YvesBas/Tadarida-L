@@ -5,17 +5,18 @@ using namespace std;
 
 const QString _baseIniFile = "/version.ini";
 
+// Detec class is a thread class which allows the main class to launch
+// several parallel threads processing the sound files
 Detec::Detec(QMainWindow* parent,int iThread): QThread((QObject *)parent)
 {
     _parent=parent;
-    //IsRunning = false;
     PMainWindow= (TadaridaMainWindow *)parent;
     IThread = iThread;
     IDebug = PMainWindow->IDebug;
     _resultSuffix = PMainWindow->ResultSuffix;
     _resultCompressedSuffix = QString("tac");
     MustCancel = false;
-    MustCompress = false; // modifié le 3/9/2015
+    MustCompress = false;
     _collectPreviousVersionsTags = true;
     PDetecTreatment = new DetecTreatment(this);
 }
@@ -24,6 +25,7 @@ Detec::~Detec()
 {
 }
 
+// this method is launched by the main class to initialize variables for a treatment
 bool Detec::InitializeDetec(const QStringList& wavList, QString soundsPath,bool reprocessingCase,int vl,int vu,bool imadat,bool withTimeCsv,RematchClass *ro,
                             int modefreq)
 {
@@ -87,6 +89,7 @@ bool Detec::InitializeDetec(const QStringList& wavList, QString soundsPath,bool 
     return(true);
 }
 
+// this method handles end treatments when the treatment od Detec object is finished
 void Detec::endDetec()
 {
     LogStream << "endDetec  IThread = " << IThread << endl;
@@ -95,7 +98,6 @@ void Detec::endDetec()
     else writeDirectoryVersion();
     ErrorFile.close();
     if(TimeFileOpen) _timeFile.close();
-    // if(!ReprocessingMode) emit threadFinished(IThread);
     if(!ReprocessingMode) emit threadFinished(IThread);
     PDetecTreatment->EndDetecTreatment();
     MustCancel = false;
@@ -105,10 +107,12 @@ void Detec::endDetec()
         if(vdl>0) for(int k=0;k<vdl;k++) delete[] _versionIndicators[k];
         delete[] _versionIndicators;
     }
-    LogStream << "fin endDetec  IThread = " << IThread << endl;
     _logFile.close();
 }
 
+// the run() method triggers the processing of the process when the main class executes:
+// _pDetec[i] -> start()
+// it calls treatOneFile(...) for each file of _wavFileList
 void Detec::run()
 {
     readDirectoryVersion();
@@ -134,6 +138,8 @@ void Detec::run()
     endDetec();
 }
 
+// if a general reprocessing is started, this method prepares variables useful
+// for the algorithm of search for labelings of sound events lost in the meantime
 void Detec::createVersionsList()
 {
     _versionDirList.clear();
@@ -153,7 +159,6 @@ void Detec::createVersionsList()
             if(conv1 && conv2) _versionDirList.append(sv);
         }
     }
-    //_logText << "liste des sv versions - nbre = " << _versionDirList.size() << endl;
     int vdl =_versionDirList.size();
     if(vdl > 1)
     {
@@ -179,8 +184,6 @@ void Detec::createVersionsList()
         }
 
     }
-    //_logText << "tri des sv versions - nbre = " << vdl << endl;
-    // for(int j=0;j<_versionDirList.size();j++) _logText << j << ") " << _versionDirList.at(j) << endl;
     if(vdl>0)
     {
         _versionIndicators = new int*[vdl];
@@ -193,10 +196,10 @@ void Detec::createVersionsList()
 
 }
 
-
+// these two methods clean subdirectories of the reference database
+// that cannot be useful any more
 void Detec::cleanVerSubdir()
 {
-    //_logText << "Nettoyage des sous-répertoires du répertoire " << _wavPath << endl;
     QDir wDir(_wavPath);
     if(!wDir.exists()) return;
     for(int j=0;j<_versionDirList.size();j++)
@@ -210,14 +213,14 @@ void Detec::cleanVerSubdir()
             {
                 cleanSubdir(wDir,svPath,true,QString("*.*"));
                 isCleaned = true;
-            } // fin suppression d'un répertoire
-        } // j< size-1
+            }
+        } 
         if(!isCleaned)
         {
             cleanSubdir(wDir,svPath+"/txt",true,QString("*.*"));
             cleanSubdir(wDir,svPath+"/ima",true,QString("*.*"));
         }
-    } // next j
+    } 
     cleanSubdir(wDir,_wavPath+"/dat",false,QString("*.dat"));
     cleanSubdir(wDir,_wavPath+"/txt",false,QString("*.txt"));
     cleanSubdir(wDir,_wavPath+"/txt",false,QString("*.csv"));
@@ -244,6 +247,10 @@ void Detec::cleanSubdir(QDir cdir,QString ndirPath,bool cleanAll,QString filter)
     }
 }
 
+// this method manages the treatments for one file
+// after initializations, it calls : PDetecTreatment::CallTreatmentsForOneFile
+// which handles computings
+// in reprocessing mode, it processes also the informations related to this reprocessing
 bool Detec::treatOneFile()
 {
     if((MustCancel  && !ReprocessingMode) || _fileProblem) return(false);
@@ -267,11 +274,9 @@ bool Detec::treatOneFile()
     QString pathFile = _wavPath + '/' + wavFile;
     if(checkAssociatedFiles(_wavPath,_wavFile)== false)
     {
-        //fr if(_errorFileOpen) _errorStream << _wavFile << ": problème sur fichier associé" << endl;
         if(ErrorFileOpen) ErrorStream << _wavFile << ": associated file problem" << endl;
 		
         _fileProblem = true;
-        //_treating = false;
         return(false);
     }
     if(PDetecTreatment->CallTreatmentsForOneFile(wavFile,pathFile))
@@ -314,7 +319,7 @@ bool Detec::treatOneFile()
 
             }
             emit information2b(info2,false);
-            // boucle de récupération sur versions antérieures
+            // recovery loop from previous versions
             if(_collectPreviousVersionsTags)
             {
                 for(int j=_versionDirList.size()-1;j>=0;j--)
@@ -328,7 +333,6 @@ bool Detec::treatOneFile()
                     {
                         _numberRecupTags += _remObject->Nbe2;
                         nbTags += _remObject->Nbe2;
-                        //fr info1=wavFile+QString(" - après récupération sur version ")
                         info1=wavFile+QString(" - after recovering out of version ")
                           +verPath+" : "+QString::number(nbTags)+QString(" matched labels.");
                         LogStream << info1 << endl;
@@ -350,6 +354,7 @@ bool Detec::treatOneFile()
     return(true);
 }
 
+// this method reads version of a treated directory in version.ini
 bool Detec::readDirectoryVersion()
 {
     QString cbase = _wavPath + _baseIniFile;
@@ -367,6 +372,7 @@ bool Detec::readDirectoryVersion()
     return(true);
 }
 
+// this method writes version of a treated directory in version.ini
 void Detec::writeDirectoryVersion()
 {
     QSettings settings(_wavPath + _baseIniFile, QSettings::IniFormat);
@@ -377,6 +383,7 @@ void Detec::writeDirectoryVersion()
     settings.endGroup();
 }
 
+// this method checks output files which must be associated with a treated wav file
 bool Detec::checkAssociatedFiles(QString pathName,QString wavName)
 {
     bool resu = true;
@@ -410,12 +417,13 @@ bool Detec::checkAssociatedFiles(QString pathName,QString wavName)
     return(resu);
 }
 
+// this method creates the pciture which will be used to watch sound events and/or
+// to enter labels for them
 void Detec::createImage(QString wavFile)
 {
     if(PDetecTreatment->SonogramWidth > 32767) {_xHalf = true; _imaWidth=(PDetecTreatment->SonogramWidth+1)/2;}
     else  {_xHalf = false; _imaWidth=PDetecTreatment->SonogramWidth;}
     int lyi = qMin(PDetecTreatment->FftHeightHalf,PDetecTreatment->LimY);
-    //QImage ima = QImage(_imaWidth, _detecTreatment->_fftHeightHalf,QImage::Format_RGB32);
     QImage ima = QImage(_imaWidth, lyi,QImage::Format_RGB32);
     initBvrvb(PDetecTreatment->EnergyMin,PDetecTreatment->EnergyMax);
     int imax=((int)(PDetecTreatment->EnergyMax-PDetecTreatment->EnergyMin)*5)+1;
@@ -426,7 +434,6 @@ void Detec::createImage(QString wavFile)
     }
     qint16 *ydl;
     int exceptions = 0;
-    //int blanc = 255 + (255<<8) +(255<<16);
     int blanc = qRgb(250,250,250);
     int noir = qRgb(5,5,5);
     int grisclair = qRgb(230,230,230);
@@ -478,20 +485,11 @@ void Detec::createImage(QString wavFile)
     ima.save(imageName,0,100); // save image
 }
 
-// void DetecTreatment::initBvrvb(double bornemin,double median,double bornemax)
+// this method sets parameters determining the colors of the image
+// highlighting the cries, the peaks of energy ...
 void Detec::initBvrvb(double bornemin,double bornemax)
 {
-    /*
     _bRGB[0][0]=bornemin;
-    _bRGB[1][0]=median;
-    _bRGB[2][0]=median+(double)_stopThreshold;
-    _bRGB[3][0]=median+(double)_detectionThreshold;
-    _bRGB[4][0]=bornemax+1;
-    */
-    _bRGB[0][0]=bornemin;
-    // _bRGB[1][0]=0;
-    // _bRGB[2][0]=(double)_stopThreshold;
-    // _bRGB[3][0]=(double)_detectionThreshold;
     _bRGB[1][0]=bornemin/2;
     _bRGB[2][0]=(double)PDetecTreatment->EnergyStopThreshold;
     _bRGB[3][0]=(double)PDetecTreatment->EnergyShapeThreshold;
@@ -504,6 +502,8 @@ void Detec::initBvrvb(double bornemin,double bornemax)
     _bRGB[4][1]=0;   _bRGB[4][2]=128; _bRGB[4][3]=160;
 }
 
+// this method sets the color of a pixel according to a pair of time/frequency values
+// and its sound energy level
 uint Detec::calculateRGB(double value)
 {
     double rgb[3];
@@ -522,6 +522,8 @@ uint Detec::calculateRGB(double value)
     return(urgb);
 }
 
+// this method saves a .da2 file after treatment, it saves all the informations
+// which will be useful to show and/or treat a sound event
 void Detec::saveDatFile(QString wavFile)
 {
     QString da2file = wavFile.replace(QString(".wav"),QString(".da2"), Qt::CaseInsensitive);
@@ -599,8 +601,7 @@ void Detec::saveDatFile(QString wavFile)
            _callMatrixStream << PDetecTreatment->Inflexion1[(i*NCRETES+jcrete)*2]  << PDetecTreatment->Inflexion1[(i*NCRETES+jcrete)*2+1];
            _callMatrixStream << PDetecTreatment->Inflexion3[(i*NCRETES+jcrete)*2]   << PDetecTreatment->Inflexion3[(i*NCRETES+jcrete)*2+1];
         }
-    } // next i
-    //
+    } 
     _callMatrixStream << PDetecTreatment->SonogramWidth;
     _callMatrixStream << (int)(PDetecTreatment->WithSilence);
     if(PDetecTreatment->WithSilence)

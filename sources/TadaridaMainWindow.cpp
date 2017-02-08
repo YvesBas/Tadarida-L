@@ -4,6 +4,8 @@
 #include "fenim.h"
 #include "recherche.h"
 
+// RematchClass : this class is used by Detec class to help it
+// to manage General Reprocessing
 RematchClass::RematchClass(QMainWindow *parent)
 {
     _parent = parent;
@@ -18,6 +20,7 @@ void RematchClass::initialize()
     Ok = true;
 }
 
+// this method initializes data before retreatment of one file during general reprocessing
 int RematchClass::PreMatch(QString wavName,QString wavPath)
 {
     _fileName = wavName;
@@ -25,16 +28,14 @@ int RematchClass::PreMatch(QString wavName,QString wavPath)
     int postab = _fileName.lastIndexOf(".");
     if(postab>0) _fileName = _fileName.left(postab);
     Fenim1 = new Fenim(_parent,_wavPath,_fileName,_baseDayDir,false,true,1,"1",0,0,0);
-    //_fenim1->m_logStream << "Prematch 2" << endl;
     Nbc1=0; Nbe1=0;
     if(Fenim1->LoadCallsLabels()==false) return(0);
-
-    //_fenim1->m_logStream << "Prematch 3" << "nb eti=" <<_fenim1->m_nbeti << endl;
     Nbc1=Fenim1->CallsNumber;
     Nbe1=Fenim1->LabelsNumber;
     return(Nbe1);
 }
 
+// this method receives useful data after retreatment of one file during general reprocessing
 int RematchClass::PostMatch(bool initial,QString recupVersion,int *cpma)
 {
     Nbe2=0;
@@ -58,6 +59,7 @@ int RematchClass::PostMatch(bool initial,QString recupVersion,int *cpma)
     return(Nbe2);
 }
 
+// this method end cleaning of data at the end of general reprocessing
 int RematchClass::EndMatch()
 {
     Fenim2->SaveLabels();
@@ -65,6 +67,7 @@ int RematchClass::EndMatch()
     return(0);
 }
 
+// constructor of the main class : initializations
 TadaridaMainWindow::TadaridaMainWindow(QWidget *parent) : QMainWindow(parent)
 {
     _logFile.setFileName(QString("tadarida.log"));
@@ -79,30 +82,21 @@ TadaridaMainWindow::TadaridaMainWindow(QWidget *parent) : QMainWindow(parent)
     _tadaridaMode = SIMPLE; // mode simple
     _userVersion = 0;
     _programVersion = 22;
-    // 21 : version avec enregistrement de _floagGoodCol...
-    // 22 : version a partir de laquelle on enregistre modefreq dans les fichiers version.ini
     _baseDir   = QDir::current();
-    _paramVersion = 2;
+    _paramVersion = 1;
     _desactiveCorrectNoise = false;
     _tadaridaMode = SIMPLE;
-    _maxThreads = 4; // (� remettre � 1)
-    // attention _maxTheads pourra bouger par config.ini et aussi en cours de session
+    _maxThreads = 3; 
     _modifyFreqAuthorized = false;
     initThreads();
-
     IDebug = false;
-   //
     DayPath = "";
     SearchDir1 = "";
     SearchDir2 = "";
-    //
     _timeExpansionLeft = 10;
     _timeExpansionRight = 0;
-    // multifreq :
     _modeFreq = 1;
-
     readConfigFile();
-    //
     ResultSuffix = "ta";
     if(_tadaridaMode==ETIQUETAGE)
     {
@@ -175,6 +169,7 @@ TadaridaMainWindow::TadaridaMainWindow(QWidget *parent) : QMainWindow(parent)
     _logText << "modefreq=" << _modeFreq << endl;
 }
 
+// desctructor of the main class : last cleanings
 TadaridaMainWindow::~TadaridaMainWindow()
 {
     for(int i=0;i<_nbDetecCreated;i++) delete _pDetec[i];
@@ -187,6 +182,7 @@ TadaridaMainWindow::~TadaridaMainWindow()
     _logFile.close();
 }
 
+// This method checks for the existence of necessary reference tables
 bool TadaridaMainWindow::tablesExists()
 {
     QStringList tablesList;
@@ -207,7 +203,6 @@ bool TadaridaMainWindow::tablesExists()
     }
     if(nlf>0)
     {
-        //fr QMessageBox::warning(this, "Attention !", QString("Table(s) manquante(s) :")+err+". Etiquetage non permis !",QMessageBox::Ok);
         QMessageBox::warning(this, "Error !", QString("Tables missing : ")+err+". not allowed labelling !",QMessageBox::Ok);
 
         return(false);
@@ -215,6 +210,7 @@ bool TadaridaMainWindow::tablesExists()
     return(true);
 }
 
+// this method calculates variables that are useful for saving label files
 void TadaridaMainWindow::updateBaseVariables()
 {
     QDate dj=QDate::currentDate();
@@ -227,45 +223,42 @@ void TadaridaMainWindow::updateBaseVariables()
     if(_baseDay.exists()) DayPath = dayPath;
 }
 
+// This method manages the validity of the reference base, the need to enter it
+// or modify it, taking into account changes in frequency types
 bool TadaridaMainWindow::manageBase(bool firstSelect,bool blockedFreq)
 {
     if(!_modifyFreqAuthorized) blockedFreq = true;
     if(firstSelect)
     {
         QString basepath = selectBase();
-        // 0) cas base absente
+        // 0) no reference database
         if(basepath.isEmpty())
         {
-            //fr if(QMessageBox::question(this, "Choix obligatoire !", "Le mode Etiquetage ne peut fonctionner si on ne choisit pas une base !",QMessageBox::Yes|QMessageBox::No)
             if(QMessageBox::question(this, "Required choice !", "Labelling mode can not function without a base !",QMessageBox::Yes|QMessageBox::No)
                     == QMessageBox::Yes) return(manageBase(true,blockedFreq));
             else return(false);
         }
         else _baseDir.setPath(basepath);
     }
-    // test �tat de la base
+    // checks validity of reference database
     if(readBaseVersion())
     {
-        // 1) cas type de frequence incoherent
+        // 1) Inconsistent frequency type
         if(_modeFreqBase <1 || _modeFreqBase>2)
         {
-            //fr QMessageBox::critical(this, "Arret du programme","Parametrage du type de frequence de la base incoherent !", QMessageBox::Ok);
             QMessageBox::critical(this, "Program stopped !","Wrong type of frequence !", QMessageBox::Ok);
             return(false);
         }
-        // 2) type de frequence different
+        // 2) Different frequency type
         if(_modeFreqBase != _modeFreq)
         {
             if(blockedFreq)
             {
-                //fr QMessageBox::warning(this, "Cette base n'est pas du type de frequence voulu !","Selectionner une base correspondant au type voulu !", QMessageBox::Ok);
                 QMessageBox::warning(this, "This base is not of the desired type of frequency !","Select a base with the right type of frequency !", QMessageBox::Ok);
-
                 return(manageBase(true,true));
             }
             else
             {
-                //fr if(QMessageBox::question(this, "Type de frequence different !", "Repondre oui pour modifier le type de fr�quence trait� ou non pour selectionner une autre base",
                 if(QMessageBox::question(this, "Different type of frequency !", "Answer yes to change the type of frequency or no to select another base",
                                          QMessageBox::Yes|QMessageBox::No)
                         == QMessageBox::Yes)
@@ -281,20 +274,17 @@ bool TadaridaMainWindow::manageBase(bool firstSelect,bool blockedFreq)
         }
         if(_baseProgramVersion != _programVersion || _baseUserVersion != _userVersion)
         {
-            // 3) cas versions incoherentes
+            // 3) incoherent versions
             if(_baseProgramVersion > _programVersion || _baseUserVersion > _userVersion)
             {
-                //fr _logText << "versions incoherentes" << endl;
                 _logText << "incompatible versions : " << _baseProgramVersion  << "," << _baseUserVersion << " et << " << _programVersion << "," << _userVersion << endl;
-                //fr QMessageBox::critical(this, "Arret du programme","La base a une version en avance sur le logiciel !", QMessageBox::Ok);
                 QMessageBox::critical(this, "Program stopped","The database version is more advanced than that of the software !", QMessageBox::Ok);
                 return(false);
             }
             else
             {
-                // 4) versions en retard
+                // 4) late version
                 updateBaseVariables();
-                //fr _logText << "version en retard" << endl;
                 _logText << "late version" << endl;
                 _baseUpToDate=false;
                 _dayBaseUpToDate=false;
@@ -303,29 +293,29 @@ bool TadaridaMainWindow::manageBase(bool firstSelect,bool blockedFreq)
         }
         else
         {
-            // 5) base ok
+            // 5) base is ok
             _baseUpToDate=true;
             _dayBaseUpToDate=true;
             updateBaseVariables();
         }
-        return(true); // pour indiquer base existante
+        // true means: base is ok
+        return(true);
     }
     else
     {
+        // user must select a valida database
         if(_baseDir == QDir::current())
         {
-            //fr QMessageBox::warning(this,"Base non determnee", "Selectionner le repertoire de la base !", QMessageBox::Ok);
             QMessageBox::warning(this,"Undefined base", "Select the database folder !", QMessageBox::Ok);
              return(manageBase(true,blockedFreq));
         }
-        // 6) base a initialiser
-        // fr _logText << "base non initialisee : version.ini manquant" << endl;
+        // 6) new selected base is checked by this recursive method
          _logText << "Uninitialized database : config file is missingt" << endl;
-        // fr if(QMessageBox::question(this, "Base vide", "Repondre oui pour initialiser cette base ou non pour en choisir une autre !",
         if(QMessageBox::question(this, "Empty database", "Answer yes to initialize this database or no to select an other one !",
                                  QMessageBox::Yes|QMessageBox::No)
                 == QMessageBox::Yes)
         {
+            // Initialization of database
             createBase();
 
         }
@@ -333,6 +323,7 @@ bool TadaridaMainWindow::manageBase(bool firstSelect,bool blockedFreq)
     }
 }
 
+// initialzation of a new reference database
 bool TadaridaMainWindow::createBase()
 {
     writeBaseVersion();
@@ -341,12 +332,14 @@ bool TadaridaMainWindow::createBase()
     return(true);
 }
 
+// end of TadaridaL session
 void TadaridaMainWindow::exitProgram()
 {
     CanContinue = false;
     close();
 }
 
+// this method saves updated settings and last inputs of labelling
 void TadaridaMainWindow::endTadarida()
 {
     writeConfigFile();
@@ -356,6 +349,7 @@ void TadaridaMainWindow::endTadarida()
     }
 }
 
+// treatment of the main window closing
 void TadaridaMainWindow::closeEvent(QCloseEvent* event)
 {
     if(countThreadsRunning()>0)
@@ -372,6 +366,7 @@ void TadaridaMainWindow::closeEvent(QCloseEvent* event)
     }
 }
 
+// this method reads the settings saved in config.ini file
 void TadaridaMainWindow::readConfigFile()
 {
     if(!QFile::exists(QDir::currentPath() + _iniPath)) return;
@@ -401,7 +396,6 @@ void TadaridaMainWindow::readConfigFile()
     int verlog = settings.value("log").toInt();
     if(verlog != _programVersion)
     {
-        // QMessageBox::warning(this, tr("Changement de version"), tr("Version logiciel differente dans config.ini : rectification "), QMessageBox::Ok);
         _logText << "Different versions - verlog=" << verlog << "  programVersion=" << _programVersion << endl;
     }
     _userVersion = settings.value("user").toInt();
@@ -432,12 +426,12 @@ void TadaridaMainWindow::readConfigFile()
     settings.endGroup();
 }
 
+// this method writes the updated settings in config.ini file
 void TadaridaMainWindow::writeConfigFile()
 {
     QFile cf(QDir::currentPath() + _iniPath);
     if(cf.open(QIODevice::WriteOnly)) cf.close();
     else
-     //fr QMessageBox::warning(this, tr("Attention"), tr("Fichier config.ini inaccessible en Ecriture : fermer ce fichier s'il est ouvert !"), QMessageBox::Ok);
     QMessageBox::warning(this, "Warning", "Config.ini is not writable : close this file if it is open !", QMessageBox::Ok);
     QSettings settings(QDir::currentPath() + _iniPath, QSettings::IniFormat);
     settings.beginGroup("path");
@@ -468,6 +462,7 @@ void TadaridaMainWindow::writeConfigFile()
     settings.endGroup();
 }
 
+// this method reads the last entries of labelling:
 void TadaridaMainWindow::readLastTexts()
 {
     for(int i=0;i<NBFIELDS;i++) LastFields[i]="";
@@ -478,6 +473,7 @@ void TadaridaMainWindow::readLastTexts()
     settings.endGroup();
 }
 
+// this method resumes the stored entries:
 void TadaridaMainWindow::writeLastTexts()
 {
     QSettings settings(QDir::currentPath() + _savedTextsFile, QSettings::IniFormat);
@@ -487,6 +483,7 @@ void TadaridaMainWindow::writeLastTexts()
     settings.endGroup();
 }
 
+// this method reads the version settings stored in the database file: 'version.ini"
 bool TadaridaMainWindow::readBaseVersion()
 {
     QString cbase = _baseDir.path()+ _baseIniFile;
@@ -510,6 +507,7 @@ bool TadaridaMainWindow::readBaseVersion()
     else return(true);
 }
 
+// this method writes the version settings stored in the database file: 'version.ini"
 void TadaridaMainWindow::writeBaseVersion()
 {
     QSettings settings(_baseDir.path()+ _baseIniFile, QSettings::IniFormat);
@@ -520,6 +518,8 @@ void TadaridaMainWindow::writeBaseVersion()
     settings.endGroup();
 }
 
+// this method creates the window of the param class and the input widgets
+// which allow expert users to update some settings
 void TadaridaMainWindow::on_btnParam_clicked()
 {
     param = new Param(this,18);
@@ -530,26 +530,17 @@ void TadaridaMainWindow::on_btnParam_clicked()
     lte << "10" << "1" ;
     param->CreateParameter(QString("Detection threshold"),&_detectionThreshold,1,10,30);
     param->CreateParameter(QString("Stop threshold"),&_stopThreshold,1,5,25);
-    //param->CreateParameter(QString("Minimum frequency"),&_minimumFrequency,1,0,20);
     param->CreateParameter(QString("p_nbo"),&_overlapsNumber,4,0,0,0,0,&lnbo);
-    //param->CreateParameter(QString("coef. x"),&Divrl,1,100,100000);
     param->CreateParameter(QString("Treatment of silences"),&_useValflag ,3);
-    //param->CreateParameter(QString("Silence threshold"),&_jumpThreshold,1,10,50);
-    //param->CreateParameter(QString("Wide vertical band"),&_widthBigControl,1,10,500);
-    //param->CreateParameter(QString("Narrow vertical band"),&_widthLittleControl,1,1,20);
-    //param->CreateParameter(QString("High threshold"),&_highThresholdJB,1,9,20);
-    //param->CreateParameter(QString("Low threshold"),&_lowThresholdJB,1,-20,9);
-    //param->CreateParameter(QString("Second low threshold"),&_lowThresholdC,1,-5,10);
-    //param->CreateParameter(QString("Second high threshold"),&_highThresholdC,1,1,30);
     param->CreateParameter(QString("Percentage q5"),&_qR,1,1,20);
     param->CreateParameter(QString("Minimum pixel number q5"),&_qN,1,2,10);
     param->CreateParameter(QString("Parameters version"),&_paramVersion ,1,0,2);
-    //param->CreateParameter(QString("Time.csv"),&_withTimeCsv,3);
     param->CreateParameter(QString("Deactivate correctnoise"),&_desactiveCorrectNoise ,3);
     if(param->ParamOrderNumber > param->ParamsNumber) param->ParamOrderNumber = param->ParamsNumber;
     param->show();
 }
 
+// selection of the folder which contains the sound files to treat
 void TadaridaMainWindow::on_btnBrowse_clicked()
 {
     QString soundsPath  = QFileDialog::getExistingDirectory( this,
@@ -560,6 +551,7 @@ void TadaridaMainWindow::on_btnBrowse_clicked()
     if(!soundsPath.isEmpty())
         _ledTreatedDirectory->setText(QDir::fromNativeSeparators(soundsPath));
 }
+
 
 void TadaridaMainWindow::on_ledTreatedDirectory_textChanged(const QString &txt)
 {
@@ -574,11 +566,12 @@ void TadaridaMainWindow::on_ledTreatedDirectory_textChanged(const QString &txt)
     _wavDirectory.setPath(txt);
 }
 
+// the user has clicked the button to treat sound files of a directory
 void TadaridaMainWindow::on_btnOk_clicked()
 {
+    // control to avoid treatment of sound files of the reference database
     if(!GetDirectoryType(_wavDirectory.path()))
     {
-        //fr QMessageBox::warning(this, "Erreur", "Ne pas lancer ce traitement sur un dossier de la base !", QMessageBox::Ok);
         QMessageBox::warning(this, "Error", "Do not start this treatment on a folder in the database !", QMessageBox::Ok);
         blockUnblock(true);
         return;
@@ -587,7 +580,7 @@ void TadaridaMainWindow::on_btnOk_clicked()
     directoryTreat(_wavDirectory,_chkSubDirectories->isChecked());
 }
 
-
+// to manage cancel input
 void TadaridaMainWindow::treatCancel()
 {
     _mustCancel = true;
@@ -595,6 +588,7 @@ void TadaridaMainWindow::treatCancel()
     for(int i=0;i<_nbThreadsLaunched;i++) if(_threadRunning[i]) _pDetec[i]->MustCancel = true;
 }
 
+// this method manages which widgets may be enabled or not according to context
 void TadaridaMainWindow::blockUnblock(bool acdesac)
 {
     _ledTreatedDirectory->setEnabled(acdesac);
@@ -621,6 +615,7 @@ void TadaridaMainWindow::blockUnblock(bool acdesac)
     }
 }
 
+// controls input of spectrograme scale setting which initializes size of picture
 void TadaridaMainWindow::on_ledScale_editingFinished()
 {
     QString txt = _ledScale->text();
@@ -645,23 +640,29 @@ void TadaridaMainWindow::on_ledScale_editingFinished()
     }
 }
 
+// shows on screen information sent by a detec class thread
 void TadaridaMainWindow::infoShow(QString mess)
 {
     _lblPhase1Message->SetText(mess);
 }
 
+// this method shows on screen information sent by a detec class thread
+// it is also used by detecInfoTreat method of this class
 void TadaridaMainWindow::infoShow2(QString mess,bool withLog)
 {
     _lblPhase1Message2->SetText(mess);
     if(withLog)  _logText << mess << endl;
 }
 
+// shows on screen information sent by a detec class thread
 void TadaridaMainWindow::infoShow3(QString mess,bool withLog)
 {
     _lblPhase1Message3->SetText(mess);
     if(withLog)  _logText << mess << endl;
 }
 
+// this method agregates data sent by 'detec' threads during general reprocessing
+// of database reference
 void TadaridaMainWindow::matchingInfoTreat(int nbeav,int nbeap,int nbere)
 {
     _tagsNumberBefore += nbeav;
@@ -669,6 +670,7 @@ void TadaridaMainWindow::matchingInfoTreat(int nbeav,int nbeap,int nbere)
     _tagsNumberFinal  += nbere;
 }
 
+// this method computes treatment informations and show them on the screen
 void TadaridaMainWindow::detecInfoTreat(int iThread,int nbt,int nbe)
 {
     QString mess,singpur,mess2;
@@ -702,6 +704,7 @@ void TadaridaMainWindow::detecInfoTreat(int iThread,int nbt,int nbe)
     _treatDirMess = mess;
 }
 
+// this method creates readable texts from errors
 QString TadaridaMainWindow::createMessageErrors(int netot,int tabe[][NTERRORS])
 {
     QString m = "";
@@ -718,21 +721,11 @@ QString TadaridaMainWindow::createMessageErrors(int netot,int tabe[][NTERRORS])
             if(nee>0)
             {
                 if(ffe==false)   ffe=true; else m+=" - ";
-                //fr if(i==FNREC) m+=" fichier son non reconnu";
                 if(i==FNREC) m+=" unrecognized sound file";
-
-                //fr if(i==MCNT) m+=" multi-channel non trait�";
                 if(i==MCNT) m+=" multi-channel untreated";
-
-                //fr if(i==DTP) m+=" duree trop petite";
                 if(i==DTP) m+=" too small duration";
-
-                //fr if(i==DTG) m+=" duree trop grande";
                 if(i==DTG) m+=" too long duration";
-
-                //fr  if(i==TNT) m+=" fact. temp. non defini";
                 if(i==TNT) m+=" undefined time factor";
-
                 if(nee<netot) m+=" : "+QString::number(nee);
             }
         }
@@ -741,7 +734,7 @@ QString TadaridaMainWindow::createMessageErrors(int netot,int tabe[][NTERRORS])
     return(m);
 }
 
-
+// this method stores information about terminating processes
 void TadaridaMainWindow::detecFinished(int ithread)
 {
     _stockNbTreated[ithread]+=_nbTreated[ithread];
@@ -750,9 +743,9 @@ void TadaridaMainWindow::detecFinished(int ithread)
     _stockNbErrorTotal+=_nbError[ithread];
     for(int k=0;k<NTERRORS;k++)
     {
-        //_tabError[ithread][k]+=_pDetec[ithread]->_detecTreatment->TabErrors[k];
         _stockTabError[ithread][k]+=_pDetec[ithread]->PDetecTreatment->TabErrors[k];
     }
+    // stores thread errors in general error stream
     fusionErrors(ithread);
 }
 
@@ -761,12 +754,15 @@ void TadaridaMainWindow::updateProgBarValue(float av)
     _prgProgression->setValue(av*10000);
 }
 
+// treatment of reference database updating
 void TadaridaMainWindow::on_btnOpenBase_clicked()
 {
     if(!manageBase(true,_modifyFreqAuthorized)) {exitProgram(); return;}
     updateBaseVariables();
 }
 
+// created a widget to browse reference database folder
+// and returns its path
 QString TadaridaMainWindow::selectBase()
 {
     QString basePath  = QFileDialog::getExistingDirectory( this,
@@ -776,22 +772,23 @@ QString TadaridaMainWindow::selectBase()
     return(basePath);
 }
 
+// selection of a wav file to label
 void TadaridaMainWindow::on_btnOpenWav_clicked()
 {
-    //fr QString wavFile  = QFileDialog::getOpenFileName( this, tr("Choisir un fichier wav"),
-    QString wavFile  = QFileDialog::getOpenFileName( this,"Select the database folder",
+    QString wavFile  = QFileDialog::getOpenFileName( this,"Select a .wav file",
                                                    _wavDirectory.path(), "(*.wav)");
     if(!wavFile.isEmpty()) openWavTag(wavFile);
 }
 
+// selection of the previous ".wav" file in the same folder
 void TadaridaMainWindow::on_btnOpenPreviousWav_clicked()
 {
     QString wavFile  = _previousWav;
     if(!wavFile.isEmpty()) openWavTag(wavFile);
-    //fr else QMessageBox::warning(this, "Attention", "Premier fichier atteint", QMessageBox::Ok);
     else QMessageBox::warning(this, "Warning", "First file is already reached", QMessageBox::Ok);
 }
 
+// selection of the next ".wav" file in the same folder
 void TadaridaMainWindow::on_btnOpenNextWav_clicked()
 {
     QString wavFile  = _nextWav;
@@ -799,6 +796,8 @@ void TadaridaMainWindow::on_btnOpenNextWav_clicked()
     else QMessageBox::warning(this, "Warning", "No next file", QMessageBox::Ok);
 }
 
+// this method launches window to see information about treated wav file
+// and allows an expert user to label sound events
 bool TadaridaMainWindow::openWavTag(QString wavFile)
 {
     QString dirName = wavFile.left(wavFile.lastIndexOf(QString("/")));
@@ -808,7 +807,6 @@ bool TadaridaMainWindow::openWavTag(QString wavFile)
     QString da2File = dirName + "/dat/"+wavShortName + ".da2";
     if(!QFile::exists(da2File))
     {
-        //fr QMessageBox::warning(this, "Fichier .da2 inexistant", da2File, QMessageBox::Ok);
         QMessageBox::warning(this, ".da2 file is missing", da2File, QMessageBox::Ok);
         return(false);
     }
@@ -816,7 +814,6 @@ bool TadaridaMainWindow::openWavTag(QString wavFile)
     QString imaFile = dirName + "/ima/"+wavShortName + ".jpg";
     if(!QFile::exists(imaFile))
     {
-        //fr QMessageBox::warning(this, "Attention", tr("Fichier image inexistant !"), QMessageBox::Ok);
         QMessageBox::warning(this, "Warning", "Image file is missing !", QMessageBox::Ok);
         return(false);
     }
@@ -853,23 +850,26 @@ bool TadaridaMainWindow::openWavTag(QString wavFile)
     return(true);
 }
 
+// this method launches a search window
 void TadaridaMainWindow::on_btnFind_clicked()
 {
     if(_isRechercheOpen==true) {delete _precherche; _isRechercheOpen=false;}
     _precherche  = new Recherche(this);
-    _precherche->afficher_ecran();
+    _precherche->showScreen();
     _precherche->show();
     _isRechercheOpen=true;
 }
 
+// button to select a sound file present in reference database
+// in order to see informations or to update labelling
 void TadaridaMainWindow::on_btnUpdateTags_clicked()
 {
-    //fr QString wavFile  = QFileDialog::getOpenFileName( this, tr("Choisir un fichier wav de la base"),
     QString wavFile  = QFileDialog::getOpenFileName( this, "Select a sound file in the database",
                                                    DayPath, "(*.wav)");
     if(!wavFile.isEmpty()) UpdateTags(wavFile);
 }
 
+// this method initializes and opens window to update labelling
 void TadaridaMainWindow::UpdateTags(QString wavFile)
 {
     QString dirName = wavFile.left(wavFile.lastIndexOf(QString("/")));
@@ -896,6 +896,7 @@ void TadaridaMainWindow::UpdateTags(QString wavFile)
     showPicture(dirName,wavShortName,false);
 }
 
+// this method distinguishes folders of reference base from others
 bool TadaridaMainWindow::GetDirectoryType(QString dirName)
 {
     QString dirToExamine = dirName.right(dirName.length()-dirName.lastIndexOf(QString("/"))-1);
@@ -912,6 +913,10 @@ bool TadaridaMainWindow::GetDirectoryType(QString dirName)
     return(typeA);
 }
 
+// this method performs some checks and creates object of Fenim class
+// to show informations about a treated file and its sound events
+// and/or to input or update labelling
+// it is used in both cases (initial or updating labels)
 void TadaridaMainWindow::showPicture(QString wavDir,QString fileName,bool typeA)
 {
     if(_isFenimWindowOpen==true) {delete fenim; _isFenimWindowOpen=false;}
@@ -922,13 +927,11 @@ void TadaridaMainWindow::showPicture(QString wavDir,QString fileName,bool typeA)
     {
         if(dirType==false)
         {
-            //fr QMessageBox::warning(this, tr("Erreur"), tr("Ne pas choisir par ce bouton un fichier dans la base !"), QMessageBox::Ok);
             QMessageBox::warning(this, "Error", "Do not select a file in the database !", QMessageBox::Ok);
             return;
         }
         if(_dayBaseUpToDate==false)
         {
-            //fr QMessageBox::warning(this, "Error", "Choix impossible : retraiter au moins le dossier du de la base du jour !", QMessageBox::Ok);
             QMessageBox::warning(this, "Error", "Unauthorized choice : retreat at least the database today folder !", QMessageBox::Ok);
             return;
 
@@ -939,7 +942,6 @@ void TadaridaMainWindow::showPicture(QString wavDir,QString fileName,bool typeA)
     {
         if(dirType==true)
         {
-            //fr QMessageBox::critical(this, "Error", "Ce n'est pas un fichier de la base !", QMessageBox::Ok);
             QMessageBox::critical(this, "Error", "This file is not part of the database !", QMessageBox::Ok);
             return;
         }
@@ -955,9 +957,6 @@ void TadaridaMainWindow::showPicture(QString wavDir,QString fileName,bool typeA)
     {
         if(_modifyFreqAuthorized)
         {
-
-            //fr if(QMessageBox::question(this, "Type de frequence different !",
-            //fr                          "Repondre oui pour modifier type de frequence traite ou non pour renoncer",
             if(QMessageBox::question(this, "Different frequency mode !",
                                       "Answer yes to change the frequency mode or no to cancel",
                                      QMessageBox::Yes|QMessageBox::No)
@@ -967,8 +966,6 @@ void TadaridaMainWindow::showPicture(QString wavDir,QString fileName,bool typeA)
                 cocheFreq();
                 if(_tadaridaMode==ETIQUETAGE)
                 {
-                    //fr QMessageBox::warning(this, "Base ne correspondant  pas au type de frequence voulu",
-                    //fr                     "Choisir un autre dossier de base !",QMessageBox::Ok);
                     QMessageBox::warning(this, "Database with other frequency mode",
                                          "Select an other database !",QMessageBox::Ok);
                     if(!manageBase(true,true)) {exitProgram(); return;}
@@ -988,6 +985,7 @@ void TadaridaMainWindow::showPicture(QString wavDir,QString fileName,bool typeA)
     if(typeA) _wavDirectory.setPath(wavDir);
 }
 
+// initialization of important settings influencing the treatment of sound files
 void TadaridaMainWindow::initializeGlobalParameters()
 {
     _detectionThreshold = 26;
@@ -1008,10 +1006,11 @@ void TadaridaMainWindow::initializeGlobalParameters()
     _withTimeCsv = false;
 }
 
+// this method asks user to launch general reprocessing
+// the base is not compatible with software version (or new value of "user" setting in config.ini file)
 bool TadaridaMainWindow::proposeGeneralReprocessing()
 {
     bool result = false;
-    //fr if(QMessageBox::question(this, "Base en retard !", "Lancer le retraitement de la base ?",
     if(QMessageBox::question(this, "Base is late !", "Launch database retreatment ?",
                              QMessageBox::Yes|QMessageBox::No)
             == QMessageBox::Yes)
@@ -1025,13 +1024,16 @@ bool TadaridaMainWindow::proposeGeneralReprocessing()
     return(result );
 }
 
+// this method manages general recprocessing of reference database
+// it creats list of "day directories" to treat inside this database
+// and initializes useful variables ans starts a timer : _clock
+// the whole treatment will be managed by manageDetecCall method
 bool TadaridaMainWindow::generalReprocessing()
 {
     QStringList dayDirectoriesList = _baseDir.entryList(QStringList("*"), QDir::Dirs);
     _tagsNumberBefore=0; _tagsNumberAfter=0; _tagsNumberFinal=0;
     if(dayDirectoriesList.isEmpty())
     {
-        //fr QString mess("Base vide - aucun traitement !");
         QString mess("Empty database - no treatment !");
         QMessageBox::warning(this, "Warning", mess, QMessageBox::Ok);
         return(true);
@@ -1077,6 +1079,7 @@ bool TadaridaMainWindow::generalReprocessing()
     return(false);
 }
 
+// Initializations before general reprocessing of database reference
 void TadaridaMainWindow::beforeRetreating()
 {
     QString retreatFilePath("retreat.log");
@@ -1091,6 +1094,12 @@ void TadaridaMainWindow::afterRetreating()
     RetreatFile.close();
 }
 
+// this method manages treatment of folder selected by user
+// it creats list of directories which can contain more than one
+// directory if user has checked "Include subfolders" and if the treated folder
+// contains subfolders whith sound files
+// it initializes useful variables ans starts a timer: _clock
+// the whole treatment will be managed by manageDetecCall method
 bool TadaridaMainWindow::directoryTreat(QDir repToTreat,bool subDirTreat)
 {
     QStringList directoriesList("");
@@ -1173,6 +1182,7 @@ bool TadaridaMainWindow::directoryTreat(QDir repToTreat,bool subDirTreat)
     return(true);
 }
 
+// cleaning of variables between two folder treatments
 void TadaridaMainWindow::clearThings()
 {
     blockUnblock(true);
@@ -1182,6 +1192,8 @@ void TadaridaMainWindow::clearThings()
     _lblPhase1Message3->SetText("");
 }
 
+// this method manages one global treatment ("normal" or general reprocessing)
+// it is called by a timer and calls the dirtreat method to treat one directory
 void TadaridaMainWindow::manageDetecCall()
 {
     bool launch = false;
@@ -1200,7 +1212,6 @@ void TadaridaMainWindow::manageDetecCall()
             {
                 _clock->stop();
                 clearThings();
-                //blockUnblock(true);
                 _ledTreatedDirectory->setVisible(true);
                 _lblTreatedDirectory->setVisible(false);
                 _logText << QDateTime::currentDateTime().toString("hh:mm:ss:zzz") << endl;
@@ -1208,7 +1219,6 @@ void TadaridaMainWindow::manageDetecCall()
                 {
                     if(_oneDirProblem)
                     {
-                        //fr QMessageBox::warning(this, "Error !","Fichier inaccessible : retraitement interrompu !",
                         QMessageBox::warning(this, "Error !","Unreachable file : retreatment is stopped !",
                                              QMessageBox::Ok);
                     }
@@ -1216,24 +1226,19 @@ void TadaridaMainWindow::manageDetecCall()
                     {
                         _dayBaseUpToDate = true;
                         QString title;
-                        //fr QString mess = QString::number(_tagsNumberAfter)+" etiquettes recuperees sur "+
-                        //fr                             QString::number(_tagsNumberBefore)+"  dans le retraitement principal.";
                         QString mess = QString::number(_tagsNumberAfter)+" recovered labels out of "+
                                                      QString::number(_tagsNumberBefore)+"  in the main reprocessing.";
                         if(_tagsNumberFinal > 0)
-                            //fr mess += "\nApres recuperation dans les versions precedantes, nombre total d'etiquettes : "
                             mess += "\nAfter recovering in older versions, total number of labels : "
                                     //+QString::number(_tagsNumberFinal)+".";
                                     +QString::number(_tagsNumberAfter+ _tagsNumberFinal)+".";
                         if(_isGeneralReprocessing)
                         {
-                            //fr title = "Fin du retraitement general";
                             title = "End of general reprocessingl";
                             writeBaseVersion();
                         }
                         else
                         {
-                            //fr title = "Fin du retraitement du dossier du jour";
                             title = "End of today folder reprocessing";
                             writeDirectoryVersion(_baseDay.path());
                         }
@@ -1309,7 +1314,7 @@ void TadaridaMainWindow::manageDetecCall()
     }
 }
 
-
+// this method is used to merge error messages of multiple threads
 void  TadaridaMainWindow::fusionErrors(int ithread)
 {
     if(_errorFileOpen)
@@ -1340,6 +1345,8 @@ void  TadaridaMainWindow::fusionErrors(int ithread)
     }
 }
 
+// this method proposes reprocessing of today folder of database reference if it is
+// not compatible with software version and if the user has first refused general reprocessing
 bool TadaridaMainWindow::proposeDayReprocessing()
 {
     if(!_baseDay.exists())
@@ -1356,7 +1363,6 @@ bool TadaridaMainWindow::proposeDayReprocessing()
             return(true);
         }
     }
-    //fr if(QMessageBox::question(this, "Base en retard", "Lancer le retraitement du dossier du jour ?",
     if(QMessageBox::question(this, "Database is late", "Launch the reprocessing of the today folder ?",
                              QMessageBox::Yes|QMessageBox::No)
             == QMessageBox::Yes)
@@ -1377,6 +1383,9 @@ bool TadaridaMainWindow::proposeDayReprocessing()
     return(true);
 }
 
+// this method manages the treatment of a folder
+// in both cases (simple treatment of a folder or general reprocessing)
+// and calls detecCall method
 bool TadaridaMainWindow::dirTreat(QString dirName)
 {
     QString directoryPath = _directoryRoot.path()+"/"+dirName;
@@ -1403,12 +1412,16 @@ bool TadaridaMainWindow::dirTreat(QString dirName)
     return(true);
 }
 
+// detecCall method is called by dirTreat(...) to manage treatment of a directory
+// it creates one or several threads of class detec, according to _maxThreads setting
+// and the number of files to treat
+// it initializes this thread by: _pDetec[i]->InitializeDetec(...)
+// and it launches these threads by: _pDetec[i]->start();
 bool TadaridaMainWindow::detecCall(QDir dirToTreat,bool ReprocessingCase)
 {
     _logText << endl <<  "treated folder : " << dirToTreat.path() << endl;
     if(!dirToTreat.exists())
     {
-        //fr QMessageBox::critical(this, tr("Erreur"), tr("Le dossier des fichiers WAV n'existe pas !"), QMessageBox::Ok);
         QMessageBox::critical(this, "Error", "Nonexistent wav folder !", QMessageBox::Ok);
         blockUnblock(true);
         return(false);
@@ -1420,7 +1433,6 @@ bool TadaridaMainWindow::detecCall(QDir dirToTreat,bool ReprocessingCase)
     {
         if(!ReprocessingCase)
         {
-            // QString mess = QString("Il n'y a aucun fichier WAV dans le dossier ")+dirToTreat.path()+" !";
             QString mess = QString("No wav file in the folder : ")+dirToTreat.path()+" !";
             QMessageBox::critical(this, "Error", mess, QMessageBox::Ok);
             blockUnblock(true);
@@ -1437,9 +1449,7 @@ bool TadaridaMainWindow::detecCall(QDir dirToTreat,bool ReprocessingCase)
     _nbThreadsLaunched = _maxThreads;
     _filesNumber = wavSoundsList.size();
     if(_filesNumber < _nbThreadsLaunched) _nbThreadsLaunched = _filesNumber;
-    //
     initThreadsLaunched(_nbThreadsLaunched);
-    //
     int c=0;
     for(int j=0;j<_filesNumber;j++)
     {
@@ -1447,7 +1457,6 @@ bool TadaridaMainWindow::detecCall(QDir dirToTreat,bool ReprocessingCase)
         c++;
         if(c>=_nbThreadsLaunched) c=0;
     }
-    //
     for(int i=0;i<_nbThreadsLaunched;i++)
     {
         if( _pDetec[i]->InitializeDetec(_pWavFileList[i], dirToTreat.path(),
@@ -1461,6 +1470,7 @@ bool TadaridaMainWindow::detecCall(QDir dirToTreat,bool ReprocessingCase)
     return(true);
 }
 
+// this method read version of a treated directory
 bool TadaridaMainWindow::readDirectoryVersion(QString dirpath)
 {
     QString baseIniFile = dirpath + _baseIniFile;
@@ -1479,6 +1489,7 @@ bool TadaridaMainWindow::readDirectoryVersion(QString dirpath)
     return(true);
 }
 
+// this method writes the versions of a treated directory
 bool TadaridaMainWindow::writeDirectoryVersion(QString dirpath)
 {
     QString baseIniFile = dirpath + _baseIniFile;
@@ -1491,6 +1502,7 @@ bool TadaridaMainWindow::writeDirectoryVersion(QString dirpath)
     return(true);
 }
 
+// this method manages the graphical display of the main window
 void TadaridaMainWindow::createWindow()
 {
     setStyleSheet("background-image : url(tadarida.jpg);");
@@ -1512,10 +1524,8 @@ void TadaridaMainWindow::createWindow()
     _lg1= (_lcw-_pmx*4)/2;
     _hg1 = _hcw-_pmy*3;
     _lbou = 150; _hbou=30; _lbi = 30; _hbi = 30; _lbou2 = 90;
-    // �����
     _hab1 = _hg1/(10-((int)(_tadaridaMode == SIMPLE)));
     int larl5= (_lg1-_margx*4)/5;
-    //_hab1 = _hg1/10;
     resize(_ltc, _ht);
     QFont font1("Times New Roman",11);
     QFont font2("Times New Roman",10);
@@ -1544,9 +1554,7 @@ void TadaridaMainWindow::createWindow()
    _right10 = new QRadioButton(QString("x10"),_rightGroup);
    _right1 = new QRadioButton(QString("x1"),_rightGroup);
    _right0 = new QRadioButton(QString("ignore"),_rightGroup);
-   //
    int larl6,larlb;
-   //
    if(_modifyFreqAuthorized)
     {
          larl6= (_lg1-_margx*4- _pmx*4)/9;
@@ -1629,7 +1637,6 @@ void TadaridaMainWindow::createWindow()
     _lblPhase1Message3->setWordWrap(true);
     _lblPhase1Message3->setVisible(false);
     _lblPhase1Title = new MyQLabel(_grpPhase1);
-    _lblPhase1Title->SetText("Treatment of sound files");
     _lblPhase1Title->setFont(fontG);
 
     _lblPhase1Title->setGeometry(_lg1/4,(_hab1*7)/10,(_lg1*2)/3,_hbou);
@@ -1655,25 +1662,18 @@ void TadaridaMainWindow::createWindow()
         _lblPhase2Title = new MyQLabel(_grpPhase2);
         _lblPhase2Title->setGeometry(mxw2*3,(_hab1*7)/10,_lg1/3,_hbou);
         _lblPhase2Title->setFont(fontG);
-        //fr _lblPhase2Title->setText("Etiquetage");
-        _lblPhase2Title->SetText("Labelling");
         _lblBase = new MyQLabel(_grpPhase2);
         _lblBase->setGeometry(mxw2,_hab1*2,larw2,_hbou);
         _lblBase->setFont(font1);
-        _lblBase->SetText("Database : ");
         _btnOpenBase = new QPushButton(_grpPhase2);
         _btnOpenBase->setGeometry(mxw2+larw2/3,(_hab1*8)/3,(larw2*2)/3,_hbou);
         _btnOpenBase->setFont(font2);
-        //
         _lblScale = new MyQLabel(_grpPhase2);
         _lblScale->setGeometry(mxw2,(_hab1*23)/6,(larw2*7)/12,_hbou);
         _lblScale->setFont(font1);
-        _lblScale->SetText("Spectrogram scale default");
         _ledScale = new QLineEdit(_grpPhase2);
         _ledScale->setGeometry(mxw2+(larw2*2/3),(_hab1*23)/6,larw2/3,_hbou);
         _ledScale->setFont(font1);
-        _ledScale->setText(QString::number(Divrl));
-        //
         _btnOpenWav = new QPushButton(_grpPhase2);
         _btnOpenWav->setGeometry(mxw2,_hab1*5-_hab1/8,larw2,_hbou);
         _btnOpenWav->setFont(font1);
@@ -1701,38 +1701,41 @@ void TadaridaMainWindow::createWindow()
    _lblThreads = new MyQLabel(_grpPhase1);
    _lblThreads->setFont(font2);
    _lblThreads->setGeometry(_margx*2+(larl5*9)/4,_hab1*3,larl5,_hbou);
-   _lblThreads->setText(QString("Parallelism : ")+QString::number(_maxThreads));
    updatesTexts();
 }
 
+
+// this method is called by the preceding one to affect texts of widgets
 void TadaridaMainWindow::updatesTexts()
 {
     setWindowTitle("Tadarida");
-    //fr _chkSubDirectories->setText("Inclure les sous-dossiers");
     _chkSubDirectories->setText("Include subfolders");
-    //fr _lblWavDirectory->setText("Dossier des fichiers WAV");
     _lblWavDirectory->SetText("wav files directory");
-    // _btnBrowse->setText("Parcourir");
     _btnBrowse->setText("Browse");
-    //_btnPause->setText(QString());
     _btnOk->setText("Treat");
     _btnCancel->setText("Cancel");
+    _lblThreads->setText(QString("Parallelism : ")+QString::number(_maxThreads));
+    _lblPhase1Title->SetText("Treatment of sound files");
     if(_tadaridaMode==ETIQUETAGE)
     {
-        //fr _btnParameters->setText(" Modifier les variables");
+        _lblPhase2Title->SetText("Labelling");
          _btnParameters->setText(" Advanced settings");
         _chkCreateImage->setText("da2 and jpg files");
         _btnOpenWav->setText("Select a wav file");
-        //fr _btnOpenBase->setText("Modifier le dossier de la base");
         _btnOpenBase->setText("Change database folder");
-        //fr _btnUpdateTags->setText("Modifier l'Etiquetage d'un fichier");
         _btnUpdateTags->setText("Update file labelling");
         _btnOpenPreviousWav->setText("Previous");
         _btnOpenNextWav->setText("Next");
         _btnFind->setText("Search");
+        _lblBase->SetText("Database : ");
+        _lblScale->SetText("Spectrogram scale default");
+        _ledScale->setText(QString::number(Divrl));
     }
 }
 
+// this method checks consistency of files ".da2" and ".ta"
+// for an already treatd file
+// and asks the user to treat again this file in case of problem
 bool TadaridaMainWindow::consistencyCheck(QString wavFileName,QString da2FileName,QString txtFileName)
 {
     _logText << "consistencyCheck " << endl;
@@ -1782,6 +1785,9 @@ bool TadaridaMainWindow::consistencyCheck(QString wavFileName,QString da2FileNam
     return(true);
 }
 
+// this method saves outputs of the previous global processing in order to be able
+// to recover labelling informations if a subsequent reprocessing regains lost cries
+// in the meantime due to modified parameters or algorithms
 void TadaridaMainWindow::previousVersionSave(QStringList wavFileList,QString wavPath)
 {
     _baseDayDir.setPath(wavPath);
@@ -1809,38 +1815,44 @@ void TadaridaMainWindow::previousVersionSave(QStringList wavFileList,QString wav
     }
 }
 
+// this method writes a message in logfile when an opening file problem has occured
 void TadaridaMainWindow::treatDirProblem()
 {
     _oneDirProblem = true;
     _logText << "dirProblem message" << endl;
 }
 
+// initialization of variables relating to threads
 void TadaridaMainWindow::initThreads()
 {
     _nbThreadsLaunched = 0;
     _nbDetecCreated = 0;
+    // this array will be used to know if a thread has already been created
+    // when several sessions of treatment are launched and the
+    // updates number of threads launched is updated
     for(int i=0;i<MAXTHREADS;i++) _tabDetecCreated[i] = false;
 }
 
-
+// initialization of "time expansion" settings
 void TadaridaMainWindow::affectTimeExpansions()
 {
     if(_left10->isChecked()) _timeExpansionLeft = 10;
     if(_left1->isChecked()) _timeExpansionLeft = 1;
     if(_left0->isChecked()) _timeExpansionLeft = 0;
-
     if(_right10->isChecked()) _timeExpansionRight = 10;
     if(_right1->isChecked()) _timeExpansionRight = 1;
     if(_right0->isChecked()) _timeExpansionRight = 0;
-
 }
 
+// initialization of type frequency according to _modeFreq value
 void TadaridaMainWindow::cocheFreq()
 {
     if(_modeFreq==2)  _freqLow->setChecked(true);
     else  _freqHigh->setChecked(true);
 }
 
+// in case of choice of a different frequency type,
+// the user must choose an other database reference
 void TadaridaMainWindow::on_freqLow_toogled(bool checked)
 {
     int precModeFreq = _modeFreq;
@@ -1853,6 +1865,13 @@ void TadaridaMainWindow::on_freqLow_toogled(bool checked)
     }
 }
 
+// this method is called by detecCall to initialize variables called by each
+// thread of Detec class
+// it launches also: DetecTreatment::setGlobalTreatment, which is a method
+// of the object: _pDetec[i]->PDetecTreatment, created by Detec class constructor
+// (DetecTreatment class concentrates most of computings generating the outputs)
+// this initialization is completed by the lines following the call of this method
+// in deteccall whose call to method of Detec::InitializeDetec(...)"
 void TadaridaMainWindow::initThreadsLaunched(int nbLaunched)
 {
     _nbThreadsLaunched = nbLaunched; // peut-�tre inutile : � voir ensuite
@@ -1865,7 +1884,6 @@ void TadaridaMainWindow::initThreadsLaunched(int nbLaunched)
         {
             FftRes[i] 		= ( fftwf_complex* ) fftwf_malloc( sizeof( fftwf_complex ) * FFT_HEIGHT_MAX );
             ComplexInput[i]        = ( fftwf_complex* ) fftwf_malloc( sizeof( fftwf_complex ) * FFT_HEIGHT_MAX );
-            // _logText << "adresse _complexInput[0]="<<  (qint64)_complexInput[i] << endl;
             for(int k=0;k<6;k++)
             {
                 fh = pow(2,7+k);
@@ -1900,7 +1918,8 @@ void TadaridaMainWindow::createErrorFile()
     else _errorFileOpen = false;
 }
 
-
+// this method is used to interrupt processing handled by the timer
+// and the method: "manageDetecCall(...)"
 int TadaridaMainWindow::countThreadsRunning()
 {
 
@@ -1914,7 +1933,6 @@ int TadaridaMainWindow::countThreadsRunning()
             else _threadRunning[i] = false;
         }
     }
-    // _logText << nbtr << endl;
     return(nbtr);
 }
 
@@ -1927,6 +1945,7 @@ void TadaridaMainWindow::modifyMaxThreads(int nt)
     }
 }
 
+// this method connects signals launched by threads to methods of this class
 void TadaridaMainWindow::connectDetectSignals(int iThread)
 {
     connect(_pDetec[iThread], SIGNAL(threadFinished(int)),this, SLOT(detecFinished(int)));
