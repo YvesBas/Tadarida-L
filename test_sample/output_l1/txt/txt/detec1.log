@@ -1,0 +1,191 @@
+dtt modefreq=2
+
+
+tOF : 11:17:11:340
+wavfile=20160730_005625.wav
+c:
+g=1
+sfte=250000
+cF
+cN
+sD: 
+dP
+sP
+end of file treatment
+
+
+tOF : 11:17:16:965
+wavfile=Car300711-2014-Pass2-C1-16701_0_20141004_210909_000.wav
+c:
+g=1
+sfte=384000
+cF
+cN
+sD: 
+dP
+sP
+end of file treatment
+
+
+tOF : 11:17:17:747
+wavfile=Car300937-2015-Pass2-Z4-U1-00907_0_20150903_001412_000.wav
+c:
+g=1
+sfte=25600
+too long
+end of file treatment
+
+
+tOF : 11:17:17:758
+wavfile=Car340108-2014-Pass1-Z1-FLO_0_20140408_013528_599.wav
+c:
+g=1
+sfte=38400
+too short duration:7.5 ms
+end of file treatment
+
+
+tOF : 11:17:17:768
+wavfile=Car40663-2014-Pass2-D2-RC-04_0_0_20140922_033604_000.wav
+c:
+g=1
+sfte=38400
+cF
+cN
+sD: 
+dP
+sP
+end of file treatment
+
+
+tOF : 11:17:18:397
+wavfile=Car450735-2014-Pass2-A1-20140828_211651_000.wav
+c:
+g=1
+sfte=19200
+cF
+cN
+sD: 
+dP
+sP
+end of file treatment
+
+
+tOF : 11:17:19:301
+wavfile=Cir106-2008-Pass1-Tron3-Chiro_extr.wav
+c:
+end of file treatment
+
+
+tOF : 11:17:19:311
+wavfile=Cir123-2015-Pass2-Tron4-Chiro_1_00270_000.wav
+c:
+d=1
+sfte=96000
+cF
+cN
+sD: 
+dP
+sP
+end of file treatment
+
+
+tOF : 11:17:19:606
+wavfile=Cir94-2009-Pass2-Tron02-Chiro Part 04 of 61.wav
+c:
+g=1
+sfte=9600
+cF
+cN
+sD: 
+dP
+sP
+end of file treatment
+
+
+tOF : 11:17:20:450
+wavfile=CONFUS_TF9520_20150829_170729.wav
+c:
+g=1
+sfte=384000
+cF
+cN
+sD: 
+dP
+sP
+end of file treatment
+
+
+tOF : 11:17:22:099
+wavfile=le_Cabrier16701_20141030_072526_487.wav
+c:
+g=1
+sfte=38400
+cF
+cN
+sD: 
+dP
+sP
+end of file treatment
+
+
+tOF : 11:17:22:602
+wavfile=o_Lamalou8476_20141221_202116_019.wav
+c:
+g=1
+sfte=44100
+cF
+cN
+sD: 
+dP
+sP
+end of file treatment
+
+
+tOF : 11:17:22:758
+wavfile=o_o_Col_de_Roncevaux_ferme_abandonnee10250_20140725_081655_173.wav
+c:
+g=1
+sfte=44100
+cF
+cN
+sD: 
+dP
+sP
+end of file treatment
+
+
+tOF : 11:17:22:772
+wavfile=RECORD0_20150421_213730_463.wav
+c:
+g=1
+sfte=25000
+too long
+end of file treatment
+
+
+tOF : 11:17:22:783
+wavfile=Ruisseau_de_Peyroules014903-D2_20140813_040521_598.wav
+c:
+g=1
+sfte=38400
+cF
+cN
+sD: 
+dP
+sP
+end of file treatment
+
+
+tOF : 11:17:22:939
+wavfile=S4U00331_0_20160427_185458_000.wav
+c:
+g=1
+sfte=38400
+cF
+cN
+sD: 
+dP
+sP
+end of file treatment
+endDetec  IThread = 0
