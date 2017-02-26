@@ -196,7 +196,6 @@ bool Recherche:: findTreat(bool findMode)
     _filesTable->clear();
     _lblSelectedNumber->setText("");
     _filesTable->setHorizontalHeaderLabels(_columnTitles);
-    // sélection des fichiers eti du répertoire
     QString searchedText = this->_editSearch->text();
     if(searchedText.isEmpty())
     {
@@ -714,7 +713,6 @@ void Recherche::endCsvTable(QString esp1,QString esp2)
     for(int i=0;i<_nCompLines;i++)
     {
         QString parLine = _fileStream.readLine();
-        //if(parLine.isNull() or parLine.isEmpty()) break;
         QString species = parLine.section('\t',0,0);
         if(species==esp2) ws[i] = 1;  else ws[i] = 0;
         ns[ws[i]]++;

@@ -1286,7 +1286,6 @@ bool Fenim::loadLabels()
     LabelsFolderName = _wavFolder + "/eti";
     QDir direti(LabelsFolderName);
     if(!direti.exists()) direti.mkdir(LabelsFolderName);
-    // pour version contour
     LabelsFileName = _mainFileName + ".eti";
     _labelsFullFileName = LabelsFolderName + "/" + LabelsFileName;
     _labelsFile.setFileName(_labelsFullFileName);
@@ -1302,7 +1301,7 @@ bool Fenim::loadLabels()
         if(_labelsFile.open(QIODevice::ReadOnly | QIODevice::Text))
         {
             _labelsStream.setDevice(&_labelsFile);
-            _labelsStream.readLine(); // pour éliminer ligne titre
+            _labelsStream.readLine(); 
             for(int i=0;i<=CallsNumber;i++)
             {
                 if(_labelsStream.atEnd()) break;
@@ -1602,7 +1601,6 @@ void Fenim::SelectCall(int x,int y,bool isCTRL)
         }
         else
         {
-            // cas général
             for(int j=0;j<CallsNumber;j++) if(j==ntrouve) SelectedCalls[j]=true;
             else SelectedCalls[j]=false;
         }
@@ -1795,7 +1793,6 @@ void FenimWindow::resizeEvent(QResizeEvent *re)
 void FenimWindow::closeEvent(QCloseEvent *event)
  {
     if(PFenim->InputToSave)
-        //fr if(QMessageBox::question(this, "Question", "Quitter sans sauvegarder les saisies ?",
         if(QMessageBox::question(this, "Question", "Exit without saving labels file ?",
                                  QMessageBox::Yes|QMessageBox::No)
                 == QMessageBox::No)
@@ -2283,7 +2280,6 @@ void EditCombo::SelectCode(const QString& selectedText)
 bool EditCombo::ConfirmAdd(QString& s)
 {
     if(QMessageBox::question((QWidget *)PFenimWindow, (const QString &)QString("Question"),
-                             //fr (const QString &)QString("Code ")+s+QString(" absent de la table : accepter ce code ?"),
                              (const QString &)QString("Code ")+s+QString(" code missing from the table : accept it ?"),
                              QMessageBox::Yes|QMessageBox::No)
             == QMessageBox::No) return(false);

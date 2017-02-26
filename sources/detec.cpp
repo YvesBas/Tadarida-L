@@ -240,7 +240,7 @@ void Detec::cleanSubdir(QDir cdir,QString ndirPath,bool cleanAll,QString filter)
         {
             if(r.length()>2)
             {
-                cleanSubdir(nDir,ndirPath+"/"+r,true,"*.*"); // attention : récursivité
+                cleanSubdir(nDir,ndirPath+"/"+r,true,"*.*"); 
             }
         }
         cdir.rmdir(ndirPath);

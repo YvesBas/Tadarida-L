@@ -344,10 +344,10 @@ void Loupe::ShowOneOtherCrestl(int callNumber,bool showSuppl)
                 _gplt[jcrete][callNumber]->setPen(qp[jcrete]);
                 LoupeScene->addItem(_gplt[jcrete][callNumber]);
                 //
-            } // next jcrete
+            } 
             _ilcs[callNumber]=true;
-        } // fin du ilcs[ncri]==false
-    } // fin du else affichersuppl
+        } 
+    } 
 }
 
 
@@ -440,7 +440,6 @@ void Loupe::ZoomeF(float izh,float izv)
     _liaj=log(rapdeb);
 
     ShowGrid(_bcGrid->isChecked());
-    // afficher_cris();
     ShowMasterPoints();
     ShowOtherPoints();
     showRatio();

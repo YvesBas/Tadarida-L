@@ -79,7 +79,7 @@ TadaridaMainWindow::TadaridaMainWindow(QWidget *parent) : QMainWindow(parent)
     _mustCancel = false;
     _wavDirectory   = QDir::current();
     _lastWav = QString("");
-    _tadaridaMode = SIMPLE; // mode simple
+    _tadaridaMode = SIMPLE; // end users mode 
     _userVersion = 0;
     _programVersion = 22;
     _baseDir   = QDir::current();
@@ -1874,7 +1874,7 @@ void TadaridaMainWindow::on_freqLow_toogled(bool checked)
 // in deteccall whose call to method of Detec::InitializeDetec(...)"
 void TadaridaMainWindow::initThreadsLaunched(int nbLaunched)
 {
-    _nbThreadsLaunched = nbLaunched; // peut-�tre inutile : � voir ensuite
+    _nbThreadsLaunched = nbLaunched; 
     if(nbLaunched>_nbDetecCreated) _nbDetecCreated= nbLaunched;
     int fh;
     for(int i=0;i<_nbThreadsLaunched;i++)
